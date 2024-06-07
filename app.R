@@ -155,8 +155,11 @@ body <- dashboardBody(
                 ),# end of box
                 
                 box(width = 3,
+                    br(),
                     numericInput("nb_remains", label = h5("Numeric input"), value = 1),
-                ),# end of box
+                    br(),
+                    br()
+                    ),# end of box
                 # box(width = 3,),
                 box(width = 6,
                     pickerInput(
@@ -268,19 +271,8 @@ body <- dashboardBody(
                                   lib = "glyphicon"))
                     ),
                     ),
-                uiOutput ("fantome"),
-                # box(width=6,
-                #   prettySwitch(
-                #     inputId = "infos_obs",
-                #     label = "Observation",
-                #     status = "success",
-                #     fill = TRUE
-                #   ),
-                #   uiOutput ("obs"),
-                # )
-                  )
-                # ) # end of div
-                             ) # end of fluidpage
+                    )
+                  ) # end of fluidpage
                   ),#end of tabpanel 
                 tabPanel(h4("Table"),
                 DT::dataTableOutput("responses2", width = 700),  style = "overflow-x: scroll;", 
@@ -345,8 +337,6 @@ observeEvent(ignoreInit = TRUE,input$create_bdd,{
   global.load$site.archaeo<-input$name_site
   to_save <- reactiveValuesToList(global.load)
   saveRDS(to_save, file =  paste0(Sys.Date(),".",global.load$site.archaeo,".BDD.uf",".rds"))
-
-  # test<-data.frame(apply(responses,2,as.character))
   write.table(as.data.frame(fields_theor), file =  paste0(Sys.Date(),".",global.load$site.archaeo,".BDD.uf",".csv",sep=""), row.names = FALSE, sep=";",dec=".") 
   
 })
