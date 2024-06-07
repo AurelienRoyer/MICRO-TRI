@@ -1,15 +1,16 @@
 library(shiny)
 library(shinydashboard)
 library(shinyWidgets)
-# library(shinydashboardPlus)
 library(shinyjs)
 library(DT)
 library(tools)
 setwd("C:/Users/aurelien/Desktop/R shiny software/TRIS")
 load(file = "list_faune.RData")
 list_species_1<-c("not_selected",list_faune$Taxon)
-list_species<-c("list_species_1")
-list_bone_1<-c("not_selected","m1inf","Mand","Max","HUM","FEM","RAD","ULNA","TIB",
+list_perso<-c("not_selected","pm","am","Microtus_sp.","Microtus_arvalis","Microtus_agrestis",
+              "Arvicola_sp.","Arvicola_amphibius","Lasiopodomys_gregalis","Apodemus_sp.")
+list_species<-c("list_perso","list_species_1")
+list_bone_1<-c("not_selected","m1inf","MOL","Mand","Max","HUM","FEM","RAD","ULNA","TIB",
              "Iinf","Isup","bassin")
 list_bone<-c("list_bone_1")
 sidebar <- dashboardSidebar(
@@ -38,8 +39,10 @@ body <- dashboardBody(
                              
                     ),#end of tabpanel
                 tabPanel(h4("New BDD"),
-  
+                         textInput("name_site", label="Name of  the site", value = "", width = NULL,
+                                   placeholder = NULL),
                          uiOutput ("liste.faun4"),
+                         
                          actionButton("create_bdd", "Create the BDD"),
                          
                 ),#end of tabpanel
@@ -134,26 +137,32 @@ body <- dashboardBody(
                 ),
                 hr(),
                 fluidRow(
-                  box(width = 6,),
-                  box(width = 3,
-                numericInput("nb_remains", label = h5("Numeric input"), value = 1),
-                  ),# end of box
+                #   box(width = 3,),
+                #   box(width = 3,
+                # numericInput("nb_remains", label = h5("Numeric input"), value = 1),
+                #   ),# end of box
                 ),# end of fluidRow
                 fluidRow(
                   box(width = 6,
-                pickerInput(
-                  inputId = "name_species",
-                  label = "Name species", 
-                  choices = get(list_species),
-                  options = list(
-                    `live-search` = TRUE)
-                ),
+                      selectInput(inputId="name_taxa", 
+                                  label= "order level" , 
+                                  choices=c("Rodentia","Eulipotyphla","Chiroptera","others"), 
+                                  selected = "Rodentia", 
+                                  multiple = FALSE, 
+                                  selectize = TRUE),
+                      uiOutput("species_pickerinput"),
+
                 ),# end of box
+                
+                box(width = 3,
+                    numericInput("nb_remains", label = h5("Numeric input"), value = 1),
+                ),# end of box
+                # box(width = 3,),
                 box(width = 6,
                     pickerInput(
                       inputId = "name_anat",
                       label = "Anatomy", 
-                      choices = get(list_bone),
+                      choices = get(list_bone[1]),
                       options = list(
                         `live-search` = TRUE)),
                     
@@ -169,20 +178,40 @@ body <- dashboardBody(
                     no = icon("remove",
                               lib = "glyphicon"))
                 ),
-                ), #end of box
+                
+                    prettySwitch(
+                      inputId = "infos_completude",
+                      label = "Complet or broke",
+                      status = "success",
+                      fill = TRUE
+                    ),
+                    
+                    uiOutput ("completude"),
+                ),
+               
+                box(width=6,
+                    prettySwitch(
+                      inputId = "infos_obs",
+                      label = "Observation",
+                      status = "success",
+                      fill = TRUE
+                    ),
+                    uiOutput ("obs"),
+                    uiOutput ("obs2"),
+                )
                 ),
                 
                 fluidRow(
-                  box(width = 4,
-                prettySwitch(
-                     inputId = "infos_completude",
-                     label = "Complet or broke",
-                     status = "success",
-                     fill = TRUE
-                   ),
-              
-                uiOutput ("completude"),
-                  ),
+                #   box(width = 4,
+                # prettySwitch(
+                #      inputId = "infos_completude",
+                #      label = "Complet or broke",
+                #      status = "success",
+                #      fill = TRUE
+                #    ),
+                # 
+                # uiOutput ("completude"),
+                #   ),
                 ),
                 fluidRow(
                 box(width = 4,
@@ -192,18 +221,18 @@ body <- dashboardBody(
                   min = 0, max = 4,
                   value = 0,step=1
                 ),
-                  radioGroupButtons(
-                    inputId = "trace_root",
-                    label = "Root marks",
-                    choices = c("IND","0","<50%",">50%"),
-                    selected =("IND"),
-                    status = "primary",
-                    checkIcon = list(
-                      yes = icon("ok", 
-                                 lib = "glyphicon"),
-                      no = icon("remove",
-                                lib = "glyphicon"))
-                  ),
+                  # radioGroupButtons(
+                  #   inputId = "trace_root",
+                  #   label = "Root marks",
+                  #   choices = c("IND","0","<50%",">50%"),
+                  #   selected =("IND"),
+                  #   status = "primary",
+                  #   checkIcon = list(
+                  #     yes = icon("ok", 
+                  #                lib = "glyphicon"),
+                  #     no = icon("remove",
+                  #               lib = "glyphicon"))
+                  # ),
                   radioGroupButtons(
                     inputId = "trace_heat",
                     label = "Burnt marks",
@@ -226,17 +255,29 @@ body <- dashboardBody(
                     ),
                     uiOutput ("tm_output"),
             
-                    
+                    radioGroupButtons(
+                      inputId = "trace_root",
+                      label = "Root marks",
+                      choices = c("IND","0","<50%",">50%"),
+                      selected =("IND"),
+                      status = "primary",
+                      checkIcon = list(
+                        yes = icon("ok", 
+                                   lib = "glyphicon"),
+                        no = icon("remove",
+                                  lib = "glyphicon"))
                     ),
-                box(width=6,
-                  prettySwitch(
-                    inputId = "infos_obs",
-                    label = "Observation",
-                    status = "success",
-                    fill = TRUE
-                  ),
-                  uiOutput ("obs"),
-                )
+                    ),
+                uiOutput ("fantome"),
+                # box(width=6,
+                #   prettySwitch(
+                #     inputId = "infos_obs",
+                #     label = "Observation",
+                #     status = "success",
+                #     fill = TRUE
+                #   ),
+                #   uiOutput ("obs"),
+                # )
                   )
                 # ) # end of div
                              ) # end of fluidpage
@@ -271,11 +312,14 @@ server <- function(input, output, session) {
     e<-reactiveVal(NULL)
     df<-reactiveValues( #creation df 
       df=NULL,save1=NULL,save2=NULL,save3=NULL,save4=NULL,save5=NULL) # end reactivevalues
-    global.load<-reactiveValues(df=NULL,save5=NULL,site.archaeo="La Balutie")
-    
+    global.load<-reactiveValues(df=NULL,save5=NULL,site.archaeo=NULL)
     df_rapid_line<-reactiveVal(0)
+    input_infos_suppl_anat<-reactiveVal(NULL)
+    
     # save.df.last.lines<-reactiveValuesToList(NULL)
-    ## NEW BDD
+
+    
+## NEW BDD
 output$liste.faun4=renderUI({
       # selectInput("liste.newgroup3", label = h5("Select the variable"), 
       #             choices = factor(df$df[,input$liste.newgroup.rename]))
@@ -284,11 +328,7 @@ output$liste.faun4=renderUI({
                    selected = list_species[[1]]) 
     })
 
-output$site=renderPrint({
-  tags$p("Archaeological site")
-  HTML(paste0("Archaeological site: ",global.load$site.archaeo))
- 
-})
+
 
 output$liste.faun1=renderUI({
 pickerInput(
@@ -301,7 +341,22 @@ pickerInput(
 )
 })
 
+observeEvent(ignoreInit = TRUE,input$create_bdd,{
+  global.load$site.archaeo<-input$name_site
+  to_save <- reactiveValuesToList(global.load)
+  saveRDS(to_save, file =  paste0(Sys.Date(),".",global.load$site.archaeo,".BDD.uf",".rds"))
+
+  # test<-data.frame(apply(responses,2,as.character))
+  write.table(as.data.frame(fields_theor), file =  paste0(Sys.Date(),".",global.load$site.archaeo,".BDD.uf",".csv",sep=""), row.names = FALSE, sep=";",dec=".") 
+  
+})
+
 ##loading
+output$site=renderPrint({
+  tags$p("Archaeological site")
+  HTML(paste0("Archaeological site: ",global.load$site.archaeo))
+  
+})
 observeEvent(input$file1, {
   input_file1.name(input$file1$name)
   input_file1.datapath(input$file1$datapath)
@@ -331,7 +386,7 @@ observeEvent(getdata.launch(), {
   last.name.square(global.load$last.name.square)
   last.name.dec(global.load$last.name.dec)
   last.name.level(global.load$last.name.level)
-
+  global.load$site.archaeo<-global$site.archaeo
   
   fileisupload(1)
   
@@ -384,6 +439,41 @@ observeEvent(fileisupload(), {
       }
       
     })
+    # output$fantome=renderUI({
+    #   if (input$infos_obs==1) {
+    #     textInput("infos_suppl_anat", label="observation", value = NULL, width = NULL,
+    #               placeholder = NULL)
+    #   }
+    #   
+    # })
+    
+    output$obs2=renderUI({
+      pickerInput(
+        inputId = "Id_obs_suppl_morpho",
+        label = "Multiple", 
+        choices = attr(UScitiesD, "Labels"),
+        multiple = TRUE
+      )
+    })
+    output$species_pickerinput=renderUI({
+      
+      switch(input$name_taxa,
+             Rodentia = {species.menu<-get(list_species[1])
+               },
+             Eulipotyphla =   {},
+             others =   {},
+             Chiroptera =  { 
+             })
+       
+      pickerInput(
+      inputId = "name_species",
+      label = "Name species", 
+      choices = species.menu,
+      options = list(
+        `live-search` = TRUE)
+    )
+    })
+    
     output$tm_output=renderUI({
       if (input$infos_tm==TRUE) {
         radioGroupButtons(
@@ -402,6 +492,110 @@ observeEvent(fileisupload(), {
       
     }) 
     
+    output$mand_output=renderUI({
+      if (input$Id_mand_empty==TRUE) {
+        pickerInput(
+          inputId = "Id_mand",
+          label = "Select/deselect all options", 
+          choices = c("Iinf","m1inf","m2inf","m3inf"),
+          options = list(
+            `actions-box` = TRUE), 
+          multiple = TRUE
+        )
+      }
+      
+    })    
+    output$max_output=renderUI({
+      if (input$Id_max_empty==TRUE) {
+        pickerInput(
+          inputId = "Id_max",
+          label = "Select/deselect all options", 
+          choices = list(
+            left=c("Isup","M1sup","M2sup","M3sup"),
+            right=c("Isup","M1sup","M2sup","M3sup")
+          ),
+          options = list(
+            `actions-box` = TRUE), 
+          multiple = TRUE
+        )
+      }
+      
+    })   
+
+    
+    observeEvent(input$name_anat,{
+      input_infos_suppl_anat(NULL)
+      if(input$name_anat=="MOL"){
+        showModal(
+          modalDialog(
+            title = tags$h4(style = "color: blue;","Mandible choice"),
+            easyClose = T,
+            HTML("Select molar"),
+            pickerInput(
+              inputId = "Id_mol",
+              label = "Molars", 
+              choices = c("m1inf","m2inf","m3inf","M1sup","M2sup","M3sup"),
+              multiple = FALSE
+            )
+          ))
+
+        
+
+      }
+      
+      if(input$name_anat=="Mand"){
+        showModal(
+          modalDialog(
+            title = tags$h4(style = "color: blue;","Mandible choice"),
+            easyClose = T,
+            
+            materialSwitch(
+              inputId = "Id_mand_empty",
+              label = "Empty mandible/Teeth within mandible", 
+              value = FALSE, 
+              right = TRUE,
+              status = "primary"
+            ),
+            HTML("Select teeth within the mandible"),
+        uiOutput("mand_output")
+
+            
+            
+          ))
+
+      }
+      if(input$name_anat=="Max"){
+        showModal(
+          modalDialog(
+            title = tags$h4(style = "color: blue;","Maxillary choice"),
+            easyClose = T,
+            materialSwitch(
+              inputId = "Id_max_empty",
+              label = "Empty maxillary/Teeth within maxillary", 
+              value = FALSE, 
+              right = TRUE,
+              status = "primary"
+            ),
+            HTML("Select teeth within the Maxillary"),
+            uiOutput("max_output")
+            
+            
+          ))
+      }
+
+    })
+    observeEvent(input$Id_mol, {
+      input_infos_suppl_anat(input$Id_mol)
+      
+    })
+    observeEvent(input$Id_max, {
+      input_infos_suppl_anat(input$Id_max)
+      
+    })
+    observeEvent(input$Id_mand, {
+      input_infos_suppl_anat(input$Id_mand)
+      
+    })
     
     observeEvent(input$submit, {
       showModal(
@@ -445,11 +639,13 @@ observeEvent(fileisupload(), {
     formData <- reactive({
          # date<-Sys.time()
         data <- sapply(fields_theor, function(x) input[[x]])
-       
         data<-c(ID_record(),data)
+
         names(data)<-c("ID_record",fields_theor)
         data$date_record<-Sys.time()
-        str(data)
+        if(!is.null(input_infos_suppl_anat())){
+         data$infos_suppl_anat<-input_infos_suppl_anat()}
+
         data
         
     })
@@ -486,9 +682,11 @@ observeEvent(fileisupload(), {
       updateSelectizeInput(session = session,inputId = "name_square",selected = last.name.square())
       updateSelectizeInput(session = session,inputId = "name_dec",selected = last.name.dec())
       updateSelectizeInput(session = session,inputId = "name_level",selected = last.name.level())
-      
+      print("bbbb")
+      print(formData())
         saveData(formData())
         data <- as.data.frame(t(formData()))
+        print("aaa")
         k<-ID_record()+1
         ID_record(k)
         global.load$k<-k
@@ -511,8 +709,11 @@ observeEvent(fileisupload(), {
         global.load$last.name.square<-last.name.square()
         global.load$last.name.dec<-last.name.dec()
         global.load$last.name.level<-last.name.level()
-        updatePickerInput(session = session, inputId = "name_species",choices = get(list_species))
-        updatePickerInput(session = session, inputId = "name_anat",choices = get(list_bone))
+        
+        global.load$input_infos_suppl_anat<-input_infos_suppl_anat()
+        input_infos_suppl_anat(NULL)
+        updatePickerInput(session = session, inputId = "name_species",choices = get(list_species[1]))
+        updatePickerInput(session = session, inputId = "name_anat",choices = get(list_bone[1]))
         updatePickerInput(session = session, inputId = "infos_suppl_anat",choices = NULL)
         updateNumericInput(session = session, inputId = "nb_remains",value =1)
         updateRadioGroupButtons(session = session, inputId = "infos_lat", selected = "IND")  
@@ -638,10 +839,10 @@ ui <-dashboardPage(
 saveData <- function(data) {
     data <- as.data.frame(t(data))
     if (exists("responses")) {
-
+print(responses)
+      print(data)
         responses <<- rbind(responses, data)
-        # assign("data_df",responses,envir=e())
-    } else {
+      } else {
         responses <<- data
     }
     
