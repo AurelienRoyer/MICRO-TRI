@@ -4,6 +4,7 @@ library(shinyWidgets)
 library(shinyjs)
 library(DT)
 library(tools)
+library(readxl)
 setwd("C:/Users/aurelien/Desktop/R shiny software/TRIS")
 load(file = "list_faune.RData")
 list_species_all<-c("not_selected",list_faune$Taxon)
@@ -33,7 +34,8 @@ sidebar <- dashboardSidebar(
                  # badgeLabel = "new"
                  # , badgeColor = "green"
                  ),
-        menuItem("Exploration", tabName = "data2", icon = icon("chart-line"))
+        menuItem("Exploration", tabName = "data2", icon = icon("chart-line")),
+        menuItem("Note", tabName = "data3", icon = icon("comment"))
     )
 )
 
@@ -44,13 +46,13 @@ body <- dashboardBody(
                 h2("Microvertebrate Toughscreen R Interface"),
                 tabsetPanel(
                   id="tab1",
-                    tabPanel(h4("Loading BDD"),
+                    tabPanel(h4("Loading Database"),
                              fileInput("file1", "Choose File (.RData)",
                                          accept = c(".RData")),
                                actionButton(inputId = "getData",label="Get Data"),
                              
                     ),#end of tabpanel
-                tabPanel(h4("New BDD"),
+                tabPanel(h4("New Database"),
                          textInput("name_site", label="Name of  the site", value = "", width = NULL,
                                    placeholder = NULL),
                          uiOutput ("liste.faun4"),
@@ -58,9 +60,25 @@ body <- dashboardBody(
                          uiOutput ("liste.faun4.chiro"),
                          uiOutput ("liste.faun4.herpeto"),
                          uiOutput ("liste.faun4.others"),
-                         
                          actionButton("create_bdd", "Create the BDD"),
                          
+                ),#end of tabpanel
+                tabPanel(h4("Load a field Database"),
+                         br(),
+                         fileInput("file.fieldBDD", "Choose File (.csv/.xls/.xlsx)",
+                                   multiple = TRUE,
+                                   accept = c("text/csv",
+                                              "text/comma-separated-values",
+                                              ".csv",
+                                              ".xlsx",".xls")),
+                         selectInput(inputId = "worksheet", label="Worksheet Name", choices =''),
+                         actionButton(inputId = "getData.fieldBDD",label="Get Data"),
+                         # actionButton('reset.BDD', 'Reset Input'),
+                         br(),
+                         uiOutput("set.ID.dec"),
+                         uiOutput("set.square"), 
+                         uiOutput("set.dec"),
+                         uiOutput("set.levels") 
                 ),#end of tabpanel
                 tabPanel(h4("About"),
                          ) #end of tabpanel
@@ -300,6 +318,14 @@ body <- dashboardBody(
         tabItem(tabName = "data2",
                 h2("analyses2 tab content"),
                 
+        ),
+        tabItem(tabName = "data3",
+                h2("Global note from microvertebrate observation"),
+                textAreaInput("note.obs", label="observation to add",rows=5, value = "", width = NULL,
+                          placeholder = "Leave an comment/observation..."),
+                uiOutput("obs.note.torender"),
+                actionButton("Record_the_observation", "Record the observation")
+                
         )
     )
 )
@@ -433,8 +459,8 @@ observeEvent(getdata.launch(), {
   df$save3<-global$df_save3
   df$save4<-global$df_save4
   df$save5<-global$df_save5
-  print("oo")
-  print(df$save5)
+
+  
   rV$ID_dec<-global$ID_dec
   rV$name_square<-global$name_square
   rV$name_dec<-global$name_dec
@@ -450,7 +476,7 @@ observeEvent(getdata.launch(), {
   global.load$chiro.list.select<-global$chiro.list.select
   global.load$euli.list.select<-global$euli.list.select
   global.load$rod.list.select<-global$rod.list.select
-  
+  global.load$note.obs<-global$note.obs
   fileisupload(1)
   
 })# end observe of df$df2
@@ -460,6 +486,81 @@ observeEvent(fileisupload(), {
   updateTabsetPanel(inputId="tab1",
                     selected = "About")
 })
+
+##### loading field database a finir ----
+file.field.BDD.isupload<-reactiveVal(NULL)
+getdata.fieldBDD.launch<-reactiveVal()
+input_fieldBDD.name<-reactiveVal()
+input_fieldBDD.datapath<-reactiveVal()
+
+observeEvent(input$file.fieldBDD, {
+  input_fieldBDD.name(input$file.fieldBDD$name)
+  input_fieldBDD.datapath(input$file.fieldBDD$datapath)
+})
+observeEvent(input$getData.fieldBDD, {
+  getdata.fieldBDD.launch(input$getData.fieldBDD)
+})
+observe({
+  req(!is.null(input_fieldBDD.datapath()))
+  extension <- tools::file_ext(input_fieldBDD.name())
+  switch(extension,
+         csv = {updateSelectInput(session, "worksheet", choices = input_fieldBDD.name())},
+         xls =   {    selectionWorksheet <-excel_sheets(path = input_fieldBDD.datapath())
+         updateSelectInput(session, "worksheet", choices = selectionWorksheet)},
+         xlsx =  {      selectionWorksheet <-excel_sheets(path = input_fieldBDD.datapath())
+         updateSelectInput(session, "worksheet", choices = selectionWorksheet)})
+})
+observeEvent(getdata.fieldBDD.launch(), {
+  req(!is.null(input_fieldBDD.datapath()))
+  extension <- tools::file_ext(input_fieldBDD.name())
+  global.load$BDD.field<- switch(extension,
+                   csv =  {    
+                     sep2 <- if( ";" %in% strsplit(readLines(input_fieldBDD.datapath(), n=1)[1], split="")[[1]] ){";"
+                     } else if( "," %in% strsplit(readLines(input_fieldBDD.datapath(), n=1)[1], split="")[[1]] ){","
+                     } else if ( "\t" %in% strsplit(readLines(input_fieldBDD.datapath(), n=1)[1], split="")[[1]] ){"\t"
+                     } else {";"}
+                     utils::read.csv(input_fieldBDD.datapath(),
+                                     header = input$header,
+                                     sep = sep2, stringsAsFactors = F,  fileEncoding="latin1",
+                                     dec=".")},
+                   xls = readxl::read_xls(input_fieldBDD.datapath(), sheet=input$worksheet),
+                   xlsx = readxl::read_xlsx(input_fieldBDD.datapath(), sheet=input$worksheet))
+  print('aa')
+  print(global.load$BDD.field)
+  file.field.BDD.isupload(1)
+})# 
+liste.set.square<-reactiveVal(c("Square","null","square","Carré"))
+liste.set.ID.dec<-reactiveVal(c("ID","null","ID.object","numero"))
+liste.set.dec<-reactiveVal(c("dec","null"))
+liste.set.levels<-reactiveVal(c("Levels","null","Couche","levels"))
+output$set.ID.dec=renderUI({
+  req(!is.null(file.field.BDD.isupload()))
+  selectInput("setIDdec", h4("ID of split (Default name: ID)"),
+              choices = names(global.load$BDD.field)[c(1:ncol(global.load$BDD.field))],
+              selected = liste.set.ID.dec())
+}) 
+
+output$set.square=renderUI({
+  req(!is.null(file.field.BDD.isupload()))
+  selectInput("setsquare", h4("Square (Default name: Square)"),
+              choices = names(global.load$BDD.field)[c(1:ncol(global.load$BDD.field))],
+              selected = liste.set.square())
+}) 
+output$set.dec=renderUI({
+  req(!is.null(file.field.BDD.isupload()))
+  selectInput("setdec", h4("Splits/decapage (Default name: dec)"),
+              choices = names(global.load$BDD.field)[c(1:ncol(global.load$BDD.field))],
+              selected = liste.set.dec())
+}) 
+
+output$set.levels=renderUI({
+  req(!is.null(file.field.BDD.isupload()))
+  selectInput("setlevels", h4("Levels (Default name: Levels)"),
+              choices = names(global.load$BDD.field)[c(1:ncol(global.load$BDD.field))],
+              selected = liste.set.levels())
+}) 
+
+##end of loading field database
 
 ##incrementation
     output$value_ID_dec <- renderText({ input$ID_dec })
@@ -502,14 +603,7 @@ observeEvent(fileisupload(), {
       }
       
     })
-    # output$fantome=renderUI({
-    #   if (input$infos_obs==1) {
-    #     textInput("infos_suppl_anat", label="observation", value = NULL, width = NULL,
-    #               placeholder = NULL)
-    #   }
-    #   
-    # })
-    
+
     output$obs2=renderUI({
       pickerInput(
         inputId = "observation_suppl",
@@ -521,11 +615,7 @@ observeEvent(fileisupload(), {
     output$species_pickerinput=renderUI({
       
       switch(input$name_taxa,
-             # other.list.select
-             # herpeto.list.select
-             # chiro.list.select
-             # euli.list.select
-             # rod.list.select
+
              Rodentia = {
                # species.menu<-get(list_species_rod[1])
                species.menu<-get(global.load$rod.list.select)
@@ -547,11 +637,11 @@ observeEvent(fileisupload(), {
                species.menu<-get(global.load$chiro.list.select)
              })
        
-      pickerInput(
+      selectizeInput(
       inputId = "name_species",
       label = "Name species", 
       choices = species.menu,
-      options = list(
+      options = list(create = TRUE,
         `live-search` = TRUE)
     )
     })
@@ -677,6 +767,7 @@ observeEvent(fileisupload(), {
     })
     
     observeEvent(input$submit, {
+      
       showModal(
         modalDialog(
         title = tags$h4(style = "color: red;","Load file"),
@@ -686,12 +777,28 @@ observeEvent(fileisupload(), {
         selectizeInput("name_square","name of square", choices = c(rV$name_square),selected = last.name.square(), options = list(create = TRUE)),
         selectizeInput("name_dec","name of dec", choices = c(rV$name_dec),selected = last.name.dec(), options = list(create = TRUE)),
         selectizeInput("name_level","name of levels", choices = c(rV$name_level),selected = last.name.level(), options = list(create = TRUE)),
-      ))
+        if (!is.null(file.field.BDD.isupload())) {
+          # req(!is.null(input$ID_dec))
+          uiOutput("txt.field.data")     
+
+        }
+        ))
+      
+      
       last.id.dec(input$ID_dec)
       last.name.square(input$name_square)
       last.name.dec(input$name_dec)
       last.name.level(input$name_level)
     })
+  
+    output$txt.field.data<-renderUI({
+      aa<-global.load$BDD.field[global.load$BDD.field[,input$setIDdec] == input$ID_dec, ]
+      temp.square.ID<-as.character(aa[1,c(input$setIDdec,input$setsquare,input$set.dec,input$setlevels)])
+      HTML(paste(" Field information from the database: <br>"))
+      HTML(temp.square.ID)
+    })
+    
+    
     observeEvent(input$ID_dec, {
       # nchar check, because emptying the text field results in "" choice.
       if (nchar(input$ID_dec) && !(input$ID_dec %in% rV$ID_dec)) {
@@ -712,7 +819,22 @@ observeEvent(fileisupload(), {
       if (nchar(input$name_level) && !(input$name_level %in% rV$name_level)) {
         rV$name_level <- c(rV$name_level, input$name_level)
       }})
-    
+    observeEvent(ignoreInit = T,input$setIDdec, {
+      req(!is.null(file.field.BDD.isupload()))
+      rV$ID_dec <- c(rV$ID_dec,global.load$BDD.field[,input$setIDdec])
+    })
+    observeEvent(ignoreInit = T,input$setsquare, {
+      req(!is.null(file.field.BDD.isupload()))
+      rV$name_square <- c(rV$name_square,global.load$BDD.field[,input$setsquare])
+    })
+    observeEvent(ignoreInit = T,input$setdec, {
+      req(!is.null(file.field.BDD.isupload()))
+      rV$name_dec <- c(rV$name_dec,global.load$BDD.field[,input$setdec])
+    })
+    observeEvent(ignoreInit = T,input$setlevels, {
+      req(!is.null(file.field.BDD.isupload()))
+        rV$name_level <- c(rV$name_level,global.load$BDD.field[,input$setlevels])
+      })
       
     # Whenever a field is filled, aggregate all form data
     formData <- reactive({
@@ -812,7 +934,7 @@ observeEvent(fileisupload(), {
         global.load$last.name.level<-last.name.level()
         global.load$input_infos_suppl_anat<-input_infos_suppl_anat()
         input_infos_suppl_anat(NULL)
-         updatePickerInput(session = session, inputId = "name_species",selected ="not_selected")
+         updateSelectizeInput(session = session, inputId = "name_species",selected ="not_selected")
         updatePickerInput(session = session, inputId = "name_anat",choices = get(list_bone[1]))
         updatePickerInput(session = session, inputId = "infos_suppl_anat",choices = NULL)
         updateNumericInput(session = session, inputId = "nb_remains",value =1)
@@ -919,6 +1041,19 @@ observeEvent(fileisupload(), {
         responses <<- data2
       }
     })
+    
+#     output$obs.note.torender <- renderText({ global.load$note.obs })
+#     observeEvent(input$note.obs,{
+# global.load$note.obs<-c(global.load$note.obs,input$note.obs)
+#       
+#     })
+    
+         output$obs.note.torender <- renderText({ global.load$note.obs })
+         
+         observeEvent(input$Record_the_observation,{
+     global.load$note.obs<-paste0(global.load$note.obs,"<p>",input$note.obs,"</p>")
+           
+         })
     
 } ## end of server 
 ui <-dashboardPage(
