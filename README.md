@@ -2,7 +2,7 @@
 
 Spatial Exploration of ArcHaeological Objects in R Shiny
 
-[![DOI](https://zenodo.org/badge/581203118.svg)](https://zenodo.org/badge/latestdoi/581203118)
+[![DOI](https://zenodo.org/badge/811219296.svg)](https://zenodo.org/doi/10.5281/zenodo.11935939)
 [![CRAN
 Version](http://www.r-pkg.org/badges/version/SEAHORS)](https://cran.r-project.org/package=SEAHORS)
 
