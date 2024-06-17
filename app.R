@@ -47,8 +47,8 @@ body <- dashboardBody(
                 tabsetPanel(
                   id="tab1",
                     tabPanel(h4("Loading Database"),
-                             fileInput("file1", "Choose File (.RData)",
-                                         accept = c(".RData")),
+                             fileInput("file1", "Choose File (.rds)",
+                                         accept = c(".rds")),
                                actionButton(inputId = "getData",label="Get Data"),
                              
                     ),#end of tabpanel
@@ -81,6 +81,26 @@ body <- dashboardBody(
                          uiOutput("set.levels") 
                 ),#end of tabpanel
                 tabPanel(h4("About"),
+                                               br(),
+                         HTML(
+                           paste0(" <div style=width:100%;, align=left>
+    <font size=3>
+   <span style='text-transform:none'>
+   
+   <i>Micro-TRI </i> (v.1) is an application dedicated to the record of small vertebrate archaeological and palaeontological remains .</p>
+   <p>It makes it possible to record easily small vertebrate remains with taxonomical and taphonomical information,
+   ssociated with field data information. It makes also possible to visualise quick information recorded by levels, square or spit.</p>
+   <p>This is an open and free software, 
+   <ul>
+      <li> its source code is published on a <a href=https://github.com/AurelienRoyer/MICRO-TRI/ target=_blank>github repository</a>.</li>
+    </ul>
+    </p>
+    <br>
+   
+    </span> 
+    </font>
+                                  </p> </div> " ))
+                         
                          ) #end of tabpanel
                 )#end of tabsetpanel
         ), # end of  tabItem
@@ -235,6 +255,13 @@ body <- dashboardBody(
                     ),
                     uiOutput ("obs"),
                     uiOutput ("obs2"),
+                    prettySwitch(
+                      inputId = "infos_photo",
+                      label = "photo",
+                      status = "success",
+                      fill = TRUE
+                    ),
+                    uiOutput ("photo"),
                 )
                 ),
                 
@@ -337,7 +364,7 @@ server <- function(input, output, session) {
                     "infos_completude","infos_completude_detailled",
                     "trace_dig","trace_root","traces_patine","trace_heat",
                     "trace_tooth_mark","trace_encoche",
-                    "observation","observation_suppl")  
+                    "observation","observation_suppl","txt_photo")  
     ID_record<-reactiveVal(1)
     input_file1.name<-reactiveVal()
     input_file1.datapath<-reactiveVal()
@@ -612,8 +639,19 @@ output$set.levels=renderUI({
         multiple = TRUE
       )
     })
-    output$species_pickerinput=renderUI({
+    output$photo=renderUI({
+      if (input$infos_photo==TRUE) {
+        textInput("txt_photo", label="photo information", value = "", width = NULL,
+                  placeholder = NULL)
+      }
       
+    })
+    
+    observeEvent(input$txt_photo,{
+      global.load$photo<-input$txt_photo
+    })
+    
+    output$species_pickerinput=renderUI({
       switch(input$name_taxa,
 
              Rodentia = {
@@ -778,7 +816,7 @@ output$set.levels=renderUI({
         selectizeInput("name_dec","name of dec", choices = c(rV$name_dec),selected = last.name.dec(), options = list(create = TRUE)),
         selectizeInput("name_level","name of levels", choices = c(rV$name_level),selected = last.name.level(), options = list(create = TRUE)),
         if (!is.null(file.field.BDD.isupload())) {
-          # req(!is.null(input$ID_dec))
+          
           uiOutput("txt.field.data")     
 
         }
@@ -797,7 +835,6 @@ output$set.levels=renderUI({
       HTML(paste(" Field information from the database: <br>"))
       HTML(temp.square.ID)
     })
-    
     
     observeEvent(input$ID_dec, {
       # nchar check, because emptying the text field results in "" choice.
