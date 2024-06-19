@@ -3,9 +3,21 @@ library(shinydashboard)
 library(shinyWidgets)
 library(shinyjs)
 library(DT)
+library(reshape2)
 library(tools)
 library(readxl)
+library(dplyr)
+library(vegan)
+library(iNEXT)
 setwd("C:/Users/aurelien/Desktop/R shiny software/TRIS")
+
+source("PalBER.R")
+source("incertitude.wilson.R")
+load("data_species_biozone.RData")
+load("bioclimatic_spectra_and_climate.RData")
+
+
+
 load(file = "list_faune.RData")
 list_species_all<-c("not_selected",list_faune$Taxon)
 list_perso_rod<-c("not_selected","pm","am","Microtus_sp.","Microtus_arvalis","Microtus_agrestis",
@@ -23,9 +35,17 @@ list_species_others<-c("list_perso_others","list_species_all")
 list_info_suppl<-c("T6","T9","supplementary triangle","Rhombe pitymien")
 
 
-list_bone_1<-c("not_selected","m1inf","MOL","Mand","Max","HUM","FEM","RAD","ULNA","TIB",
-             "Iinf","Isup","bassin")
+list_bone_1<-c("not_selected","m1inf","Mol","Mand","Max","Hum","Fem","Rad","Ulna","Tin",
+             "Iinf","Isup","Bassin")
 list_bone<-c("list_bone_1")
+jsc <- '
+$(document).ready(function () {
+  $(".sidebar-menu").children("li").on("click", function() {
+    $("#mult, #single").toggle();
+  });
+});12345
+'
+
 sidebar <- dashboardSidebar(
     sidebarMenu(id = "tabs",
         menuItem("Dashboard database", tabName = "dashboard", icon = icon("dashboard")),
@@ -35,11 +55,20 @@ sidebar <- dashboardSidebar(
                  # , badgeColor = "green"
                  ),
         menuItem("Exploration", tabName = "data2", icon = icon("chart-line")),
+        div(id = "single", style="display: none;", 
+            actionButton(inputId = "refresh",label="refresh"),
+             uiOutput("liste.sector"),
+             uiOutput("liste.UAS"),
+             uiOutput("liste.passe"),
+             uiOutput("liste.square"),
+            uiOutput("liste.year"),
+            ),
         menuItem("Note", tabName = "data3", icon = icon("comment"))
     )
 )
 
 body <- dashboardBody(
+  tags$head(tags$script(jsc)),
   useShinyjs(),
     tabItems(
         tabItem(tabName = "dashboard",
@@ -78,7 +107,11 @@ body <- dashboardBody(
                          uiOutput("set.ID.dec"),
                          uiOutput("set.square"), 
                          uiOutput("set.dec"),
-                         uiOutput("set.levels") 
+                         uiOutput("set.levels") ,
+                         uiOutput("set.year"), 
+                         uiOutput("set.sector") 
+                         
+                         
                 ),#end of tabpanel
                 tabPanel(h4("About"),
                                                br(),
@@ -178,6 +211,10 @@ body <- dashboardBody(
                 tags$hr(),
                 # br(),
                 fluidRow(
+                  box(title="sector",width = 2,background = "light-blue",
+                      verbatimTextOutput("value_name_sector"),),
+                  box(title="Year",width = 2,background = "light-blue",
+                      verbatimTextOutput("value_year_exca"),),
                   box(title="ID_dec",width = 2,background = "light-blue",
                       verbatimTextOutput("value_ID_dec"),),
                   box(title="square",width = 2,background = "light-blue",
@@ -343,8 +380,103 @@ body <- dashboardBody(
                 )#end of tabsetpanel     
         ), # end of  tabItem
         tabItem(tabName = "data2",
-                h2("analyses2 tab content"),
-                
+                # h2("analyses2 tab content"),
+                tabsetPanel(
+                  tabPanel(tags$h5("Basic data"),
+                           # uiOutput("liste.sector"),
+                           # uiOutput("liste.UAS"),
+                           # uiOutput("liste.passe"),
+                           # uiOutput("liste.square"),
+                           
+                           tags$h4(style = "color: blue;","summary of basic data"), 
+                           tags$br(),
+                           uiOutput("sum.species2"),
+                           tags$br(),
+                           uiOutput("sum.bucket"),
+                           tags$br(),
+                           uiOutput("sum.remain"),
+                           tags$br(),
+                           uiOutput("sum.remain2")
+                           
+                  ),#end tabpanel 
+                  tabPanel(tags$h5("Data material table per levels"),
+                           fluidRow(
+                             tags$br(),
+                             # tags$h5(style = "color: blue;","Correspond to nature object data per level, as defined in both select input in 'Data upload' window"),
+                             
+                             tags$br(),
+                             uiOutput("sum.species"),
+                             tags$br(),
+                             tags$br(),
+                             tags$hr(),
+                             column(5,
+                                    
+                                    DTOutput("table.species")),
+                             column(11, downloadButton("downloadData_speciesdata", "Download")),
+                           ) #end fluidrow
+                  ), #end tabpanel
+                tabPanel(tags$h5("Pivot table"),
+                         fluidRow(
+                           uiOutput("liste.summary"),
+                           column(5,
+                                  h4("Remains class "),
+                                  tableOutput("summary")),
+                           column(11, downloadButton("downloadData_pivotdata", "Download")),
+                         ) #end fluidrow
+                ), #end tabpanel
+                tabPanel(tags$h5("Ratio data"),
+                         uiOutput("Ratio.data.list"),
+                         tags$br(),
+                         uiOutput("name.of.dig.element"),
+                         uiOutput("dig.col"),
+                         tags$br(),
+                         tags$br(),
+                         uiOutput("Ratio.data.graph"),
+                ),#end tabpanel 
+                tabPanel(tags$h5("rarity curves"),
+                         tags$br(),
+                         materialSwitch(
+                           inputId = "Id075",
+                           label = "Inext graph"),
+                         tags$br(),
+                         uiOutput("rarefactionplotui"),
+                         tags$br(),
+                         tags$br(),
+                         column(11, downloadButton("downloadData_rarefactiongraph", "Download")),
+                         tags$br(),
+                         tags$br(),
+                         DTOutput("table.species.perlevels"),
+                         column(11, downloadButton("downloadData_rarefactiondata", "Download")),
+                ),#end tabpanel    
+                tabPanel(tags$h5("Bioclim data"),
+                         uiOutput("sum.bucket2"),
+                         tags$br(),
+                         tags$br(),
+                         radioButtons("var.bioclim", "",
+                                      choices = c("Rodent" = FALSE,
+                                                  "Rodent + Eulipotyphla" = TRUE),
+                                      selected = TRUE, inline=TRUE),
+                         tags$br(),
+                         DTOutput("bioclim.react"),
+                         tags$br(),
+                         column(11, downloadButton("downloadData_bioclim.react", "Download"),
+                                tags$br(),),
+                         tags$br(),
+                         DTOutput("bioclim.react2"),
+                         tags$br(),
+                         column(11, downloadButton("downloadData_bioclim.react2", "Download")),
+                         tags$br(),
+                         tags$h5(style = "color: black;","species name(s) not included:"), 
+                         uiOutput("bioclim.names_noused"),
+                         tags$h5(style = "color: blue;","Be careful to have well written the species name"), 
+                         tags$h5(style = "color: blue;","exemple: Microtus_arvalis"), 
+                         
+                ),#end tabpanel    
+                tabPanel(tags$h5("Bioclim graph"),
+                )#end tabpanel 
+
+
+                )#end of tabsetpanel  
         ),
         tabItem(tabName = "data3",
                 h2("Global note from microvertebrate observation"),
@@ -358,7 +490,8 @@ body <- dashboardBody(
 )
 
 server <- function(input, output, session) {
-  fields_theor <- c("date_record","ID_dec","name_square","name_dec",
+  font.size <- "8pt"
+  fields_theor <- c("date_record","year_exca","name_sector","ID_dec","name_square","name_dec",
                     "name_level","name_taxa" ,"name_species","name_anat", 
                     "infos_suppl_anat","nb_remains","infos_lat",
                     "infos_completude","infos_completude_detailled",
@@ -376,11 +509,14 @@ server <- function(input, output, session) {
     global.load<-reactiveValues(df=NULL,save5=NULL,site.archaeo=NULL)
     df_rapid_line<-reactiveVal(0)
     input_infos_suppl_anat<-reactiveVal(NULL)
-    
+    session_store <- reactiveValues()  ## for save  plot 
+    number.species.per.levels<-reactiveVal(NULL)
     # save.df.last.lines<-reactiveValuesToList(NULL)
-
+    font_size<-reactiveVal(12)
+    font_tick<-reactiveVal(12)
+    legendplotlyfig<-reactiveVal("right") ##for legends.
     
-## NEW BDD
+## NEW BDD ----
 output$liste.faun4=renderUI({
       # selectInput("liste.newgroup3", label = h5("Select the variable"), 
       #             choices = factor(df$df[,input$liste.newgroup.rename]))
@@ -448,7 +584,7 @@ observeEvent(ignoreInit = TRUE,input$create_bdd,{
   to_save <- reactiveValuesToList(global.load)
   saveRDS(to_save, file =  paste0(Sys.Date(),".",global.load$site.archaeo,".BDD.uf",".rds"))
   write.table(as.data.frame(fields_theor), file =  paste0(Sys.Date(),".",global.load$site.archaeo,".BDD.uf",".csv",sep=""), row.names = FALSE, sep=";",dec=".") 
-  
+  fileisupload(1)
   showModal(
     modalDialog(
       title = tags$h4(style = "color: blue;","Database create!"),
@@ -459,7 +595,7 @@ observeEvent(ignoreInit = TRUE,input$create_bdd,{
   
 })
 
-##loading
+##loading ----
 output$site=renderPrint({
   tags$p("Archaeological site")
   HTML(paste0("Archaeological site: ",global.load$site.archaeo))
@@ -472,6 +608,12 @@ observeEvent(input$file1, {
 observeEvent(input$getData, {
   getdata.launch(input$getData)
 })
+ observeEvent(input$refresh, {
+   req(!is.null(global.load$df))
+   # df$df<-df$df
+   df$df<-global.load$df
+   df.sub()
+ })
 observeEvent(getdata.launch(), {
   req(!is.null(input_file1.datapath()))
   extension <- tools::file_ext(input_file1.name())
@@ -496,6 +638,9 @@ observeEvent(getdata.launch(), {
   last.name.square(global.load$last.name.square)
   last.name.dec(global.load$last.name.dec)
   last.name.level(global.load$last.name.level)
+  last.name.sector(global.load$last.name.sector)
+  last.year_exca(global.load$last.year_exca)
+
   global.load$site.archaeo<-global$site.archaeo
   
   global.load$other.list.select<-global$other.list.select
@@ -560,11 +705,25 @@ liste.set.square<-reactiveVal(c("Square","null","square","Carré"))
 liste.set.ID.dec<-reactiveVal(c("ID","null","ID.object","numero"))
 liste.set.dec<-reactiveVal(c("dec","null"))
 liste.set.levels<-reactiveVal(c("Levels","null","Couche","levels"))
+liste.set.sector<-reactiveVal(c("sector","null"))
+  liste.set.year.exca<-reactiveVal(c("year","null"))
 output$set.ID.dec=renderUI({
   req(!is.null(file.field.BDD.isupload()))
   selectInput("setIDdec", h4("ID of split (Default name: ID)"),
               choices = names(global.load$BDD.field)[c(1:ncol(global.load$BDD.field))],
               selected = liste.set.ID.dec())
+}) 
+output$set.year=renderUI({
+  req(!is.null(file.field.BDD.isupload()))
+  selectInput("setyear", h4("Year (Default name: Year)"),
+              choices = names(global.load$BDD.field)[c(1:ncol(global.load$BDD.field))],
+              selected = liste.set.year.exca())
+}) 
+output$set.sector=renderUI({
+  req(!is.null(file.field.BDD.isupload()))
+  selectInput("setsector", h4("Sector (Default name: Sector)"),
+              choices = names(global.load$BDD.field)[c(1:ncol(global.load$BDD.field))],
+              selected = liste.set.sector())
 }) 
 
 output$set.square=renderUI({
@@ -589,19 +748,25 @@ output$set.levels=renderUI({
 
 ##end of loading field database
 
-##incrementation
+##incrementation ----
     output$value_ID_dec <- renderText({ input$ID_dec })
     output$value_name_square <- renderText({ input$name_square })
     output$value_name_dec <- renderText({ input$name_dec })
     output$value_name_level <- renderText({ input$name_level })
+    output$value_name_sector <- renderText({ input$name_sector })
+    output$value_year_exca <- renderText({ input$year_exca })
     
     rV <- reactiveValues(ID_dec = "")
     rV <- reactiveValues(name_square = "")
     rV <- reactiveValues(name_dec = "")
     rV <- reactiveValues(name_level = "")
+    rV <- reactiveValues(name_sector = "")
+    rV <- reactiveValues(year_exca = "")
     last.id.dec<-reactiveVal(NULL)
     last.name.square<-reactiveVal(NULL)
+    last.name.sector<-reactiveVal(NULL)
     last.name.dec<-reactiveVal(NULL)
+    last.year_exca<-reactiveVal(NULL)
     last.name.level<-reactiveVal(NULL)
     
     output$completude=renderUI({
@@ -811,6 +976,9 @@ output$set.levels=renderUI({
         title = tags$h4(style = "color: red;","Load file"),
         easyClose = T,
         HTML("Size options are not available without unique ID"),
+        selectizeInput("name_sector","name of sector", choices = c(rV$name_sector),selected = last.name.sector(), options = list(create = TRUE)),
+        selectizeInput("year_exca","year", choices = c(rV$year_exca),selected = last.year_exca(), options = list(create = TRUE)),
+        
         selectizeInput("ID_dec","ID of split/decapage", choices = c(rV$ID_dec),selected = last.id.dec(), options = list(create = TRUE)),
         selectizeInput("name_square","name of square", choices = c(rV$name_square),selected = last.name.square(), options = list(create = TRUE)),
         selectizeInput("name_dec","name of dec", choices = c(rV$name_dec),selected = last.name.dec(), options = list(create = TRUE)),
@@ -825,13 +993,16 @@ output$set.levels=renderUI({
       
       last.id.dec(input$ID_dec)
       last.name.square(input$name_square)
+      last.name.sector(input$name_sector)
       last.name.dec(input$name_dec)
       last.name.level(input$name_level)
+      last.year_exca(input$year_exca)
+    
     })
   
     output$txt.field.data<-renderUI({
       aa<-global.load$BDD.field[global.load$BDD.field[,input$setIDdec] == input$ID_dec, ]
-      temp.square.ID<-as.character(aa[1,c(input$setIDdec,input$setsquare,input$set.dec,input$setlevels)])
+      temp.square.ID<-as.character(aa[1,c(input$setIDdec,input$setsquare,input$set.dec,input$setlevels,input$setsector,input$setyear)])
       HTML(paste(" Field information from the database: <br>"))
       HTML(temp.square.ID)
     })
@@ -846,6 +1017,11 @@ output$set.levels=renderUI({
       if (nchar(input$name_square) && !(input$name_square %in% rV$name_square)) {
         rV$name_square <- c(rV$name_square, input$name_square)
       }})
+    observeEvent(input$year_exca, {
+      # nchar check, because emptying the text field results in "" choice.
+      if (nchar(input$year_exca) && !(input$year_exca %in% rV$year_exca)) {
+        rV$year_exca <- c(rV$year_exca, input$year_exca)
+      }})
     observeEvent(input$name_dec, {
       # nchar check, because emptying the text field results in "" choice.
       if (nchar(input$name_dec) && !(input$name_dec %in% rV$name_dec)) {
@@ -856,14 +1032,31 @@ output$set.levels=renderUI({
       if (nchar(input$name_level) && !(input$name_level %in% rV$name_level)) {
         rV$name_level <- c(rV$name_level, input$name_level)
       }})
+    observeEvent(input$name_sector, {
+      # nchar check, because emptying the text field results in "" choice.
+      if (nchar(input$name_sector) && !(input$name_sector %in% rV$name_sector)) {
+        rV$name_sector <- c(rV$name_sector, input$name_sector)
+      }})
+    
     observeEvent(ignoreInit = T,input$setIDdec, {
       req(!is.null(file.field.BDD.isupload()))
       rV$ID_dec <- c(rV$ID_dec,global.load$BDD.field[,input$setIDdec])
     })
+    observeEvent(ignoreInit = T,input$setsector, {
+      req(!is.null(file.field.BDD.isupload()))
+      rV$name_square <- c(rV$name_sector,global.load$BDD.field[,input$setsector])
+    })
+    
+    observeEvent(ignoreInit = T,input$setyear, {
+      req(!is.null(file.field.BDD.isupload()))
+      rV$year_exca <- c(rV$year_exca,global.load$BDD.field[,input$setyear])
+    })
     observeEvent(ignoreInit = T,input$setsquare, {
       req(!is.null(file.field.BDD.isupload()))
-      rV$name_square <- c(rV$name_square,global.load$BDD.field[,input$setsquare])
+      rV$name_sector <- c(rV$name_square,global.load$BDD.field[,input$setsquare])
     })
+    
+    
     observeEvent(ignoreInit = T,input$setdec, {
       req(!is.null(file.field.BDD.isupload()))
       rV$name_dec <- c(rV$name_dec,global.load$BDD.field[,input$setdec])
@@ -945,6 +1138,11 @@ output$set.levels=renderUI({
       updateSelectizeInput(session = session,inputId = "name_square",selected = last.name.square())
       updateSelectizeInput(session = session,inputId = "name_dec",selected = last.name.dec())
       updateSelectizeInput(session = session,inputId = "name_level",selected = last.name.level())
+      updateSelectizeInput(session = session,inputId = "name_sector",selected = last.name.sector())
+      updateSelectizeInput(session = session,inputId = "year_exca",selected = last.year_exca())
+      #################### mettre ici, si c'est des valeurs vides ! 
+      ####ou alors a df.sub
+      ####################################
         saveData(formData())
         data <- as.data.frame(t(formData()))
         k<-ID_record()+1
@@ -962,12 +1160,16 @@ output$set.levels=renderUI({
         global.load$df_save4<-df$save4
         global.load$df_save5<-df$save5
         global.load$ID_dec<-rV$ID_dec
+        global.load$name_sector<-rV$name_sector
         global.load$name_square<-rV$name_square
+        global.load$year_exca<-rV$year_exca
         global.load$name_dec<-rV$name_dec
         global.load$name_level<-rV$name_level
         global.load$last.id.dec<-last.id.dec()
         global.load$last.name.square<-last.name.square()
+        global.load$last.name.sector<-last.name.sector()
         global.load$last.name.dec<-last.name.dec()
+        global.load$last.year_exca<-last.year_exca()
         global.load$last.name.level<-last.name.level()
         global.load$input_infos_suppl_anat<-input_infos_suppl_anat()
         input_infos_suppl_anat(NULL)
@@ -993,7 +1195,9 @@ output$set.levels=renderUI({
           # test <- data.frame(sapply(responses,unlist))
           test<-data.frame(apply(responses,2,as.character))
           write.table(test, file =  paste0(Sys.Date(),".",global.load$site.archaeo,".BDD.uf",".csv",sep=""), row.names = FALSE, sep=";",dec=".") 
-    })
+          # df$df<-global.load$df
+          # df.sub()
+          })
     
     
     observeEvent(ignoreInit = TRUE, c(input$goButton1),{
@@ -1091,8 +1295,614 @@ output$set.levels=renderUI({
      global.load$note.obs<-paste0(global.load$note.obs,"<p>",input$note.obs,"</p>")
            
          })
+#### Microfauna treatment ----
+  
+        ##### df.sub and co   ----  
+somme.indiv<-reactiveVal()
+df.species.table<-reactiveVal()
+number.total.of.species<-reactiveVal(1)
+output$liste.sector=renderUI({
+  sector.list<-unique(unlist((df$df[["name_sector"]])))
+  checkboxGroupInput("localisation", h6("Secteur"),
+                      choices = levels(as.factor(sector.list)),selected = levels(as.factor(sector.list)))
+})
+output$liste.UAS=renderUI({
+  lvl.list<-unique(unlist((df$df[["name_level"]])))
+  checkboxGroupInput("UAS", h6("Levels"),
+                     choices = levels(as.factor(lvl.list)),selected = levels(as.factor(lvl.list)))
+})
+output$liste.passe=renderUI({
+  dec.list<-unique(unlist((df$df[["name_dec"]])))
+  checkboxGroupInput("Passe", h6("Split"),
+                     choices = levels(as.factor(dec.list)),selected = levels(as.factor(dec.list)))
+})
+output$liste.square=renderUI({
+  sq.list<-unique(unlist((df$df[["name_square"]])))
+  checkboxGroupInput("Square", h6("Square"),
+                     choices = levels(as.factor(sq.list)),selected = levels(as.factor(sq.list)))
+})
+output$liste.year=renderUI({
+  y.list<-unique(unlist((df$df[["year_exca"]])))
+  checkboxGroupInput("Year", h6("Year"),
+                     choices = levels(as.factor(y.list)),selected = levels(as.factor(y.list)))
+})
+
+df.sub <- reactive({ 
+           req(!is.null(fileisupload))
+  print("eeee")
+  print(df$df)
+  print("a")
+  print(global.load$df)
+            df.sub<-df$df
+            
+            df.sub<-as.data.frame(t(apply(df.sub,1, function(x) unlist(x))))
+           print(df.sub)
+           # if (input$setdate!="null"){
+           #   df.sub[,input$setdate] <-as.numeric(df.sub[,input$setdate])
+           #   df.sub[,input$setdate][is.na(df.sub[,input$setdate])]<-0
+           #   if (!is.null(input$Date2)) {
+           #     df.sub<-df.sub %>%
+           #       filter(df.sub[,input$setdate] >= input$Date2[1], df.sub[,input$setdate] <= input$Date2[2])}}
+             # df.sub <- df.sub[df.sub[,input$setsector] %in% input$localisation, ]
+             # df.sub <- df.sub[df.sub[,input$setlevels] %in% input$UAS, ]
+             # df.sub <- df.sub[df.sub[,input$setpasse]%in% input$Passe, ]
+             # df.sub <- df.sub[df.sub[,input$setnature] %in% input$Square, ]
+             df.sub <- df.sub[df.sub[["name_sector"]] %in% input$localisation, ]
+             df.sub <- df.sub[df.sub[["name_level"]] %in% input$UAS, ]
+             df.sub <- df.sub[df.sub[["name_dec"]]%in% input$Passe, ]
+             df.sub <- df.sub[df.sub[["name_square"]] %in% input$Square, ]
+             df.sub <- df.sub[df.sub[["year_exca"]] %in% input$Year, ]
+           
+             # df.sub<-df.sub %>% 
+           #   filter(.data[[setXX()]] >= input$xslider[1], .data[[setXX()]] <= input$xslider[2]) %>% 
+           #   filter(.data[[setYY()]] >= input$yslider[1], .data[[setYY()]] <= input$yslider[2]) %>% 
+           #   filter(.data[[setZZ()]] >= input$zslider[1], .data[[setZZ()]] <= input$zslider[2])
+           
+            
+             print(str(df.sub))
+               
+             print('eeereee')
+             print(str(df.sub))
+             df.sub$nb_remains<-as.numeric(df.sub$nb_remains)
+             
+           df.sub
+           validate(need(nrow(df.sub)!=0, "There are no matches in the dataset. Try removing or relaxing one or more filters."))
+           
+           #### creation de df.species.table
+           # data.df.tot<-as.data.frame(t(apply(df.sub,1, function(x) unlist(x))))
+           # data.df.tot$nb_remains<-as.numeric(data.df.tot$nb_remains)
+           data.df.tot<-df.sub
+           data.df.tot2<-data.df.tot %>% group_by(.data[["name_level"]],.data[["name_species"]])  %>% 
+             dplyr::summarise(total = sum(!!(as.numeric(input$nb_remains))))
+           myFormula <- as.formula(paste0("name_level", " ~ ","name_species"))
+           df.species.table<-reshape2::dcast(data.df.tot2,myFormula, fill = 0L)
+           df.species.table(df.species.table)
+
+           number.total.of.species(ncol(df.species.table)-1)
+           ####
+           df.sub
+         })  # end of df.sub reactive
+         
+
+         ###### Basic data ----
+         
+         output$sum.species=renderUI({
+           req(!is.null(fileisupload()))
+           tagList(HTML(paste("Total number of different type of objects: ",number.total.of.species())))
+           
+           })
+
+         
+         output$sum.bucket=renderUI({
+           req(!is.null(fileisupload()))
+           aa<-df.sub()[["ID_dec"]]
+           tagList(HTML(paste("Number of bucket selected: ",length(unique(aa)))))
+         })
+         
+         output$sum.bucket2=renderUI({
+           req(!is.null(fileisupload()))
+           aa<-df.sub()[,"ID_dec"]
+           tagList(h4(style = "color: blue;",HTML(paste("Bioclim data"))))
+         })
+         output$sum.remain=renderUI({
+           req(!is.null(fileisupload()))
+           aa<-as.data.frame(df$df[["nb_remains"]])
+           tagList(HTML(paste("Number total of all remains: ",sum(aa))))
+         })
+         output$sum.remain2=renderUI({
+           req(!is.null(fileisupload()))
+           aa<-df.sub()
+           tagList(HTML(paste("Number of remains selected: ",sum(aa[["nb_remains"]]))))
+         })  
+         
+         
+         ###### rarefaction curves ----
+         output$rarefactionplotui <- renderUI({
+           plotOutput("rarefactionplot"
+                      # , height = height.size(), width = width.size()
+                      )
+         })
+         
+         
+         output$rarefactionplot <- renderPlot({
+           tab.raref_fossil<-df.species.table()
+           rownames(tab.raref_fossil)<-tab.raref_fossil[,1]
+           tab.raref_fossil.2<-tab.raref_fossil[2:ncol(tab.raref_fossil)]
+           S <- vegan::specnumber(tab.raref_fossil.2)
+           number.species.per.levels(S)
+           if (input$Id075==FALSE){
+             raremax <- min(rowSums(tab.raref_fossil.2))
+             Srare <- vegan::rarefy(tab.raref_fossil.2, raremax)
+             plot(S, Srare, xlab = "Observed No. of Species", ylab = "Rarefied No. of Species")
+             vegan::rarecurve(tab.raref_fossil.2, step = 1, sample = raremax, col = "blue", cex = 0.6)
+             #session_store$plotrarecurve <- recordPlot()                                      ## record this graph version is not working 
+           } else {
+             tab.raref_fossil3<-t(tab.raref_fossil.2)
+             x<-iNEXT::iNEXT(tab.raref_fossil3,q=0,datatype="abundance")
+             p<-iNEXT::ggiNEXT(x, type=1, se=TRUE, facet.var="None", color.var="Assemblage", grey=FALSE) 
+             session_store$plotrarecurve <- p
+             p
+           }
+         })
+         
+         ####### Export table nb species per levels for rarefaction curve ----
+         output$table.species.perlevels <-  DT::renderDataTable({
+           req(!is.null(number.species.per.levels()))
+           data.df.tot2<-as.data.frame(number.species.per.levels())
+           DT::datatable(
+             data= data.df.tot2, 
+             extensions = 'Buttons', options = list(
+               initComplete = htmlwidgets::JS(
+                 "function(settings, json) {",
+                 paste0("$(this.api().table().container()).css({'font-size': '", font.size, "'});"),
+                 "}")
+             ))
+         })#end renderDataTable
+         
+         #######  save rarefaction table ----
+         output$downloadData_rarefactiondata<- downloadHandler( 
+           filename = function() {
+             paste0(Sys.Date(),"rarefaction.data.table",".csv")
+           },
+           content = function(file) {
+             write.table(as.data.frame(number.species.per.levels()), file, row.names = FALSE, sep=";",dec=".") 
+           }
+         ) 
+         
+         #######  save rarefaction.curve ----
+         output$downloadData_rarefactiongraph<- downloadHandler( 
+           filename = function(){
+             paste("rarefaction.curve - ",paste(input$file1$name)," - ", Sys.Date(), '.pdf', sep = '')},
+           content = function(file) {
+             ggsave(session_store$plotrarecurve,filename=file, device = "pdf")
+           }
+         ) 
+         
+         
+         ###### Bioclim methods  ----
+         # to fix : issue with data.species and bioclim data
+         BCI_LVLn_of_siteS2<-reactiveVal(NULL)
+         res_lda<-reactiveVal(NULL)
+         
+         output$bioclim.react <-  DT::renderDataTable({  
+           tab.raref_fossil<-df.species.table()
+           assign("temp3",tab.raref_fossil,envir=.GlobalEnv)
+           names(tab.raref_fossil)<-stringr::str_to_lower(names(tab.raref_fossil))
+           rownames(tab.raref_fossil)<-tab.raref_fossil[,1]
+           data.df.tot2<-tab.raref_fossil[2:ncol(tab.raref_fossil)]
+           data.df.tot3<-as.data.frame(t(data.df.tot2))
+           data.df.tot3<-mutate_all(data.df.tot3, function(x) as.numeric(as.character(x)))
+           list.of.site<-vector("list", ncol(data.df.tot3))
+           if(ncol(data.df.tot3)>1){
+             for (i in 1:ncol(data.df.tot3)) {
+               list.of.site[[i]]<-rownames(data.df.tot3[data.df.tot3[,i]!=0,])
+             } # creation of list for several cases
+           } else {
+             
+             list.of.site[[1]]<-rownames(data.df.tot3)
+           }
+           
+           BCI_LVLn_of_siteS <- Func_BCI_Calcul(list.of.site, EUL = input$var.bioclim, verif = F)
+           names(BCI_LVLn_of_siteS)<-colnames(data.df.tot3)
+           BCI_LVLn_of_siteS2<-as.data.frame(do.call(rbind, BCI_LVLn_of_siteS))
+           BCI_LVLn_of_siteS2(BCI_LVLn_of_siteS2)
+           BCI_LVLn_of_siteS[sapply(BCI_LVLn_of_siteS, is.null)] <- NULL ## to remove null element
+           res_lda<-func_LDA(BCI_LVLn_of_siteS, quantiv = TRUE)
+           res_lda<-as.data.frame(do.call(rbind, res_lda))
+           res_lda(res_lda)
+           DT::datatable(
+             data= as.data.frame(BCI_LVLn_of_siteS2), 
+             extensions = 'Buttons', options = list(
+               lengthMenu = list(c(5, 15,50,100, -1), c('5', '15','50','100', 'All')),
+               pageLength = 15,
+               initComplete = htmlwidgets::JS(
+                 "function(settings, json) {",
+                 paste0("$(this.api().table().container()).css({'font-size': '", font.size, "'});"),
+                 "}")
+             )) 
+         }) 
+         
+         output$bioclim.react2 <-  DT::renderDataTable({
+           req(!is.null(res_lda()))
+           res_lda<-as.data.frame(res_lda())
+           DT::datatable(
+             data= res_lda, 
+             extensions = 'Buttons', options = list(
+               lengthMenu = list(c(5, 15,50,100, -1), c('5', '15','50','100', 'All')),
+               pageLength = 15,
+               initComplete = htmlwidgets::JS(
+                 "function(settings, json) {",
+                 paste0("$(this.api().table().container()).css({'font-size': '", font.size, "'});"),
+                 "}"),
+               scrollX = TRUE,
+               fixedColumns = list(leftColumns = 10)
+             ))%>%
+             formatRound(columns= c(2,4:31),digits=3)
+           
+         }) 
+         
+         output$bioclim.names_noused=renderUI({
+           req(!is.null(fileisupload()))
+           data.sp.used<-levels(as.factor(df.sub()[["name_species"]]))
+
+           # data_allspecies <- data_species_biozone                         #### faire attention au chargement de ce jeu de donnée avec le script palber
+           taxNamesTot <- as.character(unlist(data_species_biozone["Taxon"]))
+           # data.sp.used<- mutate_all(data.sp.used, .funs=stringr::str_to_lower)
+           data.sp.used<-stringr::str_to_lower(data.sp.used)
+           id_noused <- which(!is.element(data.sp.used, taxNamesTot))
+           names_noused <- data.sp.used[id_noused]
+           tagList(h5(style = "color: red;",HTML(paste(names_noused))))
+           
+         })
+         
+         ######  Ratio graphs ---- 
+         output$Ratio.data.graph <- renderUI({
+           plotOutput("Ratiodatagraph"
+                      # , height = height.size(), width = width.size()
+                      )
+         })
+         
+         output$Ratiodatagraph <- renderPlot({
+           plot(Ratiodatagraph.plot())
+           session_store$Ratiodatagraph.plot<- Ratiodatagraph.plot()
+         })   
+         
+         Ratiodatagraph.plot<-reactive({
+           df.sub<-df.sub()
+           # setlevels<-input$setlevels
+           # setanat<-input$setanat
+           # setnb<-input$setnb
+           digcol<-input$digcol
+           nameofdigelement<-input$nameofdigelement
+           data.df.calcul<-df.sub %>% group_by(.data[["name_level"]],.data[["name_anat"]])%>%
+             summarize(nb_total = sum(!!sym("nb_remains")))
+           myFormula <- as.formula(paste0("name_level", " ~ ","name_anat"))
+           data.df.calcul.2<-reshape2::dcast(data.df.calcul, myFormula , fill = 0L)
+           
+           switch(input$select.ratio,
+                  "1"={
+                    
+                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("Mand"))) > 0 ,"No 'mand' or 'mandible' elements found in the database"))
+                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("Fem"))) > 0 ,"No 'fem'or 'femur' elements found in the database"))
+                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("Hum"))) > 0 ,"No 'hum'or 'humerus' elements found in the database"))
+                    
+                    axis.var.name<-"CRA/POSTCRA%"
+                    ratio<-dplyr::select(data.df.calcul.2,starts_with("Mand"))/(dplyr::select(data.df.calcul.2,starts_with("Mand"))+dplyr::select(data.df.calcul.2,starts_with("Fem"))+dplyr::select(data.df.calcul.2,starts_with("Hum")))
+                    #ratio<-data.df.calcul.2$mand/(data.df.calcul.2$mand+data.df.calcul.2$fem+data.df.calcul.2$hum)
+                    #somme.ratio<-data.df.calcul.2$mand+data.df.calcul.2$fem+data.df.calcul.2$hum
+                    somme.ratio<-dplyr::select(data.df.calcul.2,starts_with("Mand"))+dplyr::select(data.df.calcul.2,starts_with("Fem"))+dplyr::select(data.df.calcul.2,starts_with("Hum"))
+                    axis.var.name<-"ratio CRA/POSTCRA %"
+                  },
+                  "2"={
+                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("Fem"))) > 0 ,"No 'fem' or 'femur' elements found in the database"))
+                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("Hum"))) > 0 ,"No 'hum' or 'humerus' elements found in the database"))
+                    
+                    axis.var.name<-"AN/PO%"
+                    ratio<-dplyr::select(data.df.calcul.2,starts_with("Hum"))/(dplyr::select(data.df.calcul.2,starts_with("Fem"))+dplyr::select(data.df.calcul.2,starts_with("Hum")))
+                    somme.ratio<-dplyr::select(data.df.calcul.2,starts_with("Fem"))+dplyr::select(data.df.calcul.2,starts_with("Hum"))
+                    axis.var.name<-"ratio AN/PO %"
+                  },
+                  "3"={
+                    data.df.calcul.gh<-df.sub %>% group_by(.data[[setlevels]],.data[[setanat]],.data[[digcol]])%>%
+                      summarize(nb_total = sum(!!sym(setnb)))
+                    data.df.calcul.gh.2 <- data.df.calcul.gh %>% filter(.data[[setanat]] == nameofdigelement)
+                    somme.ratio<-data.df.calcul.gh.2 %>% group_by(.data[[setlevels]])%>%
+                      summarize(nb_total = sum(!!sym("nb_total")))
+                    myFormula <- as.formula(paste0(setlevels, " ~ ",digcol))
+                    data.df.calcul.2<-reshape2::dcast(data.df.calcul.gh.2, myFormula , fill = 0L)
+                    print(data.df.calcul.2)
+                    
+                    ## ici faire calcul dig vs pas dig. 
+                    ## + rajouter dans les choix digelement: fem,hum etc
+                    # et dans digcol: des noms de colonne commencant par dig
+                    ratio<-data.df.calcul.2$hum/(data.df.calcul.2$hum+data.df.calcul.2$fem) # A changer
+                    somme.ratio<-data.df.calcul.2$hu
+                    
+                    
+                    axis.var.name<- paste0("Proportion of digested ", nameofdigelement)
+                  },
+                  "4"={
+                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("Fem"))) > 0 ,"No 'fem' or 'femur' elements found in the database"))
+                    fem<-dplyr::select(data.df.calcul.2,starts_with("Fem"))
+                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("Hum"))) > 0 ,"No 'hum' or 'humerus' elements found in the database"))
+                    hum<-dplyr::select(data.df.calcul.2,starts_with("Hum"))
+                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("Rad"))) > 0 ,"No 'rad' or 'radius' elements found in the database"))
+                    rad<-dplyr::select(data.df.calcul.2,starts_with("Rad"))
+                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("Ulna"))) > 0 ,"No 'uln' or 'ulna' elements found in the database"))
+                    uln<-dplyr::select(data.df.calcul.2,starts_with("Ulna"))
+                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("Tib"))) > 0 ,"No 'tib' or 'tibia' elements found in the database"))
+                    tib<-dplyr::select(data.df.calcul.2,starts_with("Tib"))
+                    
+                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("Mand"))) > 0 ,"No 'mand' or 'mandible' elements found in the database"))
+                    mand<-dplyr::select(data.df.calcul.2,starts_with("mand"))
+                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("Max"))) > 0 ,"No 'max' or 'maxillae' elements found in the database"))
+                    max<-dplyr::select(data.df.calcul.2,starts_with("max"))
+                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("Mol"))) > 0 ,"No 'mol' or 'molars' elements found in the database"))
+                    mol<-dplyr::select(data.df.calcul.2,starts_with("mol"))
+                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("i"))) > 0 ,"No 'i' or 'incisor' elements found in the database"))
+                    inc<-dplyr::select(data.df.calcul.2,starts_with("mol"))
+                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("Mtc"))) > 0 ,"No 'mtc' or 'mtc' elements found in the database"))
+                    mtc<-dplyr::select(data.df.calcul.2,starts_with("mtc"))
+                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("Mtt"))) > 0 ,"No 'mtt' or 'mtt' elements found in the database"))
+                    mtt<-dplyr::select(data.df.calcul.2,starts_with("mtt"))
+                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("Sca"))) > 0 ,"No 'sca' or 'scapulae' elements found in the database"))
+                    sca<-dplyr::select(data.df.calcul.2,starts_with("sca"))
+                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("Tar"))) > 0 ,"No 'tar' or 'tarsals' elements found in the database"))
+                    tar<-dplyr::select(data.df.calcul.2,starts_with("tar"))
+                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("Car"))) > 0 ,"No 'car' or 'carpals' elements found in the database"))
+                    car<-dplyr::select(data.df.calcul.2,starts_with("car"))
+                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("Pha"))) > 0 ,"No 'pha' or 'phalanges' elements found in the database"))
+                    pha<-dplyr::select(data.df.calcul.2,starts_with("pha"))
+                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("Pat"))) > 0 ,"No 'pat' or 'patellae' elements found in the database"))
+                    pat<-dplyr::select(data.df.calcul.2,starts_with("pat"))
+                    
+                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("Bassin"))) > 0 ,"No 'bas' or 'bassin' elements found in the database"))
+                    bas<-dplyr::select(data.df.calcul.2,starts_with("bas"))
+                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("Vert"))) > 0 ,"No 'vert' or 'vertebrae' elements found in the database"))
+                    vert<-dplyr::select(data.df.calcul.2,starts_with("vert"))
+                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("Rib"))) > 0 ,"No 'rib' or 'ribs' elements found in the database"))
+                    rib<-dplyr::select(data.df.calcul.2,starts_with("rib"))
+                    
+                    ratio<-((rad+tib+fem+hum+uln+sca+pat+mtc+mtt+car+tar+pha+bas+vert+rib)*32)/(((rad+tib+fem+hum+uln+sca+pat+mtc+mtt+car+tar+pha+bas+vert+rib)*32)+((mand+max+mol+inc)*184))
+                    somme.ratio<-rad+tib+fem+hum+uln+mand+max+mol+inc+sca+pat+mtc+mtt+car+tar+pha+bas+vert+rib
+                    axis.var.name<-"ratio PCRT/CR%"
+                  },
+                  "5"={
+                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("fem"))) > 0 ,"No 'fem' or 'femur' elements found in the database"))
+                    fem<-dplyr::select(data.df.calcul.2,starts_with("fem"))
+                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("hum"))) > 0 ,"No 'hum' or 'humerus' elements found in the database"))
+                    hum<-dplyr::select(data.df.calcul.2,starts_with("hum"))
+                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("rad"))) > 0 ,"No 'rad' or 'radius' elements found in the database"))
+                    rad<-dplyr::select(data.df.calcul.2,starts_with("rad"))
+                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("uln"))) > 0 ,"No 'uln' or 'ulna' elements found in the database"))
+                    uln<-dplyr::select(data.df.calcul.2,starts_with("uln"))
+                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("tib"))) > 0 ,"No 'tib' or 'tibia' elements found in the database"))
+                    tib<-dplyr::select(data.df.calcul.2,starts_with("tib"))
+                    
+                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("mand"))) > 0 ,"No 'mand' or 'mandible' elements found in the database"))
+                    mand<-dplyr::select(data.df.calcul.2,starts_with("mand"))
+                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("max"))) > 0 ,"No 'max' or 'maxillae' elements found in the database"))
+                    max<-dplyr::select(data.df.calcul.2,starts_with("max"))
+                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("mol"))) > 0 ,"No 'mol' or 'molars' elements found in the database"))
+                    mol<-dplyr::select(data.df.calcul.2,starts_with("mol"))
+                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("i"))) > 0 ,"No 'i' or 'incisor' elements found in the database"))
+                    inc<-dplyr::select(data.df.calcul.2,starts_with("mol"))
+                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("mtc"))) > 0 ,"No 'mtc' or 'mtc' elements found in the database"))
+                    mtc<-dplyr::select(data.df.calcul.2,starts_with("mtc"))
+                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("mtt"))) > 0 ,"No 'mtt' or 'mtt' elements found in the database"))
+                    mtt<-dplyr::select(data.df.calcul.2,starts_with("mtt"))
+                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("sca"))) > 0 ,"No 'sca' or 'scapulae' elements found in the database"))
+                    sca<-dplyr::select(data.df.calcul.2,starts_with("sca"))
+                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("tar"))) > 0 ,"No 'tar' or 'tarsals' elements found in the database"))
+                    tar<-dplyr::select(data.df.calcul.2,starts_with("tar"))
+                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("car"))) > 0 ,"No 'car' or 'carpals' elements found in the database"))
+                    car<-dplyr::select(data.df.calcul.2,starts_with("car"))
+                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("pha"))) > 0 ,"No 'pha' or 'phalanges' elements found in the database"))
+                    pha<-dplyr::select(data.df.calcul.2,starts_with("pha"))
+                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("pat"))) > 0 ,"No 'pat' or 'patellae' elements found in the database"))
+                    pat<-dplyr::select(data.df.calcul.2,starts_with("pat"))
+                    
+                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("bas"))) > 0 ,"No 'bas' or 'bassin' elements found in the database"))
+                    bas<-dplyr::select(data.df.calcul.2,starts_with("bas"))
+                    
+                    ratio<-((rad+tib+fem+hum+uln+sca+pat+mtc+mtt+car+tar+pha+bas)*32)/(((rad+tib+fem+hum+uln+sca+pat+mtc+mtt+car+tar+pha+bas)*32)+((mand+max+mol+inc)*114))
+                    somme.ratio<-rad+tib+fem+hum+uln+mand+max+mol+inc+sca+pat+mtc+mtt+car+tar+pha+bas
+                    axis.var.name<-"ratio PCRAP/CR%"
+                  },
+                  "6"={
+                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("fem"))) > 0 ,"No 'fem' or 'femur' elements found in the database"))
+                    fem<-dplyr::select(data.df.calcul.2,starts_with("fem"))
+                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("hum"))) > 0 ,"No 'hum' or 'humerus' elements found in the database"))
+                    hum<-dplyr::select(data.df.calcul.2,starts_with("hum"))
+                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("rad"))) > 0 ,"No 'rad' or 'radius' elements found in the database"))
+                    rad<-dplyr::select(data.df.calcul.2,starts_with("rad"))
+                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("uln"))) > 0 ,"No 'uln' or 'ulna' elements found in the database"))
+                    uln<-dplyr::select(data.df.calcul.2,starts_with("uln"))
+                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("tib"))) > 0 ,"No 'tib' or 'tibia' elements found in the database"))
+                    tib<-dplyr::select(data.df.calcul.2,starts_with("tib"))
+                    
+                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("mand"))) > 0 ,"No 'mand' or 'mandible' elements found in the database"))
+                    mand<-dplyr::select(data.df.calcul.2,starts_with("mand"))
+                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("max"))) > 0 ,"No 'max' or 'maxillae' elements found in the database"))
+                    max<-dplyr::select(data.df.calcul.2,starts_with("max"))
+                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("mol"))) > 0 ,"No 'mol' or 'molars' elements found in the database"))
+                    mol<-dplyr::select(data.df.calcul.2,starts_with("mol"))
+                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("i"))) > 0 ,"No 'i' or 'incisor' elements found in the database"))
+                    inc<-dplyr::select(data.df.calcul.2,starts_with("mol"))
+                    
+                    
+                    ratio<-((rad+tib+fem+hum+uln)*32)/(((rad+tib+fem+hum+uln)*32)+((mand+max+mol+inc)*10))
+                    somme.ratio<-rad+tib+fem+hum+uln+mand+max+mol+inc
+                    
+                    axis.var.name<-"ratio PCRLB/CR%"
+                  },
+                  "7"={
+                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("fem"))) > 0 ,"No 'fem' or 'femur' elements found in the database"))
+                    fem<-dplyr::select(data.df.calcul.2,starts_with("fem"))
+                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("hum"))) > 0 ,"No 'hum' or 'humerus' elements found in the database"))
+                    hum<-dplyr::select(data.df.calcul.2,starts_with("hum"))
+                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("rad"))) > 0 ,"No 'rad' or 'radius' elements found in the database"))
+                    rad<-dplyr::select(data.df.calcul.2,starts_with("rad"))
+                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("uln"))) > 0 ,"No 'uln' or 'ulna' elements found in the database"))
+                    uln<-dplyr::select(data.df.calcul.2,starts_with("uln"))
+                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("tib"))) > 0 ,"No 'tib' or 'tibia' elements found in the database"))
+                    tib<-dplyr::select(data.df.calcul.2,starts_with("tib"))
+                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("mtc"))) > 0 ,"No 'mtc' or 'mtc' elements found in the database"))
+                    mtc<-dplyr::select(data.df.calcul.2,starts_with("mtc"))
+                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("mtt"))) > 0 ,"No 'mtt' or 'mtt' elements found in the database"))
+                    mtt<-dplyr::select(data.df.calcul.2,starts_with("mtt"))
+                    
+                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("tar"))) > 0 ,"No 'tar' or 'tarsals' elements found in the database"))
+                    tar<-dplyr::select(data.df.calcul.2,starts_with("tar"))
+                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("car"))) > 0 ,"No 'car' or 'carpals' elements found in the database"))
+                    car<-dplyr::select(data.df.calcul.2,starts_with("car"))
+                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("pha"))) > 0 ,"No 'pha' or 'phalanges' elements found in the database"))
+                    pha<-dplyr::select(data.df.calcul.2,starts_with("pha"))
+                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("pat"))) > 0 ,"No 'pat' or 'patellae' elements found in the database"))
+                    pat<-dplyr::select(data.df.calcul.2,starts_with("pat"))
+                    
+                    ratio<-(mtc+mtp+tar+pha+car)*12/(((mtc+mtt+tar+pha+car)*12)+(tib+rad+uln+hum+fem+pat)*18)
+                    somme.ratio<-mtc+mtp+tar+pha+car+tib+rad+uln+fem+pat
+                    axis.var.name<-"ratio AUT/ZE%"
+                  },
+                  "8"={
+                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("Rad"))) > 0 ,"No 'rad' or 'radius' elements found in the database"))
+                    rad<-dplyr::select(data.df.calcul.2,starts_with("Rad"))
+                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("Ulna"))) > 0 ,"No 'uln' or 'ulna' elements found in the database"))
+                    uln<-dplyr::select(data.df.calcul.2,starts_with("Ulna"))
+                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("Tib"))) > 0 ,"No 'tib' or 'tibia' elements found in the database"))
+                    tib<-dplyr::select(data.df.calcul.2,starts_with("Tib"))
+                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("Fem"))) > 0 ,"No 'fem' or 'femur' elements found in the database"))
+                    fem<-dplyr::select(data.df.calcul.2,starts_with("Fem"))
+                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("Hum"))) > 0 ,"No 'hum' or 'humerus' elements found in the database"))
+                    hum<-dplyr::select(data.df.calcul.2,starts_with("Hum"))
+                    
+                    ratio<-((rad+tib+uln)*4)/((tib+rad+uln)*4+((hum+fem)*6))
+                    somme.ratio<-rad+tib+uln+hum+fem
+                    axis.var.name<-"ratio Z/E%"
+                  },
+                  "9"={
+                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("fem"))) > 0 ,"No 'fem' or 'femur' elements found in the database"))
+                    fem<-dplyr::select(data.df.calcul.2,starts_with("fem"))
+                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("hum"))) > 0 ,"No 'hum' or 'humerus' elements found in the database"))
+                    hum<-dplyr::select(data.df.calcul.2,starts_with("hum"))
+                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("sca"))) > 0 ,"No 'sca' or 'scapula' elements found in the database"))
+                    sca<-dplyr::select(data.df.calcul.2,starts_with("sca"))
+                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("rad"))) > 0 ,"No 'rad' or 'radius' elements found in the database"))
+                    rad<-dplyr::select(data.df.calcul.2,starts_with("rad"))
+                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("uln"))) > 0 ,"No 'uln' or 'ulna' elements found in the database"))
+                    uln<-dplyr::select(data.df.calcul.2,starts_with("uln"))
+                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("tib"))) > 0 ,"No 'tib' or 'tibia' elements found in the database"))
+                    tib<-dplyr::select(data.df.calcul.2,starts_with("tib"))
+                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("mtc"))) > 0 ,"No 'mtc' or 'mtc' elements found in the database"))
+                    mtc<-dplyr::select(data.df.calcul.2,starts_with("mtc"))
+                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("mtt"))) > 0 ,"No 'mtt' or 'mtt' elements found in the database"))
+                    mtt<-dplyr::select(data.df.calcul.2,starts_with("mtt"))
+                    
+                    ratio<-(hum+sca+rad+mtc)*12/(((hum+sca+rad+uln+mtc)*12)+(fem+tib+mtt)*16)
+                    somme.ratio<-hum+sca+rad+uln+mtc+fem+tib+mtt
+                    axis.var.name<-"AN/PO%"
+                    axis.var.name<-"ratio AN/PO%"
+                  }
+           )
+           
+           f_vec <-Vectorize(WilsonBinCI, vectorize.args = c("n","p"), SIMPLIFY = FALSE)
+           
+           data.df.calcul.anpo<-matrix(unlist(f_vec(c(somme.ratio),c(ratio))),ncol=2, byrow=F)
+           
+           df.ratio<-cbind.data.frame(data.df.calcul.2[,setlevels],ratio,data.df.calcul.anpo)
+           
+           colnames(df.ratio)<-c(setlevels,"ratio","lower","upper")
+           
+           if (!is.null(factor.order.level.activation())){
+             df.ratio[[setlevels]]<-factor(df.ratio[[setlevels]], levels = factor.order.level())
+           }
+           
+           print(df.ratio)
+           p <- ggplot2::ggplot(df.ratio, 
+                                aes(x = .data[["ratio"]]*100, y = .data[["name_level"]], xmin = .data[["lower"]]*100, xmax = .data[["upper"]]*100))+ 
+             scale_x_continuous(limits=c(0,100))
+           p<-p+geom_pointrange()+
+             xlab(paste(axis.var.name))+ylab(paste("name_level"))+
+             do.call(themeforfigure.choice(), list()) +
+             theme(axis.title.x = element_text(size=font_size()),
+                   axis.title.y = element_text(size=font_size()),
+                   axis.text.x = element_text(size=font_tick()),
+                   axis.text.y = element_text(size=font_tick()),
+                   legend.title = element_blank())+
+             theme(legend.position=legendplotlyfig())
+           p
+           
+           
+         }) 
+         
+         output$Ratio.data.list=renderUI({
+           req(!is.null(fileisupload()))
+           selectInput("select.ratio", label = h5("Select the ratio to plot"), 
+                       choices = list("CRA/POSTCRA%" = 1, "AN/PO% (1)" = 2,"AN/PO% (2)" = 9,"AUT/ZE%"=7,"Z/E%" = 8, "PCRLB/CR%"=6, "PCRAP/CR%"=5,"PCRT/CR%"=4,"Proportion digested element" = 3 ), 
+                       selected = 1)
+         })
+         
+         output$liste.summary=renderUI({
+           req(!is.null(fileisupload()))
+           checkboxGroupInput("listesum", h4("Variables for summary table"),
+                              choices = names(df$df)[c(1:ncol(df$df))])
+         })
+         
+         output$summary <- renderTable({
+           Pivotdatatable()
+       
+           
+         },digits=0)
+         
+         output$downloadData_pivotdata<- downloadHandler( 
+           filename = function() {
+             paste0(Sys.Date(),"_pivot.table",".csv")
+           },
+           content = function(file) {
+             write.table(Pivotdatatable(), file, row.names = FALSE, sep=";",dec=".")
+           }
+         )
+         
     
+         
+         Pivotdatatable<-reactive({req(input$listesum)
+           df.sub<-df.sub()
+           liste.sum<-c(input$listesum,"nb_remains") # creation d'une liste
+           table_matos<-df.sub %>% group_by(across(liste.sum)) %>% summarize(n_row=n()    )
+           str(table_matos)
+           colnames(table_matos)<-c(unlist(liste.sum),"n_row")
+           table_matos$nb_pt_tot<-table_matos[["nb_remains"]]*table_matos[["n_row"]]
+           
+           table_matos<-table_matos %>% dplyr::select (-c("nb_remains"))
+           
+           table_matos})
+         
+         
+         output$table.species <-  DT::renderDataTable({
+           data.df.tot2<-df.species.table()
+           DT::datatable(
+             data= data.df.tot2, 
+             extensions = 'Buttons', options = list(
+               lengthMenu = list(c(5, 15,50,100, -1), c('5', '15','50','100', 'All')),
+               pageLength = 15,
+               initComplete = htmlwidgets::JS(
+                 "function(settings, json) {",
+                 paste0("$(this.api().table().container()).css({'font-size': '", font.size, "'});"),
+                 "}")
+             ))
+         })#end renderDataTable
+         output$downloadData_speciesdata<- downloadHandler( 
+           filename = function() {
+             paste0(Sys.Date(),"_species.table",".csv")
+           },
+           content = function(file) {
+             write.table(df.species.table(), file, row.names = FALSE, sep=";",dec=".") ## to MODIF !!!
+           }
+         ) 
 } ## end of server 
+
+
 ui <-dashboardPage(
   dashboardHeader(title = "MICRO-TRI"),
   sidebar,
