@@ -762,12 +762,12 @@ output$set.levels=renderUI({
     rV <- reactiveValues(name_level = "")
     rV <- reactiveValues(name_sector = "")
     rV <- reactiveValues(year_exca = "")
-    last.id.dec<-reactiveVal(NULL)
-    last.name.square<-reactiveVal(NULL)
-    last.name.sector<-reactiveVal(NULL)
-    last.name.dec<-reactiveVal(NULL)
-    last.year_exca<-reactiveVal(NULL)
-    last.name.level<-reactiveVal(NULL)
+    last.id.dec<-reactiveVal("not_selected")
+    last.name.square<-reactiveVal("not_selected")
+    last.name.sector<-reactiveVal("not_selected")
+    last.name.dec<-reactiveVal("not_selected")
+    last.year_exca<-reactiveVal("not_selected")
+    last.name.level<-reactiveVal("not_selected")
     
     output$completude=renderUI({
       if (input$infos_completude==TRUE) {
@@ -806,8 +806,10 @@ output$set.levels=renderUI({
     })
     output$photo=renderUI({
       if (input$infos_photo==TRUE) {
-        textInput("txt_photo", label="photo information", value = "", width = NULL,
-                  placeholder = NULL)
+        textInput("txt_photo", label="photo information", value = "Photo:", width = NULL,
+                  placeholder = "No photo")
+      } else {
+        
       }
       
     })
@@ -1074,11 +1076,23 @@ output$set.levels=renderUI({
         data$date_record<-Sys.time()
         if(!is.null(input_infos_suppl_anat())){
          data$infos_suppl_anat<-input_infos_suppl_anat()}
-         data$dig_I<-"NULL"
-         data$dig_MOL<-"NULL"
-         data$dig_m1inf<-"NULL"
-         data$dig_bone<-"NULL"
-     
+         data$dig_I<-"NA"
+         data$dig_MOL<-"NA"
+         data$dig_m1inf<-"NA"
+         data$dig_bone<-"NA"
+         if(length(data$name_sector)==1 && data$name_sector=="") {
+           data$name_sector<-"empty"} 
+         if(length(data$year_exca)==1 && data$year_exca=="") {
+           data$year_exca<-"empty"} 
+         if(length(data$ID_dec)==1 && data$ID_dec=="") {
+           data$ID_dec<-"empty"} 
+         if(length(data$name_square)==1 && data$name_square=="") {
+           data$name_square<-"empty"} 
+         if(length(data$name_dec)==1 && data$name_dec=="") {
+           data$name_dec<-"empty"} 
+         if(length(data$name_level)==1 && data$name_level=="") {
+           data$name_level<-"empty"}
+         
         #"Mand","Max",
         if (!input$trace_dig=="IND"){
          switch(input$name_anat,
@@ -1140,9 +1154,8 @@ output$set.levels=renderUI({
       updateSelectizeInput(session = session,inputId = "name_level",selected = last.name.level())
       updateSelectizeInput(session = session,inputId = "name_sector",selected = last.name.sector())
       updateSelectizeInput(session = session,inputId = "year_exca",selected = last.year_exca())
-      #################### mettre ici, si c'est des valeurs vides ! 
-      ####ou alors a df.sub
-      ####################################
+     
+      
         saveData(formData())
         data <- as.data.frame(t(formData()))
         k<-ID_record()+1
@@ -1329,14 +1342,7 @@ output$liste.year=renderUI({
 
 df.sub <- reactive({ 
            req(!is.null(fileisupload))
-  print("eeee")
-  print(df$df)
-  print("a")
-  print(global.load$df)
-            df.sub<-df$df
-            
-            df.sub<-as.data.frame(t(apply(df.sub,1, function(x) unlist(x))))
-           print(df.sub)
+          df.sub<-df$df
            # if (input$setdate!="null"){
            #   df.sub[,input$setdate] <-as.numeric(df.sub[,input$setdate])
            #   df.sub[,input$setdate][is.na(df.sub[,input$setdate])]<-0
@@ -1357,17 +1363,17 @@ df.sub <- reactive({
            #   filter(.data[[setXX()]] >= input$xslider[1], .data[[setXX()]] <= input$xslider[2]) %>% 
            #   filter(.data[[setYY()]] >= input$yslider[1], .data[[setYY()]] <= input$yslider[2]) %>% 
            #   filter(.data[[setZZ()]] >= input$zslider[1], .data[[setZZ()]] <= input$zslider[2])
-           
-            
-             print(str(df.sub))
-               
-             print('eeereee')
-             print(str(df.sub))
+          
+             df.sub[,1:29][df.sub[,1:29]=="NULL"] <- "NA"
+              df.sub<-as.data.frame(t(apply(df.sub,1, function(x) unlist(x))))
+             df.sub
+             validate(need(length(df.sub)!=0, "There are no matches in the dataset. Try removing or relaxing one or more filters."))
+             # assign("temppp",df.sub,envir = .GlobalEnv)
              df.sub$nb_remains<-as.numeric(df.sub$nb_remains)
              
-           df.sub
-           validate(need(nrow(df.sub)!=0, "There are no matches in the dataset. Try removing or relaxing one or more filters."))
-           
+           # df.sub
+           # validate(need(nrow(df.sub)==0, "There are no matches in the dataset. Try removing or relaxing one or more filters."))
+           # 
            #### creation de df.species.table
            # data.df.tot<-as.data.frame(t(apply(df.sub,1, function(x) unlist(x))))
            # data.df.tot$nb_remains<-as.numeric(data.df.tot$nb_remains)
