@@ -1,3 +1,4 @@
+### trace encoche + trace patine+infosuppleanat +pb obs suppl qui reste
 library(shiny)
 library(shinydashboard)
 library(shinyWidgets)
@@ -622,24 +623,26 @@ observeEvent(getdata.launch(), {
 
   df$df<-global$df
   ID_record(global$k)
-  responses <<- global$df
+  # responses <<- global$df
+  global.load$df<-global$df
   df$save1<-global$df_save1
   df$save2<-global$df_save2
   df$save3<-global$df_save3
   df$save4<-global$df_save4
   df$save5<-global$df_save5
-
-  
   rV$ID_dec<-global$ID_dec
   rV$name_square<-global$name_square
   rV$name_dec<-global$name_dec
   rV$name_level<-global$name_level
+  rV$name_sector<-global$name_sector
+  rV$year_exca<-global$year_exca
+  
   last.id.dec(global$last.id.dec)
-  last.name.square(global.load$last.name.square)
-  last.name.dec(global.load$last.name.dec)
-  last.name.level(global.load$last.name.level)
-  last.name.sector(global.load$last.name.sector)
-  last.year_exca(global.load$last.year_exca)
+  last.name.square(global$last.name.square)
+  last.name.dec(global$last.name.dec)
+  last.name.level(global$last.name.level)
+  last.name.sector(global$last.name.sector)
+  last.year_exca(global$last.year_exca)
 
   global.load$site.archaeo<-global$site.archaeo
   
@@ -1156,8 +1159,10 @@ output$set.levels=renderUI({
       updateSelectizeInput(session = session,inputId = "year_exca",selected = last.year_exca())
      
       
-        saveData(formData())
+        # saveData(formData())
         data <- as.data.frame(t(formData()))
+        global.load$df<-rbind(global.load$df, data)
+        
         k<-ID_record()+1
         ID_record(k)
         global.load$k<-k
@@ -1166,7 +1171,7 @@ output$set.levels=renderUI({
         df$save3<-df$save4
         df$save4<-df$save5
         df$save5<-data
-        global.load$df<-responses
+        # global.load$df<-responses
         global.load$df_save1<-df$save1
         global.load$df_save2<-df$save2
         global.load$df_save3<-df$save3
@@ -1199,17 +1204,18 @@ output$set.levels=renderUI({
         updatePrettySwitch(session = session, inputId = "infos_tm",value = FALSE)
         updateRadioGroupButtons(session = session, inputId ="trace_tooth_mark",selected = "oui")
         updateTextInput(session = session, inputId = "observation",value = "")
+        updateTextInput(session = session, inputId = "txt_photo",value = "No photo")
+        updatePrettySwitch(session = session, inputId = "infos_photo",value = FALSE)
+        updatePickerInput(session = session, inputId = "observation_suppl",choices = NULL)
           # $ infos_suppl_anat          : NULL
           # $ traces_patine             : NULL
           # $ trace_encoche             : NULL
           updatePrettySwitch(session = session, inputId = "infos_obs",value = FALSE)
           to_save <- reactiveValuesToList(global.load)
           saveRDS(to_save, file =  paste0(Sys.Date(),".",global.load$site.archaeo,".BDD.uf",".rds"))
-          # test <- data.frame(sapply(responses,unlist))
-          test<-data.frame(apply(responses,2,as.character))
+          test<-data.frame(apply(global.load$df,2,as.character))
           write.table(test, file =  paste0(Sys.Date(),".",global.load$site.archaeo,".BDD.uf",".csv",sep=""), row.names = FALSE, sep=";",dec=".") 
-          # df$df<-global.load$df
-          # df.sub()
+
           })
     
     
@@ -1256,8 +1262,17 @@ output$set.levels=renderUI({
       df$save3<-df$save4
       df$save4<-df$save5
       df$save5<-temp
-      responses <<- rbind(responses, temp)
+      
+      data <- as.data.frame(t(formData()))
+      global.load$df<-rbind(global.load$df, temp)
+      
+      # responses <<- rbind(responses, temp) #### a modif
       refresh_dtoutput(rnorm(1,mean=100,sd=100))
+      
+      to_save <- reactiveValuesToList(global.load)
+      saveRDS(to_save, file =  paste0(Sys.Date(),".",global.load$site.archaeo,".BDD.uf",".rds"))
+      test<-data.frame(apply(global.load$df,2,as.character))
+      write.table(test, file =  paste0(Sys.Date(),".",global.load$site.archaeo,".BDD.uf",".csv",sep=""), row.names = FALSE, sep=";",dec=".") 
       
     })
    
@@ -1270,7 +1285,8 @@ output$set.levels=renderUI({
     output$responses <- DT::renderDataTable({
         # input$submit2
       refresh_dtoutput()
-            loadData()
+            # loadData()
+      global.load$df
     }, server = FALSE,
     callback = JS(c("table.page('last').draw(false);")),
   
@@ -1278,30 +1294,39 @@ output$set.levels=renderUI({
     )
     
     output$responses2 <- DT::renderDataTable({
-       datatable(loadData(), editable = TRUE)
+       datatable(
+         # loadData(), 
+         global.load$df,
+         editable = TRUE)
     } ,   options = list(lengthMenu = c(1, 2,3, 5,10,25,50), pageLength = 5)
     )
     observeEvent(input$responses2_cell_edit, {
-      data2<-loadData()
+      # data2<-loadData()
+      data2<-global.load$df
       row  <- input$responses2_cell_edit$row
       clmn <- input$responses2_cell_edit$col
       data2[row, clmn] <- input$responses2_cell_edit$value
-      responses <<- data2
+      # responses <<- data2
+      to_save <- reactiveValuesToList(global.load)
+      saveRDS(to_save, file =  paste0(Sys.Date(),".",global.load$site.archaeo,".BDD.uf",".rds"))
+      write.table(as.data.frame(fields_theor), file =  paste0(Sys.Date(),".",global.load$site.archaeo,".BDD.uf",".csv",sep=""), row.names = FALSE, sep=";",dec=".") 
+      
     })
     observeEvent(input$deleteRows,{
-      if (!is.null(input$responses2_rows_selected)) {
-        data2<-loadData()
-        data2 <-  data2[-as.numeric(input$responses2_rows_selected),]
-        responses <<- data2
+        if (!is.null(input$responses2_rows_selected)) {
+        # data2<-loadData()
+         data2<-global.load$df
+         data2 <-  data2[-as.numeric(input$responses2_rows_selected),]
+         global.load$df<-data2
+         # responses <<- data2
+         to_save <- reactiveValuesToList(global.load)
+         saveRDS(to_save, file =  paste0(Sys.Date(),".",global.load$site.archaeo,".BDD.uf",".rds"))
+         write.table(as.data.frame(fields_theor), file =  paste0(Sys.Date(),".",global.load$site.archaeo,".BDD.uf",".csv",sep=""), row.names = FALSE, sep=";",dec=".") 
+        
       }
     })
     
-#     output$obs.note.torender <- renderText({ global.load$note.obs })
-#     observeEvent(input$note.obs,{
-# global.load$note.obs<-c(global.load$note.obs,input$note.obs)
-#       
-#     })
-    
+
          output$obs.note.torender <- renderText({ global.load$note.obs })
          
          observeEvent(input$Record_the_observation,{
@@ -1310,7 +1335,7 @@ output$set.levels=renderUI({
          })
 #### Microfauna treatment ----
   
-        ##### df.sub and co   ----  
+##### df.sub and co   ----  
 somme.indiv<-reactiveVal()
 df.species.table<-reactiveVal()
 number.total.of.species<-reactiveVal(1)
@@ -1342,7 +1367,7 @@ output$liste.year=renderUI({
 
 df.sub <- reactive({ 
            req(!is.null(fileisupload))
-          df.sub<-df$df
+          df.sub<-global.load$df
            # if (input$setdate!="null"){
            #   df.sub[,input$setdate] <-as.numeric(df.sub[,input$setdate])
            #   df.sub[,input$setdate][is.na(df.sub[,input$setdate])]<-0
@@ -1358,16 +1383,21 @@ df.sub <- reactive({
              df.sub <- df.sub[df.sub[["name_dec"]]%in% input$Passe, ]
              df.sub <- df.sub[df.sub[["name_square"]] %in% input$Square, ]
              df.sub <- df.sub[df.sub[["year_exca"]] %in% input$Year, ]
-           
+        
              # df.sub<-df.sub %>% 
            #   filter(.data[[setXX()]] >= input$xslider[1], .data[[setXX()]] <= input$xslider[2]) %>% 
            #   filter(.data[[setYY()]] >= input$yslider[1], .data[[setYY()]] <= input$yslider[2]) %>% 
            #   filter(.data[[setZZ()]] >= input$zslider[1], .data[[setZZ()]] <= input$zslider[2])
-          
+             
              df.sub[,1:29][df.sub[,1:29]=="NULL"] <- "NA"
-              df.sub<-as.data.frame(t(apply(df.sub,1, function(x) unlist(x))))
-             df.sub
+               # df.sub<-as.data.frame(t(apply(df.sub,2, function(x) unlist(x))))
+             if(nrow(df.sub)>1){
+               df.sub<-as.data.frame(apply(df.sub,2, function(x) as.character(x)))}
+               assign("temppp",df.sub,envir = .GlobalEnv)
+               
              validate(need(length(df.sub)!=0, "There are no matches in the dataset. Try removing or relaxing one or more filters."))
+             df.sub
+             
              # assign("temppp",df.sub,envir = .GlobalEnv)
              df.sub$nb_remains<-as.numeric(df.sub$nb_remains)
              
@@ -1395,7 +1425,6 @@ df.sub <- reactive({
          output$sum.species=renderUI({
            req(!is.null(fileisupload()))
            tagList(HTML(paste("Total number of different type of objects: ",number.total.of.species())))
-           
            })
 
          
@@ -1412,7 +1441,7 @@ df.sub <- reactive({
          })
          output$sum.remain=renderUI({
            req(!is.null(fileisupload()))
-           aa<-as.data.frame(df$df[["nb_remains"]])
+           aa<-as.data.frame(global.load$df[["nb_remains"]])
            tagList(HTML(paste("Number total of all remains: ",sum(aa))))
          })
          output$sum.remain2=renderUI({
@@ -1428,8 +1457,7 @@ df.sub <- reactive({
                       # , height = height.size(), width = width.size()
                       )
          })
-         
-         
+
          output$rarefactionplot <- renderPlot({
            tab.raref_fossil<-df.species.table()
            rownames(tab.raref_fossil)<-tab.raref_fossil[,1]
@@ -1870,18 +1898,15 @@ df.sub <- reactive({
            }
          )
          
-    
-         
-         Pivotdatatable<-reactive({req(input$listesum)
+
+    Pivotdatatable<-reactive({req(input$listesum)
            df.sub<-df.sub()
            liste.sum<-c(input$listesum,"nb_remains") # creation d'une liste
            table_matos<-df.sub %>% group_by(across(liste.sum)) %>% summarize(n_row=n()    )
            str(table_matos)
            colnames(table_matos)<-c(unlist(liste.sum),"n_row")
            table_matos$nb_pt_tot<-table_matos[["nb_remains"]]*table_matos[["n_row"]]
-           
            table_matos<-table_matos %>% dplyr::select (-c("nb_remains"))
-           
            table_matos})
          
          
@@ -1916,8 +1941,6 @@ ui <-dashboardPage(
 saveData <- function(data) {
     data <- as.data.frame(t(data))
     if (exists("responses")) {
-print(responses)
-      print(data)
         responses <<- rbind(responses, data)
       } else {
         responses <<- data
@@ -1933,5 +1956,9 @@ loadData <- function() {
         
     }
 }
+saveData.line <- function() {
+  
+}
+
 # Run the application 
 shinyApp(ui = ui, server = server)
