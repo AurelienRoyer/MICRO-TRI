@@ -1,3 +1,5 @@
+##A faire : bioclim data + ratio data
+
 library(shiny)
 library(shinydashboard)
 library(shinyWidgets)
@@ -1456,27 +1458,13 @@ output$liste.year=renderUI({
 df.sub <- reactive({ 
            req(!is.null(fileisupload))
           df.sub<-global.load$df
-           # if (input$setdate!="null"){
-           #   df.sub[,input$setdate] <-as.numeric(df.sub[,input$setdate])
-           #   df.sub[,input$setdate][is.na(df.sub[,input$setdate])]<-0
-           #   if (!is.null(input$Date2)) {
-           #     df.sub<-df.sub %>%
-           #       filter(df.sub[,input$setdate] >= input$Date2[1], df.sub[,input$setdate] <= input$Date2[2])}}
-             # df.sub <- df.sub[df.sub[,input$setsector] %in% input$localisation, ]
-             # df.sub <- df.sub[df.sub[,input$setlevels] %in% input$UAS, ]
-             # df.sub <- df.sub[df.sub[,input$setpasse]%in% input$Passe, ]
-             # df.sub <- df.sub[df.sub[,input$setnature] %in% input$Square, ]
+
              df.sub <- df.sub[df.sub[["name_sector"]] %in% input$localisation, ]
              df.sub <- df.sub[df.sub[["name_level"]] %in% input$UAS, ]
              df.sub <- df.sub[df.sub[["name_dec"]]%in% input$Passe, ]
              df.sub <- df.sub[df.sub[["name_square"]] %in% input$Square, ]
              df.sub <- df.sub[df.sub[["year_exca"]] %in% input$Year, ]
-        
-             # df.sub<-df.sub %>% 
-           #   filter(.data[[setXX()]] >= input$xslider[1], .data[[setXX()]] <= input$xslider[2]) %>% 
-           #   filter(.data[[setYY()]] >= input$yslider[1], .data[[setYY()]] <= input$yslider[2]) %>% 
-           #   filter(.data[[setZZ()]] >= input$zslider[1], .data[[setZZ()]] <= input$zslider[2])
-             
+
              df.sub[,1:29][df.sub[,1:29]=="NULL"] <- "NA"
                # df.sub<-as.data.frame(t(apply(df.sub,2, function(x) unlist(x))))
              if(nrow(df.sub)>1){
@@ -1485,13 +1473,8 @@ df.sub <- reactive({
                
              validate(need(nrow(df.sub)!=0, "There are no matches in the dataset. Try removing or relaxing one or more filters."))
              df.sub
-             
-             # assign("temppp",df.sub,envir = .GlobalEnv)
              df.sub$nb_remains<-as.numeric(df.sub$nb_remains)
-             
-           # df.sub
-           # validate(need(nrow(df.sub)==0, "There are no matches in the dataset. Try removing or relaxing one or more filters."))
-           # 
+
            #### creation de df.species.table
            # data.df.tot<-as.data.frame(t(apply(df.sub,1, function(x) unlist(x))))
            # data.df.tot$nb_remains<-as.numeric(data.df.tot$nb_remains)
@@ -1632,7 +1615,7 @@ df.sub <- reactive({
            BCI_LVLn_of_siteS2<-as.data.frame(do.call(rbind, BCI_LVLn_of_siteS))
            BCI_LVLn_of_siteS2(BCI_LVLn_of_siteS2)
            BCI_LVLn_of_siteS[sapply(BCI_LVLn_of_siteS, is.null)] <- NULL ## to remove null element
-           res_lda<-func_LDA(BCI_LVLn_of_siteS, quantiv = TRUE)
+           res_lda<-func_LDA(BCI_LVLn_of_siteS, quantiv = TRUE) ########################################probleme ici
            res_lda<-as.data.frame(do.call(rbind, res_lda))
            res_lda(res_lda)
            DT::datatable(
