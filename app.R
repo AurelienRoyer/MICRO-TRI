@@ -1,4 +1,3 @@
-### trace encoche + trace patine+infosuppleanat 
 library(shiny)
 library(shinydashboard)
 library(shinyWidgets)
@@ -1497,8 +1496,11 @@ df.sub <- reactive({
            # data.df.tot<-as.data.frame(t(apply(df.sub,1, function(x) unlist(x))))
            # data.df.tot$nb_remains<-as.numeric(data.df.tot$nb_remains)
            data.df.tot<-df.sub
-           data.df.tot2<-data.df.tot %>% group_by(.data[["name_level"]],.data[["name_species"]])  %>% 
-             dplyr::summarise(total = sum(!!(as.numeric(input$nb_remains))))
+           # data.df.tot2<-data.df.tot %>% group_by(.data[["name_level"]],.data[["name_species"]])  %>% 
+           #   dplyr::summarise(total = sum(!!(as.numeric(data.df.tot$nb_remains))))
+           data.df.tot2<-data.df.tot %>% group_by(name_level,name_species)  %>% 
+             dplyr::summarise(total = sum((as.numeric(nb_remains))))
+           
            myFormula <- as.formula(paste0("name_level", " ~ ","name_species"))
            df.species.table<-reshape2::dcast(data.df.tot2,myFormula, fill = 0L)
            df.species.table(df.species.table)
@@ -1535,10 +1537,8 @@ df.sub <- reactive({
          })
          output$sum.remain2=renderUI({
            req(!is.null(fileisupload()))
-           print(nrow(df.sub()))
-           aa<-df.sub()
-           
-           tagList(HTML(paste("Number of remains selected: ",sum(aa[["nb_remains"]]))))
+            aa<-df.sub()
+            tagList(HTML(paste("Number of remains selected: ",sum(aa[["nb_remains"]]))))
          })  
          
          
