@@ -1,4 +1,4 @@
-### trace encoche + trace patine+infosuppleanat +pb obs suppl qui reste
+### trace encoche + trace patine+infosuppleanat 
 library(shiny)
 library(shinydashboard)
 library(shinyWidgets)
@@ -33,8 +33,8 @@ list_species_chiro<-c("list_perso_chiro","list_species_all")
 list_species_herpeto<-c("list_perso_herpeto","list_species_all")
 list_species_others<-c("list_perso_others","list_species_all")
 
-list_info_suppl<-c("T6","T9","supplementary triangle","Rhombe pitymien")
-
+# list_info_suppl<-c("No infos","T6","T9","supplementary triangle","Rhombe pitymien")
+# patine.list<-c("","doubtful","pollution-white","pollution-recent")
 
 list_bone_1<-c("not_selected","m1inf","Mol","Mand","Max","Hum","Fem","Rad","Ulna","Tin",
              "Iinf","Isup","Bassin")
@@ -83,7 +83,7 @@ body <- dashboardBody(
                              
                     ),#end of tabpanel
                 tabPanel(h4("New Database"),
-                         textInput("name_site", label="Name of  the site", value = "", width = NULL,
+                         textInput("name_site", label="Name of the site", value = "", width = NULL,
                                    placeholder = NULL),
                          uiOutput ("liste.faun4"),
                          uiOutput ("liste.faun4.eulipo"),
@@ -347,6 +347,7 @@ body <- dashboardBody(
                       no = icon("remove",
                                 lib = "glyphicon"))
                   ),
+                uiOutput("patine_pickerinput"),
                   ),
                 box(width=4,
                     prettySwitch(
@@ -356,12 +357,18 @@ body <- dashboardBody(
                       fill = TRUE
                     ),
                     uiOutput ("tm_output"),
-            
+                    prettySwitch(
+                      inputId = "infos_enc",
+                      label = "pit marks",
+                      status = "success",
+                      fill = TRUE
+                    ),
+                    uiOutput ("enc_output"),
                     radioGroupButtons(
                       inputId = "trace_root",
                       label = "Root marks",
                       choices = c("IND","0","<50%",">50%"),
-                      selected =("IND"),
+                      selected =("0"),
                       status = "primary",
                       checkIcon = list(
                         yes = icon("ok", 
@@ -496,7 +503,7 @@ server <- function(input, output, session) {
                     "name_level","name_taxa" ,"name_species","name_anat", 
                     "infos_suppl_anat","nb_remains","infos_lat",
                     "infos_completude","infos_completude_detailled",
-                    "trace_dig","trace_root","traces_patine","trace_heat",
+                    "trace_dig","trace_root","color_patine","trace_heat",
                     "trace_tooth_mark","trace_encoche",
                     "observation","observation_suppl","txt_photo")  
     ID_record<-reactiveVal(1)
@@ -516,6 +523,8 @@ server <- function(input, output, session) {
     font_size<-reactiveVal(12)
     font_tick<-reactiveVal(12)
     legendplotlyfig<-reactiveVal("right") ##for legends.
+    list_info_suppl<-reactiveVal(c("No infos","T6","T9","supplementary triangle","Rhombe pitymien"))
+    patine.list<-reactiveVal(c("","doubtful","pollution-white","pollution-recent"))
     
 ## NEW BDD ----
 output$liste.faun4=renderUI({
@@ -569,6 +578,8 @@ observeEvent(ignoreInit = TRUE,input$other.list.select,{
   global.load$other.list.select<-input$other.list.select
 })
 
+
+
 output$liste.faun1=renderUI({
 pickerInput(
   inputId = "Id_bones",
@@ -611,7 +622,6 @@ observeEvent(input$getData, {
 })
  observeEvent(input$refresh, {
    req(!is.null(global.load$df))
-   # df$df<-df$df
    df$df<-global.load$df
    df.sub()
  })
@@ -645,13 +655,15 @@ observeEvent(getdata.launch(), {
   last.year_exca(global$last.year_exca)
 
   global.load$site.archaeo<-global$site.archaeo
-  
+  # global.load$patine.list.select<-global.load$patine.list.select
   global.load$other.list.select<-global$other.list.select
   global.load$herpeto.list.select<-global$herpeto.list.select
   global.load$chiro.list.select<-global$chiro.list.select
   global.load$euli.list.select<-global$euli.list.select
   global.load$rod.list.select<-global$rod.list.select
   global.load$note.obs<-global$note.obs
+  list_info_suppl(global$list_info_suppl)
+  patine.list(global$patine.list)
   fileisupload(1)
   
 })# end observe of df$df2
@@ -771,6 +783,7 @@ output$set.levels=renderUI({
     last.name.dec<-reactiveVal("not_selected")
     last.year_exca<-reactiveVal("not_selected")
     last.name.level<-reactiveVal("not_selected")
+
     
     output$completude=renderUI({
       if (input$infos_completude==TRUE) {
@@ -800,13 +813,26 @@ output$set.levels=renderUI({
     })
 
     output$obs2=renderUI({
-      pickerInput(
+      list_info2<-list_info_suppl()
+       selectizeInput(
         inputId = "observation_suppl",
         label = "Supplementary observation", 
-        choices = list_info_suppl,
-        multiple = TRUE
+        choices = list_info2,
+        selected = "",
+        multiple = TRUE,
+        options = list(create = TRUE,
+                                       `live-search` = TRUE)
+      
+        
       )
+      
     })
+    
+    observeEvent(input$observation_suppl, {
+      list_info_suppl(levels(as.factor(c(list_info_suppl(),input$observation_suppl))))
+ 
+    })
+    
     output$photo=renderUI({
       if (input$infos_photo==TRUE) {
         textInput("txt_photo", label="photo information", value = "Photo:", width = NULL,
@@ -853,14 +879,49 @@ output$set.levels=renderUI({
         `live-search` = TRUE)
     )
     })
-    
+ 
+output$patine_pickerinput=renderUI({
+      # patine.menu<-get(global.load$patine.list.select)
+  patine.list<-patine.list()
+       selectizeInput(
+        inputId = "color_patine",
+        label = "color patine", 
+        choices = patine.list,
+        options = list(create = TRUE,
+                       `live-search` = TRUE)
+      )
+    })
+
+observeEvent(input$color_patine, {
+  patine.list(levels(as.factor(c(patine.list(),input$color_patine))))
+  
+})      
+
     output$tm_output=renderUI({
       if (input$infos_tm==TRUE) {
         radioGroupButtons(
           inputId = "trace_tooth_mark",
           label = "Tooth marks",
           choices = c("?","1","multiple","opposite"),
-          selected =("oui"),
+          selected =("1"),
+          status = "primary",
+          checkIcon = list(
+            yes = icon("ok", 
+                       lib = "glyphicon"),
+            no = icon("remove",
+                      lib = "glyphicon"))
+        )
+      }
+      
+    }) 
+    
+    output$enc_output=renderUI({
+      if (input$infos_enc==TRUE) {
+        radioGroupButtons(
+          inputId = "trace_encoche",
+          label = "Pit",
+          choices = c("?","1","multiple","opposite"),
+          selected =("1"),
           status = "primary",
           checkIcon = list(
             yes = icon("ok", 
@@ -924,6 +985,7 @@ output$set.levels=renderUI({
       }
       
       if(input$name_anat=="Mand"){
+        input_infos_suppl_anat("0")
         showModal(
           modalDialog(
             title = tags$h4(style = "color: blue;","Mandible choice"),
@@ -942,6 +1004,7 @@ output$set.levels=renderUI({
 
       }
       if(input$name_anat=="Max"){
+        input_infos_suppl_anat("0")
         showModal(
           modalDialog(
             title = tags$h4(style = "color: blue;","Maxillary choice"),
@@ -962,12 +1025,17 @@ output$set.levels=renderUI({
 
     })
     observeEvent(input$Id_mol, {
+      
       input_infos_suppl_anat(input$Id_mol)
+      
       
     })
     observeEvent(input$Id_max, {
-      input_infos_suppl_anat(input$Id_max)
-      
+       input_infos_suppl_anat(input$Id_max)
+      # print(input$Id_max)
+      # if(!is.null(input$Id_max))
+      # {input_infos_suppl_anat(input$Id_max)}
+      # else{input_infos_suppl_anat("0")}
     })
     observeEvent(input$Id_mand, {
       input_infos_suppl_anat(input$Id_mand)
@@ -1083,6 +1151,7 @@ output$set.levels=renderUI({
          data$dig_MOL<-"NA"
          data$dig_m1inf<-"NA"
          data$dig_bone<-"NA"
+         data$dig_bone_others<-"NA"
          if(length(data$name_sector)==1 && data$name_sector=="") {
            data$name_sector<-"empty"} 
          if(length(data$year_exca)==1 && data$year_exca=="") {
@@ -1095,28 +1164,37 @@ output$set.levels=renderUI({
            data$name_dec<-"empty"} 
          if(length(data$name_level)==1 && data$name_level=="") {
            data$name_level<-"empty"}
-         
+         if (input$infos_enc==F) {data$trace_encoche<-"no"}
+         if (input$infos_tm==F) {data$trace_tooth_mark<-"no"}
+           
         #"Mand","Max",
         if (!input$trace_dig=="IND"){
+          data$dig_bone_others<-input$trace_dig
          switch(input$name_anat,
 
                 Iinf = {
                   data$dig_I<-input$trace_dig
+                  data$dig_bone_others<-"NA"
                 },
                 Isup =   {
                   data$dig_I<-input$trace_dig
+                  data$dig_bone_others<-"NA"
                 },
                 m1inf =   {
-                  data$dig_MOL<-input$trace_dig
+                  data$dig_m1inf<-input$trace_dig
+                  data$dig_bone_others<-"NA"
                 },
                 MOL =   {
                   data$dig_MOL<-input$trace_dig
+                  data$dig_bone_others<-"NA"
                 },
                 FEM =   {
                   data$dig_bone<-input$trace_dig
+                  data$dig_bone_others<-"NA"
                 },
                 HUM =  { 
                   data$dig_bone<-input$trace_dig
+                  data$dig_bone_others<-"NA"
                 })
           } #end of if
          data
@@ -1190,26 +1268,31 @@ output$set.levels=renderUI({
         global.load$last.year_exca<-last.year_exca()
         global.load$last.name.level<-last.name.level()
         global.load$input_infos_suppl_anat<-input_infos_suppl_anat()
+        global.load$list_info_suppl<-list_info_suppl()
         input_infos_suppl_anat(NULL)
+        global.load$patine.list<-patine.list()
+
          updateSelectizeInput(session = session, inputId = "name_species",selected ="not_selected")
+         updatePickerInput(session = session, inputId = "infos_suppl_anat",selected =NULL,choices = NULL)
         updatePickerInput(session = session, inputId = "name_anat",choices = get(list_bone[1]))
-        updatePickerInput(session = session, inputId = "infos_suppl_anat",choices = NULL)
+
         updateNumericInput(session = session, inputId = "nb_remains",value =1)
         updateRadioGroupButtons(session = session, inputId = "infos_lat", selected = "IND")  
         updatePrettySwitch(session = session, inputId = "infos_completude",value = FALSE)
         updateCheckboxGroupButtons(session = session, inputId = "infos_completude_detailled",selected = c(""))  
-        updateRadioGroupButtons(session = session, inputId = "trace_dig",selected = "0")
-        updateRadioGroupButtons(session = session, inputId ="trace_root",selected = "IND")
+        updateRadioGroupButtons(session = session, inputId = "trace_dig",selected = "IND")
+        updateRadioGroupButtons(session = session, inputId ="trace_root",selected = "0")
         updateRadioGroupButtons(session = session, inputId ="trace_heat",selected = "no")
         updatePrettySwitch(session = session, inputId = "infos_tm",value = FALSE)
-        updateRadioGroupButtons(session = session, inputId ="trace_tooth_mark",selected = "oui")
+        updatePrettySwitch(session = session, inputId = "infos_enc",value = FALSE)
+        updateRadioGroupButtons(session = session, inputId ="trace_tooth_mark",selected = "")
+        updateRadioGroupButtons(session = session, inputId ="trace_encoche",selected = "")
         updateTextInput(session = session, inputId = "observation",value = "")
         updateTextInput(session = session, inputId = "txt_photo",value = "No photo")
         updatePrettySwitch(session = session, inputId = "infos_photo",value = FALSE)
-        updatePickerInput(session = session, inputId = "observation_suppl",choices = NULL)
-          # $ infos_suppl_anat          : NULL
-          # $ traces_patine             : NULL
-          # $ trace_encoche             : NULL
+        updatePickerInput(session = session, inputId = "observation_suppl",selected = "")
+        updateSelectizeInput(session = session, inputId = "color_patine",selected ="")
+
           updatePrettySwitch(session = session, inputId = "infos_obs",value = FALSE)
           to_save <- reactiveValuesToList(global.load)
           saveRDS(to_save, file =  paste0(Sys.Date(),".",global.load$site.archaeo,".BDD.uf",".rds"))
@@ -1306,10 +1389,13 @@ output$set.levels=renderUI({
       row  <- input$responses2_cell_edit$row
       clmn <- input$responses2_cell_edit$col
       data2[row, clmn] <- input$responses2_cell_edit$value
+      global.load$df<-data2
       # responses <<- data2
       to_save <- reactiveValuesToList(global.load)
       saveRDS(to_save, file =  paste0(Sys.Date(),".",global.load$site.archaeo,".BDD.uf",".rds"))
-      write.table(as.data.frame(fields_theor), file =  paste0(Sys.Date(),".",global.load$site.archaeo,".BDD.uf",".csv",sep=""), row.names = FALSE, sep=";",dec=".") 
+      # write.table(as.data.frame(fields_theor), file =  paste0(Sys.Date(),".",global.load$site.archaeo,".BDD.uf",".csv",sep=""), row.names = FALSE, sep=";",dec=".") 
+      test<-data.frame(apply(global.load$df,2,as.character))
+      write.table(test, file =  paste0(Sys.Date(),".",global.load$site.archaeo,".BDD.uf",".csv",sep=""), row.names = FALSE, sep=";",dec=".") 
       
     })
     observeEvent(input$deleteRows,{
@@ -1321,15 +1407,17 @@ output$set.levels=renderUI({
          # responses <<- data2
          to_save <- reactiveValuesToList(global.load)
          saveRDS(to_save, file =  paste0(Sys.Date(),".",global.load$site.archaeo,".BDD.uf",".rds"))
-         write.table(as.data.frame(fields_theor), file =  paste0(Sys.Date(),".",global.load$site.archaeo,".BDD.uf",".csv",sep=""), row.names = FALSE, sep=";",dec=".") 
-        
+         # write.table(as.data.frame(fields_theor), file =  paste0(Sys.Date(),".",global.load$site.archaeo,".BDD.uf",".csv",sep=""), row.names = FALSE, sep=";",dec=".") 
+         test<-data.frame(apply(global.load$df,2,as.character))
+         write.table(test, file =  paste0(Sys.Date(),".",global.load$site.archaeo,".BDD.uf",".csv",sep=""), row.names = FALSE, sep=";",dec=".") 
+         
       }
     })
     
 
          output$obs.note.torender <- renderText({ global.load$note.obs })
          
-         observeEvent(input$Record_the_observation,{
+observeEvent(input$Record_the_observation,{
      global.load$note.obs<-paste0(global.load$note.obs,"<p>",input$note.obs,"</p>")
            
          })
