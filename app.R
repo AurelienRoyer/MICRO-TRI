@@ -1041,7 +1041,7 @@ observeEvent(input$color_patine, {
       input_infos_suppl_anat(input$Id_mand)
       
     })
-    
+    ###saving ----
     observeEvent(input$submit, {
       
       showModal(
@@ -1419,7 +1419,8 @@ observeEvent(input$color_patine, {
          
 observeEvent(input$Record_the_observation,{
      global.load$note.obs<-paste0(global.load$note.obs,"<p>",input$note.obs,"</p>")
-           
+     to_save <- reactiveValuesToList(global.load)
+     saveRDS(to_save, file =  paste0(Sys.Date(),".",global.load$site.archaeo,".BDD.uf",".rds"))
          })
 #### Microfauna treatment ----
   
@@ -1483,7 +1484,7 @@ df.sub <- reactive({
                df.sub<-as.data.frame(apply(df.sub,2, function(x) as.character(x)))}
                assign("temppp",df.sub,envir = .GlobalEnv)
                
-             validate(need(length(df.sub)!=0, "There are no matches in the dataset. Try removing or relaxing one or more filters."))
+             validate(need(nrow(df.sub)!=0, "There are no matches in the dataset. Try removing or relaxing one or more filters."))
              df.sub
              
              # assign("temppp",df.sub,envir = .GlobalEnv)
@@ -1534,7 +1535,9 @@ df.sub <- reactive({
          })
          output$sum.remain2=renderUI({
            req(!is.null(fileisupload()))
+           print(nrow(df.sub()))
            aa<-df.sub()
+           
            tagList(HTML(paste("Number of remains selected: ",sum(aa[["nb_remains"]]))))
          })  
          
