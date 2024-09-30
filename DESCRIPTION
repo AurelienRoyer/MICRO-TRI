@@ -1,0 +1,26 @@
+Package: microTRI
+Type: Package
+Title: R shiny tools to acquire data from small vertebrate remains
+Version: 1.0.0
+Date: 2024-26-09
+Authors@R: c(person("Aurelien", "Royer", email = "aurelien.royer@u-bourgogne.fr", role = "aut", comment = c(ORCID = "0000-0002-0139-8765"))
+             )
+Author: Aurelien Royer [aut] (<https://orcid.org/0000-0002-0139-8765>)
+Maintainer: Aurelien Royer <aa@aa.com>
+Description: An R 'Shiny' application dedicated to acquire small vertebrate data remains.
+License: GPL-3
+Repository: CRAN
+Encoding: UTF-8
+LazyData: true
+Depends: R (>= 3.5.0)
+Imports:
+	shiny,
+	shinydashboard,
+	shinyjs,
+	shinyWidgets
+Suggests: 
+    knitr
+VignetteBuilder: knitr
+URL: https://github.com/AurelienRoyer/SEAHORS
+BugReports: https://github.com/AurelienRoyer/SEAHORS/issues
+RoxygenNote: 7.2.3
