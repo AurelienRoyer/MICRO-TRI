@@ -37,7 +37,7 @@ visualize premiliminary data as Bioclim estimation, rarefaction curves, taphonom
 
 ``` r
 # install.packages("devtools")
-devtools::install_github("AurelienRoyer/microTRI")
+devtools::install_github("AurelienRoyer/MICRO-TRI")
 ```
 
 Load the package and launch the `microTRI` application:
