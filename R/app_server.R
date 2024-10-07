@@ -1415,6 +1415,9 @@ df.sub <- reactive({
                     axis.var.name<-"ratio AN/PO%"
                   }
            )
+         ## test de somme.ratio si =0
+            somme.ratio<-somme.ratio[-(which(rowSums(somme.ratio)==0)),]
+          ##
            
            f_vec <-Vectorize(WilsonBinCI, vectorize.args = c("n","p"), SIMPLIFY = FALSE)
            
