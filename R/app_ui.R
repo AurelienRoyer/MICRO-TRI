@@ -424,15 +424,88 @@ body <- dashboardBody(
                            column(11, downloadButton("downloadData_pivotdata", "Download")),
                          ) #end fluidrow
                 ), #end tabpanel
-                tabPanel(tags$h5("Ratio data"),
-                         uiOutput("Ratio.data.list"),
+                tabPanel(tags$h5("Tapho Ratio"),
                          tags$br(),
-                         uiOutput("name.of.dig.element"),
-                         uiOutput("dig.col"),
+                         column(9,uiOutput("Ratio.data.list"),),
+                         column(3,
+                                shinyWidgets::actionBttn(
+                                  inputId = "chr_setting",
+                                  label = "Graphical options",
+                                  style = "unite",
+                                  color = "danger",
+                                  size = "xs",
+                                  icon = icon("fas fa-cogs",lib = "font-awesome")
+                                ),
+                                tags$style("#bsmodal_param .modal-dialog{ width:1200px} 
+                                                                .modal-backdrop {
+                                                                                    display: none;
+                                                                                    z-index: 1040 !important;
+                                                                                }
+                                                                                
+                                                                                .modal-content {
+                                                                                    margin: 2px auto;
+                                                                                    z-index: 1100 !important;
+                                                                                }
+                                                                                
+                                                                                "),
+                                
+                                bsModal(
+                                  id = "bsmodal_param",
+                                  title = tags$h4(style = "color: red;","Graphical options"),
+                                  trigger = "chr_setting",size = "large",
+                                  
+                                  checkboxInput("optioninfosfigplotly", "Show figure legend", TRUE),
+                                  numericInput("fontsizetick", "tick font size",12, min = 1, max=40),
+                                  numericInput("fontsizeaxis", "Axis font size",12, min = 1, max=40),
+                                  uiOutput("themeforfigure")
+                                ),),
+                         column(12,
                          tags$br(),
-                         tags$br(),
-                         uiOutput("Ratio.data.graph"),
+                           tags$br(),
+                         uiOutput("Ratio.data.graph"),)
                 ),#end tabpanel 
+                
+                tabPanel(tags$h5("Digestion Ratio"),
+                         tags$br(),
+                         column(9,uiOutput("Ratio.dig.list"),),
+                         column(3,
+                                shinyWidgets::actionBttn(
+                                  inputId = "chr_setting_dig",
+                                  label = "Graphical options",
+                                  style = "unite",
+                                  color = "danger",
+                                  size = "xs",
+                                  icon = icon("fas fa-cogs",lib = "font-awesome")
+                                ),
+                                tags$style("#bsmodal_param2 .modal-dialog{ width:1200px} 
+                                                                .modal-backdrop {
+                                                                                    display: none;
+                                                                                    z-index: 1040 !important;
+                                                                                }
+                                                                                
+                                                                                .modal-content {
+                                                                                    margin: 2px auto;
+                                                                                    z-index: 1100 !important;
+                                                                                }
+                                                                                
+                                                                                "),
+                                
+                                bsModal(
+                                  id = "bsmodal_param2",
+                                  title = tags$h4(style = "color: red;","Graphical options"),
+                                  trigger = "chr_setting_dig",size = "large",
+                                  
+                                  # checkboxInput("optioninfosfigplotly", "Show figure legend", TRUE),
+                                  # numericInput("fontsizetick", "tick font size",12, min = 1, max=40),
+                                  # numericInput("fontsizeaxis", "Axis font size",12, min = 1, max=40),
+                                  uiOutput("themeforfigure")
+                                ),),
+                         column(12,
+                           
+                                tags$br(),
+                                uiOutput("Ratio.data.dig.graph"),)
+                ),#end tabpanel 
+                
                 tabPanel(tags$h5("rarity curves"),
                          tags$br(),
                          materialSwitch(

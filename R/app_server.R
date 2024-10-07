@@ -26,6 +26,11 @@ app_server <- function(input, output, session) {
     legendplotlyfig<-reactiveVal("right") ##for legends.
     list_info_suppl<-reactiveVal(c("No infos","T6","T9","supplementary triangle","Rhombe pitymien"))
     patine.list<-reactiveVal(c("","doubtful","pollution-white","pollution-recent"))
+    themeforfigure.choice<-reactiveVal(c("theme_minimal"))
+    font_size<-reactiveVal(12)
+    font_tick<-reactiveVal(12)
+    legendplotlyfig<-reactiveVal(TRUE) ##for legends.
+    
     
 ## NEW BDD ----
 output$liste.faun4=renderUI({
@@ -1166,6 +1171,33 @@ df.sub <- reactive({
          })
          
          ######  Ratio graphs ---- 
+         #option for ratio
+         output$themeforfigure=renderUI({
+           req(!is.null(fileisupload()))
+           themes <- c("theme_bw", "theme_classic", "theme_dark", "theme_grey", "theme_light", "theme_linedraw", "theme_minimal")
+           selectInput("themeforfigure.list", h4("Theme for 'Simple 2Dplot'"),
+                       choices = themes,
+                       selected = "theme_minimal")
+         })
+         
+         observeEvent(input$themeforfigure.list,{
+           themeforfigure.choice(c(input$themeforfigure.list))
+           
+         })
+         
+         observeEvent(input$fontsizeaxis, {
+           font_size(input$fontsizeaxis)
+         }) 
+         observeEvent(input$fontsizetick, {
+           font_tick(input$fontsizetick)
+         }) 
+         
+         observeEvent(input$optioninfosfigplotly, {
+           legendplotlyfig(input$optioninfosfigplotly)
+         })
+         #
+         
+         
          output$Ratio.data.graph <- renderUI({
            plotOutput("Ratiodatagraph"
                       # , height = height.size(), width = width.size()
@@ -1179,166 +1211,155 @@ df.sub <- reactive({
          
          Ratiodatagraph.plot<-reactive({
            df.sub<-df.sub()
-           # setlevels<-input$setlevels
-           # setanat<-input$setanat
-           # setnb<-input$setnb
+            setlevels<-input$setlevels
+            setanat<-input$setanat
+            setnb<-input$setnb
            digcol<-input$digcol
-           nameofdigelement<-input$nameofdigelement
+           # nameofdigelement<-input$nameofdigelement
+           df.sub$nb_remains<-as.numeric(df.sub$nb_remains)
            data.df.calcul<-df.sub %>% group_by(.data[["name_level"]],.data[["name_anat"]])%>%
              summarize(nb_total = sum(!!sym("nb_remains")))
            myFormula <- as.formula(paste0("name_level", " ~ ","name_anat"))
-           data.df.calcul.2<-reshape2::dcast(data.df.calcul, myFormula , fill = 0L)
+           data.df.calcul.verif<-reshape2::dcast(data.df.calcul, myFormula , fill = 0L)
+           nom.col<-colnames(data.df.calcul.verif)
+           
+           list.element<-c(list_bone_1)
+           new.element <-setdiff(list.element,nom.col)
+           new.element.tab<-matrix(data=0,ncol
+                                   =length(new.element))
+           colnames(new.element.tab)<-new.element
+           data.df.calcul.2<- cbind(data.df.calcul.verif,new.element.tab)
+           
+           fem<-dplyr::select(data.df.calcul.2,starts_with("Fem"))
+           hum<-dplyr::select(data.df.calcul.2,starts_with("Hum"))
+           rad<-dplyr::select(data.df.calcul.2,starts_with("Rad"))
+           uln<-dplyr::select(data.df.calcul.2,starts_with("Ulna"))
+           tib<-dplyr::select(data.df.calcul.2,starts_with("Tib"))
+           mand<-dplyr::select(data.df.calcul.2,starts_with("Mand"))
+           max<-dplyr::select(data.df.calcul.2,starts_with("Max"))
+           mol<-dplyr::select(data.df.calcul.2,starts_with("Mol"))+dplyr::select(data.df.calcul.2,starts_with("m1inf"))
+           inc<-dplyr::select(data.df.calcul.2,starts_with("Iinf"))+dplyr::select(data.df.calcul.2,starts_with("Isup"))
+           mtpod<-dplyr::select(data.df.calcul.2,starts_with("Mtpod"))
+           
+           sca<-dplyr::select(data.df.calcul.2,starts_with("Scap"))
+           tar<-dplyr::select(data.df.calcul.2,starts_with("Tars"))
+           car<-dplyr::select(data.df.calcul.2,starts_with("Carp"))
+           pha<-dplyr::select(data.df.calcul.2,starts_with("Pha"))
+           pat<-dplyr::select(data.df.calcul.2,starts_with("Pat"))
+           bas<-dplyr::select(data.df.calcul.2,starts_with("Innominate"))
+           vert<-dplyr::select(data.df.calcul.2,starts_with("Vert"))
+           rib<-dplyr::select(data.df.calcul.2,starts_with("Rib"))
            
            switch(input$select.ratio,
                   "1"={
+
+                    valide.sup.base<-length(dplyr::select(data.df.calcul.verif,starts_with("Fem")))+
+                      length(dplyr::select(data.df.calcul.verif,starts_with("Hum")))
+                    valide.sup.0<-length(dplyr::select(data.df.calcul.verif,starts_with("Mand")))+length(dplyr::select(data.df.calcul.verif,starts_with("Fem")))+
+                      length(dplyr::select(data.df.calcul.verif,starts_with("Hum")))
                     
-                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("Mand"))) > 0 ,"No 'mand' or 'mandible' elements found in the database"))
-                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("Fem"))) > 0 ,"No 'fem'or 'femur' elements found in the database"))
-                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("Hum"))) > 0 ,"No 'hum'or 'humerus' elements found in the database"))
-                    
+                    validate(need(valide.sup.base > 0 ,"No 'Hum' or 'Fem'  elements found in the database"))
+                    validate(need(valide.sup.0 > 0 ,"No 'mand', 'Hum' and 'Fem'  elements found in the database"))
+          
                     axis.var.name<-"CRA/POSTCRA%"
-                    ratio<-dplyr::select(data.df.calcul.2,starts_with("Mand"))/(dplyr::select(data.df.calcul.2,starts_with("Mand"))+dplyr::select(data.df.calcul.2,starts_with("Fem"))+dplyr::select(data.df.calcul.2,starts_with("Hum")))
-                    #ratio<-data.df.calcul.2$mand/(data.df.calcul.2$mand+data.df.calcul.2$fem+data.df.calcul.2$hum)
-                    #somme.ratio<-data.df.calcul.2$mand+data.df.calcul.2$fem+data.df.calcul.2$hum
-                    somme.ratio<-dplyr::select(data.df.calcul.2,starts_with("Mand"))+dplyr::select(data.df.calcul.2,starts_with("Fem"))+dplyr::select(data.df.calcul.2,starts_with("Hum"))
+                    # ratio<-dplyr::select(data.df.calcul.2,starts_with("Mand"))/(dplyr::select(data.df.calcul.2,starts_with("Mand"))+dplyr::select(data.df.calcul.2,starts_with("Fem"))+dplyr::select(data.df.calcul.2,starts_with("Hum")))
+                    ratio<-mand/(mand+fem+hum)
+                    # somme.ratio<-dplyr::select(data.df.calcul.2,starts_with("Mand"))+dplyr::select(data.df.calcul.2,starts_with("Fem"))+dplyr::select(data.df.calcul.2,starts_with("Hum"))
+                    somme.ratio<-mand+fem+hum
                     axis.var.name<-"ratio CRA/POSTCRA %"
                   },
                   "2"={
-                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("Fem"))) > 0 ,"No 'fem' or 'femur' elements found in the database"))
-                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("Hum"))) > 0 ,"No 'hum' or 'humerus' elements found in the database"))
+                    valide.sup.base<-length(dplyr::select(data.df.calcul.verif,starts_with("Fem")))+
+                      length(dplyr::select(data.df.calcul.verif,starts_with("Hum")))
+                    valide.sup.0<-length(dplyr::select(data.df.calcul.verif,starts_with("Hum")))
+                    
+                    validate(need(valide.sup.base > 0 ,"No 'Hum'and 'Fem' elements found in the database"))
+                    validate(need(valide.sup.0 > 0 ,"No 'Hum' elements found in the database"))
                     
                     axis.var.name<-"AN/PO%"
-                    ratio<-dplyr::select(data.df.calcul.2,starts_with("Hum"))/(dplyr::select(data.df.calcul.2,starts_with("Fem"))+dplyr::select(data.df.calcul.2,starts_with("Hum")))
-                    somme.ratio<-dplyr::select(data.df.calcul.2,starts_with("Fem"))+dplyr::select(data.df.calcul.2,starts_with("Hum"))
+                    # ratio<-dplyr::select(data.df.calcul.2,starts_with("Hum"))/(dplyr::select(data.df.calcul.2,starts_with("Fem"))+dplyr::select(data.df.calcul.2,starts_with("Hum")))
+                    # somme.ratio<-dplyr::select(data.df.calcul.2,starts_with("Fem"))+dplyr::select(data.df.calcul.2,starts_with("Hum"))
+                    ratio<-hum/(fem+hum)
+                     somme.ratio<-fem+hum
                     axis.var.name<-"ratio AN/PO %"
                   },
-                  "3"={
-                    data.df.calcul.gh<-df.sub %>% group_by(.data[[setlevels]],.data[[setanat]],.data[[digcol]])%>%
-                      summarize(nb_total = sum(!!sym(setnb)))
-                    data.df.calcul.gh.2 <- data.df.calcul.gh %>% filter(.data[[setanat]] == nameofdigelement)
-                    somme.ratio<-data.df.calcul.gh.2 %>% group_by(.data[[setlevels]])%>%
-                      summarize(nb_total = sum(!!sym("nb_total")))
-                    myFormula <- as.formula(paste0(setlevels, " ~ ",digcol))
-                    data.df.calcul.2<-reshape2::dcast(data.df.calcul.gh.2, myFormula , fill = 0L)
-                    print(data.df.calcul.2)
-                    
-                    ## ici faire calcul dig vs pas dig. 
-                    ## + rajouter dans les choix digelement: fem,hum etc
-                    # et dans digcol: des noms de colonne commencant par dig
-                    ratio<-data.df.calcul.2$hum/(data.df.calcul.2$hum+data.df.calcul.2$fem) # A changer
-                    somme.ratio<-data.df.calcul.2$hu
-                    
-                    
-                    axis.var.name<- paste0("Proportion of digested ", nameofdigelement)
-                  },
+                  "3"={},
                   "4"={
-                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("Fem"))) > 0 ,"No 'fem' or 'femur' elements found in the database"))
-                    fem<-dplyr::select(data.df.calcul.2,starts_with("Fem"))
-                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("Hum"))) > 0 ,"No 'hum' or 'humerus' elements found in the database"))
-                    hum<-dplyr::select(data.df.calcul.2,starts_with("Hum"))
-                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("Rad"))) > 0 ,"No 'rad' or 'radius' elements found in the database"))
-                    rad<-dplyr::select(data.df.calcul.2,starts_with("Rad"))
-                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("Ulna"))) > 0 ,"No 'uln' or 'ulna' elements found in the database"))
-                    uln<-dplyr::select(data.df.calcul.2,starts_with("Ulna"))
-                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("Tib"))) > 0 ,"No 'tib' or 'tibia' elements found in the database"))
-                    tib<-dplyr::select(data.df.calcul.2,starts_with("Tib"))
                     
-                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("Mand"))) > 0 ,"No 'mand' or 'mandible' elements found in the database"))
-                    mand<-dplyr::select(data.df.calcul.2,starts_with("mand"))
-                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("Max"))) > 0 ,"No 'max' or 'maxillae' elements found in the database"))
-                    max<-dplyr::select(data.df.calcul.2,starts_with("max"))
-                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("Mol"))) > 0 ,"No 'mol' or 'molars' elements found in the database"))
-                    mol<-dplyr::select(data.df.calcul.2,starts_with("mol"))
-                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("i"))) > 0 ,"No 'i' or 'incisor' elements found in the database"))
-                    inc<-dplyr::select(data.df.calcul.2,starts_with("mol"))
-                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("Mtc"))) > 0 ,"No 'mtc' or 'mtc' elements found in the database"))
-                    mtc<-dplyr::select(data.df.calcul.2,starts_with("mtc"))
-                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("Mtt"))) > 0 ,"No 'mtt' or 'mtt' elements found in the database"))
-                    mtt<-dplyr::select(data.df.calcul.2,starts_with("mtt"))
-                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("Sca"))) > 0 ,"No 'sca' or 'scapulae' elements found in the database"))
-                    sca<-dplyr::select(data.df.calcul.2,starts_with("sca"))
-                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("Tar"))) > 0 ,"No 'tar' or 'tarsals' elements found in the database"))
-                    tar<-dplyr::select(data.df.calcul.2,starts_with("tar"))
-                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("Car"))) > 0 ,"No 'car' or 'carpals' elements found in the database"))
-                    car<-dplyr::select(data.df.calcul.2,starts_with("car"))
-                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("Pha"))) > 0 ,"No 'pha' or 'phalanges' elements found in the database"))
-                    pha<-dplyr::select(data.df.calcul.2,starts_with("pha"))
-                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("Pat"))) > 0 ,"No 'pat' or 'patellae' elements found in the database"))
-                    pat<-dplyr::select(data.df.calcul.2,starts_with("pat"))
+                    valide.sup.base<-length(dplyr::select(data.df.calcul.verif,starts_with("Fem")))+
+                      length(dplyr::select(data.df.calcul.verif,starts_with("Hum")))+
+                      length(dplyr::select(data.df.calcul.verif,starts_with("Rad")))+
+                      length(dplyr::select(data.df.calcul.verif,starts_with("Ulna")))+
+                      length(dplyr::select(data.df.calcul.verif,starts_with("Tib")))+
+                      length(dplyr::select(data.df.calcul.verif,starts_with("Scap")))+
+                      length(dplyr::select(data.df.calcul.verif,starts_with("Mtpod")))+
+                      length(dplyr::select(data.df.calcul.verif,starts_with("Pat")))+
+                      length(dplyr::select(data.df.calcul.verif,starts_with("Carp")))+
+                      length(dplyr::select(data.df.calcul.verif,starts_with("Tars")))+
+                      length(dplyr::select(data.df.calcul.verif,starts_with("Pha")))+
+                      length(dplyr::select(data.df.calcul.verif,starts_with("Innominate")))+
+                      length(dplyr::select(data.df.calcul.verif,starts_with("Vert")))+
+                      length(dplyr::select(data.df.calcul.verif,starts_with("Rib")))
+                    valide.sup.0<-valide.sup.base+
+                      length(dplyr::select(data.df.calcul.verif,starts_with("Mol")))+
+                      length(dplyr::select(data.df.calcul.verif,starts_with("m1inf")))+
+                      length(dplyr::select(data.df.calcul.verif,starts_with("Mand")))+
+                    length(dplyr::select(data.df.calcul.verif,starts_with("Max")))+
+                      length(dplyr::select(data.df.calcul.verif,starts_with("Iinf")))+
+                      length(dplyr::select(data.df.calcul.verif,starts_with("Isup")))
                     
-                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("Bassin"))) > 0 ,"No 'bas' or 'bassin' elements found in the database"))
-                    bas<-dplyr::select(data.df.calcul.2,starts_with("bas"))
-                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("Vert"))) > 0 ,"No 'vert' or 'vertebrae' elements found in the database"))
-                    vert<-dplyr::select(data.df.calcul.2,starts_with("vert"))
-                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("Rib"))) > 0 ,"No 'rib' or 'ribs' elements found in the database"))
-                    rib<-dplyr::select(data.df.calcul.2,starts_with("rib"))
+                    validate(need(valide.sup.base > 0 ,"No bone elements found in the database"))
+                    validate(need(valide.sup.0 > 0 ,"No bone  elements found in the database"))
                     
-                    ratio<-((rad+tib+fem+hum+uln+sca+pat+mtc+mtt+car+tar+pha+bas+vert+rib)*32)/(((rad+tib+fem+hum+uln+sca+pat+mtc+mtt+car+tar+pha+bas+vert+rib)*32)+((mand+max+mol+inc)*184))
-                    somme.ratio<-rad+tib+fem+hum+uln+mand+max+mol+inc+sca+pat+mtc+mtt+car+tar+pha+bas+vert+rib
+                    ratio<-((rad+tib+fem+hum+uln+sca+pat+mtpod+car+tar+pha+bas+vert+rib)*32)/(((rad+tib+fem+hum+uln+sca+pat+mtpod+car+tar+pha+bas+vert+rib)*32)+((mand+max+mol+inc)*184))
+                    somme.ratio<-rad+tib+fem+hum+uln+mand+max+mol+inc+sca+pat+mtpod+car+tar+pha+bas+vert+rib
                     axis.var.name<-"ratio PCRT/CR%"
+                    
                   },
                   "5"={
-                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("fem"))) > 0 ,"No 'fem' or 'femur' elements found in the database"))
-                    fem<-dplyr::select(data.df.calcul.2,starts_with("fem"))
-                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("hum"))) > 0 ,"No 'hum' or 'humerus' elements found in the database"))
-                    hum<-dplyr::select(data.df.calcul.2,starts_with("hum"))
-                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("rad"))) > 0 ,"No 'rad' or 'radius' elements found in the database"))
-                    rad<-dplyr::select(data.df.calcul.2,starts_with("rad"))
-                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("uln"))) > 0 ,"No 'uln' or 'ulna' elements found in the database"))
-                    uln<-dplyr::select(data.df.calcul.2,starts_with("uln"))
-                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("tib"))) > 0 ,"No 'tib' or 'tibia' elements found in the database"))
-                    tib<-dplyr::select(data.df.calcul.2,starts_with("tib"))
+                    valide.sup.base<-length(dplyr::select(data.df.calcul.verif,starts_with("Fem")))+
+                      length(dplyr::select(data.df.calcul.verif,starts_with("Hum")))+
+                      length(dplyr::select(data.df.calcul.verif,starts_with("Rad")))+
+                      length(dplyr::select(data.df.calcul.verif,starts_with("Ulna")))+
+                      length(dplyr::select(data.df.calcul.verif,starts_with("Tib")))+
+                      length(dplyr::select(data.df.calcul.verif,starts_with("Scap")))+
+                      length(dplyr::select(data.df.calcul.verif,starts_with("Mtpod")))+
+                      length(dplyr::select(data.df.calcul.verif,starts_with("Pat")))+
+                      length(dplyr::select(data.df.calcul.verif,starts_with("Carp")))+
+                      length(dplyr::select(data.df.calcul.verif,starts_with("Tars")))+
+                      length(dplyr::select(data.df.calcul.verif,starts_with("Pha")))+
+                      length(dplyr::select(data.df.calcul.verif,starts_with("Innominate")))
+                    valide.sup.0<-valide.sup.base+
+                      length(dplyr::select(data.df.calcul.verif,starts_with("Mol")))+
+                      length(dplyr::select(data.df.calcul.verif,starts_with("m1inf")))+
+                      length(dplyr::select(data.df.calcul.verif,starts_with("Mand")))+
+                      length(dplyr::select(data.df.calcul.verif,starts_with("Max")))+
+                      length(dplyr::select(data.df.calcul.verif,starts_with("Iinf")))+
+                      length(dplyr::select(data.df.calcul.verif,starts_with("Isup")))
                     
-                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("mand"))) > 0 ,"No 'mand' or 'mandible' elements found in the database"))
-                    mand<-dplyr::select(data.df.calcul.2,starts_with("mand"))
-                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("max"))) > 0 ,"No 'max' or 'maxillae' elements found in the database"))
-                    max<-dplyr::select(data.df.calcul.2,starts_with("max"))
-                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("mol"))) > 0 ,"No 'mol' or 'molars' elements found in the database"))
-                    mol<-dplyr::select(data.df.calcul.2,starts_with("mol"))
-                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("i"))) > 0 ,"No 'i' or 'incisor' elements found in the database"))
-                    inc<-dplyr::select(data.df.calcul.2,starts_with("mol"))
-                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("mtc"))) > 0 ,"No 'mtc' or 'mtc' elements found in the database"))
-                    mtc<-dplyr::select(data.df.calcul.2,starts_with("mtc"))
-                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("mtt"))) > 0 ,"No 'mtt' or 'mtt' elements found in the database"))
-                    mtt<-dplyr::select(data.df.calcul.2,starts_with("mtt"))
-                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("sca"))) > 0 ,"No 'sca' or 'scapulae' elements found in the database"))
-                    sca<-dplyr::select(data.df.calcul.2,starts_with("sca"))
-                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("tar"))) > 0 ,"No 'tar' or 'tarsals' elements found in the database"))
-                    tar<-dplyr::select(data.df.calcul.2,starts_with("tar"))
-                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("car"))) > 0 ,"No 'car' or 'carpals' elements found in the database"))
-                    car<-dplyr::select(data.df.calcul.2,starts_with("car"))
-                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("pha"))) > 0 ,"No 'pha' or 'phalanges' elements found in the database"))
-                    pha<-dplyr::select(data.df.calcul.2,starts_with("pha"))
-                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("pat"))) > 0 ,"No 'pat' or 'patellae' elements found in the database"))
-                    pat<-dplyr::select(data.df.calcul.2,starts_with("pat"))
+                    validate(need(valide.sup.base > 0 ,"No bone elements found in the database"))
+                    validate(need(valide.sup.0 > 0 ,"No bone elements found in the database"))
                     
-                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("bas"))) > 0 ,"No 'bas' or 'bassin' elements found in the database"))
-                    bas<-dplyr::select(data.df.calcul.2,starts_with("bas"))
-                    
-                    ratio<-((rad+tib+fem+hum+uln+sca+pat+mtc+mtt+car+tar+pha+bas)*32)/(((rad+tib+fem+hum+uln+sca+pat+mtc+mtt+car+tar+pha+bas)*32)+((mand+max+mol+inc)*114))
-                    somme.ratio<-rad+tib+fem+hum+uln+mand+max+mol+inc+sca+pat+mtc+mtt+car+tar+pha+bas
+                    ratio<-((rad+tib+fem+hum+uln+sca+pat+mtpod+car+tar+pha+bas)*32)/(((rad+tib+fem+hum+uln+sca+pat+mtpod+car+tar+pha+bas)*32)+((mand+max+mol+inc)*114))
+                    somme.ratio<-rad+tib+fem+hum+uln+mand+max+mol+inc+sca+pat+mtpod+car+tar+pha+bas
                     axis.var.name<-"ratio PCRAP/CR%"
                   },
                   "6"={
-                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("fem"))) > 0 ,"No 'fem' or 'femur' elements found in the database"))
-                    fem<-dplyr::select(data.df.calcul.2,starts_with("fem"))
-                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("hum"))) > 0 ,"No 'hum' or 'humerus' elements found in the database"))
-                    hum<-dplyr::select(data.df.calcul.2,starts_with("hum"))
-                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("rad"))) > 0 ,"No 'rad' or 'radius' elements found in the database"))
-                    rad<-dplyr::select(data.df.calcul.2,starts_with("rad"))
-                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("uln"))) > 0 ,"No 'uln' or 'ulna' elements found in the database"))
-                    uln<-dplyr::select(data.df.calcul.2,starts_with("uln"))
-                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("tib"))) > 0 ,"No 'tib' or 'tibia' elements found in the database"))
-                    tib<-dplyr::select(data.df.calcul.2,starts_with("tib"))
+                    valide.sup.base<-length(dplyr::select(data.df.calcul.verif,starts_with("Fem")))+
+                      length(dplyr::select(data.df.calcul.verif,starts_with("Hum")))+
+                      length(dplyr::select(data.df.calcul.verif,starts_with("Rad")))+
+                      length(dplyr::select(data.df.calcul.verif,starts_with("Ulna")))+
+                      length(dplyr::select(data.df.calcul.verif,starts_with("Tib")))
+                    valide.sup.0<-valide.sup.base+
+                      length(dplyr::select(data.df.calcul.verif,starts_with("Mol")))+
+                      length(dplyr::select(data.df.calcul.verif,starts_with("m1inf")))+
+                      length(dplyr::select(data.df.calcul.verif,starts_with("Mand")))+
+                      length(dplyr::select(data.df.calcul.verif,starts_with("Max")))+
+                      length(dplyr::select(data.df.calcul.verif,starts_with("Iinf")))+
+                      length(dplyr::select(data.df.calcul.verif,starts_with("Isup")))
                     
-                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("mand"))) > 0 ,"No 'mand' or 'mandible' elements found in the database"))
-                    mand<-dplyr::select(data.df.calcul.2,starts_with("mand"))
-                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("max"))) > 0 ,"No 'max' or 'maxillae' elements found in the database"))
-                    max<-dplyr::select(data.df.calcul.2,starts_with("max"))
-                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("mol"))) > 0 ,"No 'mol' or 'molars' elements found in the database"))
-                    mol<-dplyr::select(data.df.calcul.2,starts_with("mol"))
-                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("i"))) > 0 ,"No 'i' or 'incisor' elements found in the database"))
-                    inc<-dplyr::select(data.df.calcul.2,starts_with("mol"))
+                    validate(need(valide.sup.base > 0 ,"No bone elements found in the database"))
+                    validate(need(valide.sup.0 > 0 ,"No bone elements found in the database"))
                     
                     
                     ratio<-((rad+tib+fem+hum+uln)*32)/(((rad+tib+fem+hum+uln)*32)+((mand+max+mol+inc)*10))
@@ -1347,103 +1368,93 @@ df.sub <- reactive({
                     axis.var.name<-"ratio PCRLB/CR%"
                   },
                   "7"={
-                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("fem"))) > 0 ,"No 'fem' or 'femur' elements found in the database"))
-                    fem<-dplyr::select(data.df.calcul.2,starts_with("fem"))
-                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("hum"))) > 0 ,"No 'hum' or 'humerus' elements found in the database"))
-                    hum<-dplyr::select(data.df.calcul.2,starts_with("hum"))
-                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("rad"))) > 0 ,"No 'rad' or 'radius' elements found in the database"))
-                    rad<-dplyr::select(data.df.calcul.2,starts_with("rad"))
-                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("uln"))) > 0 ,"No 'uln' or 'ulna' elements found in the database"))
-                    uln<-dplyr::select(data.df.calcul.2,starts_with("uln"))
-                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("tib"))) > 0 ,"No 'tib' or 'tibia' elements found in the database"))
-                    tib<-dplyr::select(data.df.calcul.2,starts_with("tib"))
-                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("mtc"))) > 0 ,"No 'mtc' or 'mtc' elements found in the database"))
-                    mtc<-dplyr::select(data.df.calcul.2,starts_with("mtc"))
-                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("mtt"))) > 0 ,"No 'mtt' or 'mtt' elements found in the database"))
-                    mtt<-dplyr::select(data.df.calcul.2,starts_with("mtt"))
+                    valide.sup.base<-
+                      length(dplyr::select(data.df.calcul.verif,starts_with("Scap")))+
+                      length(dplyr::select(data.df.calcul.verif,starts_with("Mtpod")))+
+                      length(dplyr::select(data.df.calcul.verif,starts_with("Carp")))+
+                      length(dplyr::select(data.df.calcul.verif,starts_with("Tars")))+
+                      length(dplyr::select(data.df.calcul.verif,starts_with("Pha")))+
+                      length(dplyr::select(data.df.calcul.verif,starts_with("Innominate")))
+                    valide.sup.0<-valide.sup.base+length(dplyr::select(data.df.calcul.verif,starts_with("Fem")))+
+                      length(dplyr::select(data.df.calcul.verif,starts_with("Hum")))+
+                      length(dplyr::select(data.df.calcul.verif,starts_with("Rad")))+
+                      length(dplyr::select(data.df.calcul.verif,starts_with("Ulna")))+
+                      length(dplyr::select(data.df.calcul.verif,starts_with("Tib")))+
+                      length(dplyr::select(data.df.calcul.verif,starts_with("Pat")))
+                      
                     
-                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("tar"))) > 0 ,"No 'tar' or 'tarsals' elements found in the database"))
-                    tar<-dplyr::select(data.df.calcul.2,starts_with("tar"))
-                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("car"))) > 0 ,"No 'car' or 'carpals' elements found in the database"))
-                    car<-dplyr::select(data.df.calcul.2,starts_with("car"))
-                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("pha"))) > 0 ,"No 'pha' or 'phalanges' elements found in the database"))
-                    pha<-dplyr::select(data.df.calcul.2,starts_with("pha"))
-                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("pat"))) > 0 ,"No 'pat' or 'patellae' elements found in the database"))
-                    pat<-dplyr::select(data.df.calcul.2,starts_with("pat"))
-                    
-                    ratio<-(mtc+mtp+tar+pha+car)*12/(((mtc+mtt+tar+pha+car)*12)+(tib+rad+uln+hum+fem+pat)*18)
-                    somme.ratio<-mtc+mtp+tar+pha+car+tib+rad+uln+fem+pat
+                    validate(need(valide.sup.base > 0 ,"No bone elements found in the database"))
+                    validate(need(valide.sup.0 > 0 ,"No bone elements found in the database"))
+                    ratio<-((mtpod/2)+tar+pha+car)*12/((((mtpod/2)+tar+pha+car)*12)+(tib+rad+uln+hum+fem+pat)*18)
+                    somme.ratio<-mtpod+tar+pha+car+tib+rad+uln+fem+pat
                     axis.var.name<-"ratio AUT/ZE%"
                   },
                   "8"={
-                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("Rad"))) > 0 ,"No 'rad' or 'radius' elements found in the database"))
-                    rad<-dplyr::select(data.df.calcul.2,starts_with("Rad"))
-                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("Ulna"))) > 0 ,"No 'uln' or 'ulna' elements found in the database"))
-                    uln<-dplyr::select(data.df.calcul.2,starts_with("Ulna"))
-                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("Tib"))) > 0 ,"No 'tib' or 'tibia' elements found in the database"))
-                    tib<-dplyr::select(data.df.calcul.2,starts_with("Tib"))
-                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("Fem"))) > 0 ,"No 'fem' or 'femur' elements found in the database"))
-                    fem<-dplyr::select(data.df.calcul.2,starts_with("Fem"))
-                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("Hum"))) > 0 ,"No 'hum' or 'humerus' elements found in the database"))
-                    hum<-dplyr::select(data.df.calcul.2,starts_with("Hum"))
+                    valide.sup.base<-
+                      length(dplyr::select(data.df.calcul.verif,starts_with("Rad")))+
+                      length(dplyr::select(data.df.calcul.verif,starts_with("Ulna")))+
+                      length(dplyr::select(data.df.calcul.verif,starts_with("Tib")))
+                    valide.sup.0<-valide.sup.base+length(dplyr::select(data.df.calcul.verif,starts_with("Fem")))+
+                      length(dplyr::select(data.df.calcul.verif,starts_with("Hum")))
+                     
+                    
+                    
+                    validate(need(valide.sup.base > 0 ,"No bone elements found in the database"))
+                    validate(need(valide.sup.0 > 0 ,"No bone elements found in the database"))
                     
                     ratio<-((rad+tib+uln)*4)/((tib+rad+uln)*4+((hum+fem)*6))
                     somme.ratio<-rad+tib+uln+hum+fem
                     axis.var.name<-"ratio Z/E%"
                   },
                   "9"={
-                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("fem"))) > 0 ,"No 'fem' or 'femur' elements found in the database"))
-                    fem<-dplyr::select(data.df.calcul.2,starts_with("fem"))
-                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("hum"))) > 0 ,"No 'hum' or 'humerus' elements found in the database"))
-                    hum<-dplyr::select(data.df.calcul.2,starts_with("hum"))
-                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("sca"))) > 0 ,"No 'sca' or 'scapula' elements found in the database"))
-                    sca<-dplyr::select(data.df.calcul.2,starts_with("sca"))
-                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("rad"))) > 0 ,"No 'rad' or 'radius' elements found in the database"))
-                    rad<-dplyr::select(data.df.calcul.2,starts_with("rad"))
-                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("uln"))) > 0 ,"No 'uln' or 'ulna' elements found in the database"))
-                    uln<-dplyr::select(data.df.calcul.2,starts_with("uln"))
-                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("tib"))) > 0 ,"No 'tib' or 'tibia' elements found in the database"))
-                    tib<-dplyr::select(data.df.calcul.2,starts_with("tib"))
-                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("mtc"))) > 0 ,"No 'mtc' or 'mtc' elements found in the database"))
-                    mtc<-dplyr::select(data.df.calcul.2,starts_with("mtc"))
-                    validate(need(length(dplyr::select(data.df.calcul.2,starts_with("mtt"))) > 0 ,"No 'mtt' or 'mtt' elements found in the database"))
-                    mtt<-dplyr::select(data.df.calcul.2,starts_with("mtt"))
+                    valide.sup.base<-   length(dplyr::select(data.df.calcul.verif,starts_with("Rad")))+
+                      length(dplyr::select(data.df.calcul.verif,starts_with("Ulna")))+
+                      length(dplyr::select(data.df.calcul.verif,starts_with("Scap")))+
+                      length(dplyr::select(data.df.calcul.verif,starts_with("Mtpod")))+
+                      length(dplyr::select(data.df.calcul.verif,starts_with("Hum")))
+                    valide.sup.0<-valide.sup.base+length(dplyr::select(data.df.calcul.verif,starts_with("Fem")))+
+                      length(dplyr::select(data.df.calcul.verif,starts_with("Tib")))
+
+                    validate(need(valide.sup.base > 0 ,"No bone elements found in the database"))
+                    validate(need(valide.sup.0 > 0 ,"No bone elements found in the database"))
                     
-                    ratio<-(hum+sca+rad+mtc)*12/(((hum+sca+rad+uln+mtc)*12)+(fem+tib+mtt)*16)
-                    somme.ratio<-hum+sca+rad+uln+mtc+fem+tib+mtt
+                    ratio<-(hum+uln+sca+rad+(mtpod/2))*12/(((hum+sca+rad+uln+(mtpod/2))*12)+(fem+tib+(mtpod/2))*16)
+                    somme.ratio<-hum+sca+rad+uln+fem+tib+mtpod
                     axis.var.name<-"AN/PO%"
                     axis.var.name<-"ratio AN/PO%"
                   }
            )
-         ## test de somme.ratio si =0
-            somme.ratio<-somme.ratio[-(which(rowSums(somme.ratio)==0)),]
+           ## test de somme.ratio si =0
+            # somme.ratio<-somme.ratio[-(which(rowSums(somme.ratio)==0)),]
           ##
+           ratio<-unlist(ratio)
+           somme.ratio<-unlist(somme.ratio)
            
            f_vec <-Vectorize(WilsonBinCI, vectorize.args = c("n","p"), SIMPLIFY = FALSE)
            
            data.df.calcul.anpo<-matrix(unlist(f_vec(c(somme.ratio),c(ratio))),ncol=2, byrow=F)
            
-           df.ratio<-cbind.data.frame(data.df.calcul.2[,setlevels],ratio,data.df.calcul.anpo)
+           df.ratio<-cbind.data.frame(data.df.calcul.2["name_level"],ratio,data.df.calcul.anpo)
            
-           colnames(df.ratio)<-c(setlevels,"ratio","lower","upper")
+           colnames(df.ratio)<-c("name_level","ratio","lower","upper")
            
-           if (!is.null(factor.order.level.activation())){
-             df.ratio[[setlevels]]<-factor(df.ratio[[setlevels]], levels = factor.order.level())
-           }
+           ############################################################################################a creer pour ordonner niveau
+           # if (!is.null(factor.order.level.activation())){
+           #   df.ratio[[setlevels]]<-factor(df.ratio[[setlevels]], levels = factor.order.level())
+           # }
            
-           print(df.ratio)
            p <- ggplot2::ggplot(df.ratio, 
-                                aes(x = .data[["ratio"]]*100, y = .data[["name_level"]], xmin = .data[["lower"]]*100, xmax = .data[["upper"]]*100))+ 
+                                ggplot2::aes(x = .data[["ratio"]]*100, y = .data[["name_level"]], xmin = .data[["lower"]]*100, xmax = .data[["upper"]]*100))+ 
              scale_x_continuous(limits=c(0,100))
            p<-p+geom_pointrange()+
-             xlab(paste(axis.var.name))+ylab(paste("name_level"))+
+             xlab(paste(axis.var.name))+ylab(paste("name_level")) +
              do.call(themeforfigure.choice(), list()) +
              theme(axis.title.x = element_text(size=font_size()),
                    axis.title.y = element_text(size=font_size()),
                    axis.text.x = element_text(size=font_tick()),
                    axis.text.y = element_text(size=font_tick()),
                    legend.title = element_blank())+
-             theme(legend.position=legendplotlyfig())
+             theme(legend.position='none')
            p
            
            
@@ -1452,9 +1463,229 @@ df.sub <- reactive({
          output$Ratio.data.list=renderUI({
            req(!is.null(fileisupload()))
            selectInput("select.ratio", label = h5("Select the ratio to plot"), 
-                       choices = list("CRA/POSTCRA%" = 1, "AN/PO% (1)" = 2,"AN/PO% (2)" = 9,"AUT/ZE%"=7,"Z/E%" = 8, "PCRLB/CR%"=6, "PCRAP/CR%"=5,"PCRT/CR%"=4,"Proportion digested element" = 3 ), 
+                       choices = list("CRA/POSTCRA%" = 1, "AN/PO% (mand+hum+fem)" = 2,"AN/PO% (2)" = 9,"AUT/ZE%"=7,"Z/E%" = 8, "PCRLB/CR%"=6, "PCRAP/CR%"=5,"PCRT/CR%"=4,"Proportion digested element" = 3 ), 
                        selected = 1)
          })
+         output$Ratio.data.dig.graph <- renderUI({
+           plotOutput("Ratiodatagraph.dig"
+                      # , height = height.size(), width = width.size()
+           )
+         })
+         
+         output$Ratiodatagraph.dig <- renderPlot({
+           plot(Ratiodatagraph.dig.plot())
+           session_store$Ratiodatagraph.dig.plot<- Ratiodatagraph.dig.plot()
+         })   
+         
+         Ratiodatagraph.dig.plot<-reactive({
+           df.sub<-df.sub()
+           setlevels<-input$setlevels
+           setanat<-input$setanat
+           setnb<-input$setnb
+           # digcol<-c("dig_I","dig_MOL","dig_m1inf","dig_bone","dig_bone_others")
+           df.sub$nb_remains<-as.numeric(df.sub$nb_remains)
+           data.df.calcul.gh<-df.sub %>% group_by(.data[["name_level"]],.data[["name_anat"]],.data[["dig_I"]],
+                                                  .data[["dig_MOL"]],.data[["dig_m1inf"]],
+                                                  ,.data[["dig_bone"]],.data[["dig_bone_others"]])%>%
+             summarize(nb_total = sum(!!sym("nb_remains")))
+           
+          
+           list.element<-c("0","1","2","3","4","IND")
+           
+          
+           switch(input$select.ratio.dig,
+                  "1"={
+                    FEM.dig<-subset(data.df.calcul.gh, name_anat == "Fem")
+                    validate(need(nrow(FEM.dig) > 0 ,"No 'Fem' elements found in the database"))
+
+                    FEM.dig<-FEM.dig[,c(1,2,7,8)]
+                    digcol<-"dig_bone_others"
+                    myFormula <- as.formula(paste0("name_level", " ~ ",digcol))
+                    data.df.calcul.verif<-reshape2::dcast(FEM.dig, myFormula , fill = 0L)
+                    new.element <-setdiff(list.element,colnames(data.df.calcul.verif))
+                    new.element.tab<-matrix(data=0,ncol
+                                            =length(new.element),dimnames =list(c(),new.element))
+                    
+                    data.df.calcul.verif<- cbind(data.df.calcul.verif,new.element.tab)
+                    somme.ratio<-rowSums(data.df.calcul.verif[2:ncol(data.df.calcul.verif)])
+                    ratio<-rowSums(data.df.calcul.verif[3:6])/(rowSums(data.df.calcul.verif[2:6])+somme.ratio)
+                    axis.var.name<-"% Fem dig"
+                    
+                  },
+                  "2"={
+                    FEM.dig<-subset(data.df.calcul.gh, name_anat == "Hum")
+                    validate(need(nrow(FEM.dig) > 0 ,"No 'Hum' elements found in the database"))
+                    
+                    FEM.dig<-FEM.dig[,c(1,2,7,8)]
+                    digcol<-"dig_bone_others"
+                    myFormula <- as.formula(paste0("name_level", " ~ ",digcol))
+                    data.df.calcul.verif<-reshape2::dcast(FEM.dig, myFormula , fill = 0L)
+                    new.element <-setdiff(list.element,colnames(data.df.calcul.verif))
+                    new.element.tab<-matrix(data=0,ncol
+                                            =length(new.element),dimnames =list(c(),new.element))
+                    
+                    data.df.calcul.verif<- cbind(data.df.calcul.verif,new.element.tab)
+                    somme.ratio<-rowSums(data.df.calcul.verif[2:ncol(data.df.calcul.verif)])
+                    ratio<-rowSums(data.df.calcul.verif[3:6])/(rowSums(data.df.calcul.verif[2:6])+somme.ratio)
+                    axis.var.name<-"% Hum dig"
+                  },
+                  "3"={
+                    FEM.dig<-subset(data.df.calcul.gh, name_anat == "Hum" | name_anat == "Fem" )
+                    validate(need(nrow(FEM.dig) > 0 ,"No 'Hum' and 'Fem' elements found in the database"))
+                    
+                    FEM.dig<-FEM.dig[,c(1,2,7,8)]
+                    digcol<-"dig_bone_others"
+                    myFormula <- as.formula(paste0("name_level", " ~ ",digcol))
+                    data.df.calcul.verif<-reshape2::dcast(FEM.dig, myFormula , fill = 0L)
+                    new.element <-setdiff(list.element,colnames(data.df.calcul.verif))
+                    new.element.tab<-matrix(data=0,ncol
+                                            =length(new.element),dimnames =list(c(),new.element))
+                    
+                    data.df.calcul.verif<- cbind(data.df.calcul.verif,new.element.tab)
+                    somme.ratio<-rowSums(data.df.calcul.verif[2:ncol(data.df.calcul.verif)])
+                    ratio<-rowSums(data.df.calcul.verif[3:6])/(rowSums(data.df.calcul.verif[2:6])+somme.ratio)
+                    axis.var.name<-"% Hum dig"
+                  },
+                  "4"={
+                    FEM.dig<-subset(data.df.calcul.gh, name_anat == "Iinf")
+                    validate(need(nrow(FEM.dig) > 0 ,"No 'Iinf' elements found in the database"))
+                    
+                    FEM.dig<-FEM.dig[,c(1,2,3,8)]
+                    digcol<-"dig_I"
+                    myFormula <- as.formula(paste0("name_level", " ~ ",digcol))
+                    data.df.calcul.verif<-reshape2::dcast(FEM.dig, myFormula , fill = 0L)
+                    new.element <-setdiff(list.element,colnames(data.df.calcul.verif))
+                    new.element.tab<-matrix(data=0,ncol
+                                            =length(new.element),dimnames =list(c(),new.element))
+                    
+                    data.df.calcul.verif<- cbind(data.df.calcul.verif,new.element.tab)
+                    somme.ratio<-rowSums(data.df.calcul.verif[2:ncol(data.df.calcul.verif)])
+                    ratio<-rowSums(data.df.calcul.verif[3:6])/(rowSums(data.df.calcul.verif[2:6])+somme.ratio)
+                    axis.var.name<-"% Iinf dig"
+                  },
+                  "5"={
+                    FEM.dig<-subset(data.df.calcul.gh, name_anat == "Isup")
+                    validate(need(nrow(FEM.dig) > 0 ,"No 'Isup' elements found in the database"))
+                    
+                    FEM.dig<-FEM.dig[,c(1,2,3,8)]
+                    digcol<-"dig_I"
+                    myFormula <- as.formula(paste0("name_level", " ~ ",digcol))
+                    data.df.calcul.verif<-reshape2::dcast(FEM.dig, myFormula , fill = 0L)
+                    new.element <-setdiff(list.element,colnames(data.df.calcul.verif))
+                    new.element.tab<-matrix(data=0,ncol
+                                            =length(new.element),dimnames =list(c(),new.element))
+                    
+                    data.df.calcul.verif<- cbind(data.df.calcul.verif,new.element.tab)
+                    somme.ratio<-rowSums(data.df.calcul.verif[2:ncol(data.df.calcul.verif)])
+                    ratio<-rowSums(data.df.calcul.verif[3:6])/(rowSums(data.df.calcul.verif[2:6])+somme.ratio)
+                    axis.var.name<-"% Isup dig"
+                   
+                  },
+                  "6"={
+                    FEM.dig<-subset(data.df.calcul.gh, name_anat == "Isup"| name_anat == "Iinf")
+                    validate(need(nrow(FEM.dig) > 0 ,"No 'Incisor' elements found in the database"))
+                    
+                    FEM.dig<-FEM.dig[,c(1,2,3,8)]
+                    digcol<-"dig_I"
+                    myFormula <- as.formula(paste0("name_level", " ~ ",digcol))
+                    data.df.calcul.verif<-reshape2::dcast(FEM.dig, myFormula , fill = 0L)
+                    new.element <-setdiff(list.element,colnames(data.df.calcul.verif))
+                    new.element.tab<-matrix(data=0,ncol
+                                            =length(new.element),dimnames =list(c(),new.element))
+                    
+                    data.df.calcul.verif<- cbind(data.df.calcul.verif,new.element.tab)
+                    somme.ratio<-rowSums(data.df.calcul.verif[2:ncol(data.df.calcul.verif)])
+                    ratio<-rowSums(data.df.calcul.verif[3:6])/(rowSums(data.df.calcul.verif[2:6])+somme.ratio)
+                    axis.var.name<-"% incisor dig"
+                    
+                  },
+                  "7"={
+                    FEM.dig<-subset(data.df.calcul.gh, name_anat == "m1inf")
+                    validate(need(nrow(FEM.dig) > 0 ,"No 'm1inf' elements found in the database"))
+                    
+                    FEM.dig<-FEM.dig[,c(1,2,5,8)]
+                    digcol<-"dig_m1inf"
+                    myFormula <- as.formula(paste0("name_level", " ~ ",digcol))
+                    data.df.calcul.verif<-reshape2::dcast(FEM.dig, myFormula , fill = 0L)
+                    new.element <-setdiff(list.element,colnames(data.df.calcul.verif))
+                    new.element.tab<-matrix(data=0,ncol
+                                            =length(new.element),dimnames =list(c(),new.element))
+                    
+                    data.df.calcul.verif<- cbind(data.df.calcul.verif,new.element.tab)
+                    somme.ratio<-rowSums(data.df.calcul.verif[2:ncol(data.df.calcul.verif)])
+                    ratio<-rowSums(data.df.calcul.verif[3:6])/(rowSums(data.df.calcul.verif[2:6])+somme.ratio)
+                    axis.var.name<-"% m1inf dig"
+                    
+                  },
+                  "8"={
+                    FEM.dig<-subset(data.df.calcul.gh, name_anat == "MOL")
+                    validate(need(nrow(FEM.dig) > 0 ,"No 'MOL' elements found in the database"))
+                    
+                    FEM.dig<-FEM.dig[,c(1,2,4,8)]
+                    digcol<-"dig_MOL"
+                    myFormula <- as.formula(paste0("name_level", " ~ ",digcol))
+                    data.df.calcul.verif<-reshape2::dcast(FEM.dig, myFormula , fill = 0L)
+                    new.element <-setdiff(list.element,colnames(data.df.calcul.verif))
+                    new.element.tab<-matrix(data=0,ncol
+                                            =length(new.element),dimnames =list(c(),new.element))
+                    
+                    data.df.calcul.verif<- cbind(data.df.calcul.verif,new.element.tab)
+                    somme.ratio<-rowSums(data.df.calcul.verif[2:ncol(data.df.calcul.verif)])
+                    ratio<-rowSums(data.df.calcul.verif[3:6])/(rowSums(data.df.calcul.verif[2:6])+somme.ratio)
+                    axis.var.name<-"% MO dig"
+                  }
+           )
+           ## test de somme.ratio si =0
+           # somme.ratio<-somme.ratio[-(which(rowSums(somme.ratio)==0)),]
+           ##
+           print(data.df.calcul.verif)
+           
+           f_vec <-Vectorize(WilsonBinCI, vectorize.args = c("n","p"), SIMPLIFY = FALSE)
+           
+           data.df.calcul.anpo<-matrix(unlist(f_vec(c(somme.ratio),c(ratio))),ncol=2, byrow=F)
+           
+           df.ratio<-cbind.data.frame(data.df.calcul.2["name_level"],ratio,data.df.calcul.anpo)
+           
+           colnames(df.ratio)<-c("name_level","ratio","lower","upper")
+           
+           ############################################################################################a creer pour ordonner niveau
+           # if (!is.null(factor.order.level.activation())){
+           #   df.ratio[[setlevels]]<-factor(df.ratio[[setlevels]], levels = factor.order.level())
+           # }
+           
+           p <- ggplot2::ggplot(df.ratio, 
+                                ggplot2::aes(x = .data[["ratio"]]*100, y = .data[["name_level"]], xmin = .data[["lower"]]*100, xmax = .data[["upper"]]*100))+ 
+             scale_x_continuous(limits=c(0,100))
+           p<-p+geom_pointrange()+
+             xlab(paste(axis.var.name))+ylab(paste("name_level")) +
+             do.call(themeforfigure.choice(), list()) +
+             theme(axis.title.x = element_text(size=font_size()),
+                   axis.title.y = element_text(size=font_size()),
+                   axis.text.x = element_text(size=font_tick()),
+                   axis.text.y = element_text(size=font_tick()),
+                   legend.title = element_blank())+
+             theme(legend.position='none')
+           p
+           
+           
+         }) 
+         
+         output$Ratio.dig.list=renderUI({
+           req(!is.null(fileisupload()))
+           selectInput("select.ratio.dig", label = h5("Select the ratio to plot"), 
+                       choices = list("Proportion digested hum" = 1,
+                                      "Proportion digested fem" = 2,
+                                      "Proportion digested bones" = 3,
+                                      "Proportion digested Iinf" = 4,
+                                      "Proportion digested Isup" = 5,
+                                      "Proportion digested I" = 6,
+                                      "Proportion digested m1inf" = 7,
+                                      "Proportion digested Mol" = 8
+                                      ), 
+                       selected = 7)
+         })
+         
+         
          
          output$liste.summary=renderUI({
            req(!is.null(fileisupload()))
