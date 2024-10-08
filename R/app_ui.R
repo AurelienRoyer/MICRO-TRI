@@ -85,6 +85,29 @@ body <- dashboardBody(
                          actionButton("create_bdd", "Create the BDD"),
                          
                 ),#end of tabpanel
+                tabPanel(h4("Import an old database"),
+                         br(),
+                         HTML(
+                           paste0(" <div style=width:100%;, align=left>
+    <font size=3>
+   <span style='text-transform:none'>
+   
+   <p>It require a dataframe with the exact same column names 
+    <br>
+    </span> 
+    </font>
+                                  </p> </div> " )),
+                         br(),
+                         fileInput("file.oldBDD", "Choose File (.csv/.xls/.xlsx)",
+                                   multiple = TRUE,
+                                   accept = c("text/csv",
+                                              "text/comma-separated-values",
+                                              ".csv",
+                                              ".xlsx",".xls")),
+                         selectInput(inputId = "worksheet.old", label="Worksheet Name", choices =''),
+                         actionButton(inputId = "getData.old.BDD",label="Fusion Database")
+                         
+                         ),
                 tabPanel(h4("Load a field Database"),
                          br(),
                          fileInput("file.fieldBDD", "Choose File (.csv/.xls/.xlsx)",

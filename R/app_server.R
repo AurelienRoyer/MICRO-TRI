@@ -472,7 +472,7 @@ observeEvent(input$color_patine, {
     
     observeEvent(input$name_anat,{
       input_infos_suppl_anat(NULL)
-      if(input$name_anat=="MOL"){
+      if(input$name_anat=="Mol"){
         showModal(
           modalDialog(
             title = tags$h4(style = "color: blue;","Mandible choice"),
@@ -547,8 +547,8 @@ observeEvent(input$color_patine, {
       input_infos_suppl_anat(input$Id_mand)
       
     })
-    ###saving ----
-    observeEvent(input$submit, {
+###saving ----
+observeEvent(input$submit, {
       
       showModal(
         modalDialog(
@@ -648,7 +648,14 @@ observeEvent(input$color_patine, {
     # Whenever a field is filled, aggregate all form data
     formData <- reactive({
         data <- sapply(fields_theor, function(x) input[[x]])
-        data<-c(ID_record(),data)
+        
+        if (length(levels(as.factor(ID_record())))==0){
+          ID_record2<-1
+        } else {ID_record2<-ID_record()}
+        
+        data<-c(ID_record2,data)
+        
+        # data<-c(ID_record(),data)
         names(data)<-c("ID_record",fields_theor)
         data$date_record<-Sys.time()
         if(!is.null(input_infos_suppl_anat())){
@@ -703,6 +710,18 @@ observeEvent(input$color_patine, {
                   data$dig_bone_others<-"NA"
                 })
           } #end of if
+         if (input$name_anat=="m1inf"){
+           data$name_anat<-"Mol"
+           data$infos_suppl_anat<-"m1inf"
+         }
+         if (input$name_anat=="Isup"){
+           data$name_anat<-"Incisor"
+           data$infos_suppl_anat<-"Isup"
+         }         
+         if (input$name_anat=="Iinf"){
+           data$name_anat<-"Incisor"
+           data$infos_suppl_anat<-"Iinf"
+         }
          data
         
     })
@@ -778,8 +797,8 @@ observeEvent(input$color_patine, {
         input_infos_suppl_anat(NULL)
         global.load$patine.list<-patine.list()
 
-         updateSelectizeInput(session = session, inputId = "name_species",selected ="not_selected")
-         updatePickerInput(session = session, inputId = "infos_suppl_anat",selected =NULL,choices = NULL)
+        updateSelectizeInput(session = session, inputId = "name_species",selected ="not_selected")
+        updatePickerInput(session = session, inputId = "infos_suppl_anat",selected =NULL,choices = NULL)
         updatePickerInput(session = session, inputId = "name_anat",choices = get(list_bone[1]))
 
         updateNumericInput(session = session, inputId = "nb_remains",value =1)
@@ -870,27 +889,39 @@ observeEvent(input$color_patine, {
     observeEvent(input$submit2,{
       refresh_dtoutput(rnorm(1,mean=100,sd=100))
     })
-
+    
+    curPgInd<-reactiveVal(1)  
+    observeEvent(global.load$df, {
+      user<-nrow(global.load$df)
+      if(user == 0) {
+        return ()
+      }
+      curPgInd(ceiling(user / 5))
+    })
+    
     output$responses <- DT::renderDataTable({
-        # input$submit2
+      # curPgInd <- ceiling(curRowInd() / defaultPgRows)
+      # curPgInd <-5
+      # pgLoadJS <- paste0('setTimeout(function() {table.page(', curPgInd - 1,').draw(false);}, 100);')
       refresh_dtoutput()
-            # loadData()
       global.load$df
-    }, server = FALSE,
-    callback = JS(c("table.page('last').draw(false);")),
-  
-    options = list(lengthMenu = c(1, 2,3, 5,10,25,50), pageLength = 5)
+     
+    }, 
+     # server = FALSE,
+    # callback = JS("table.page('last').draw(false);"),
+    # callback = JS(pgLoadJS),
+    callback = JS(paste0('setTimeout(function() {table.page(', curPgInd() - 1,').draw(false);}, 100);')),
+    options = list(lengthMenu = c(1,2,3,5,10,25,50), pageLength = 5)
     )
     
     output$responses2 <- DT::renderDataTable({
        datatable(
-         # loadData(), 
          global.load$df,
          editable = TRUE)
-    } ,   options = list(lengthMenu = c(1, 2,3, 5,10,25,50), pageLength = 5)
+    } ,   
+    options = list(lengthMenu = c(1, 2,3, 5,10,25,50), pageLength = 5)
     )
     observeEvent(input$responses2_cell_edit, {
-      # data2<-loadData()
       data2<-global.load$df
       row  <- input$responses2_cell_edit$row
       clmn <- input$responses2_cell_edit$col
@@ -1170,7 +1201,7 @@ df.sub <- reactive({
            
          })
          
-         ######  Ratio graphs ---- 
+######  Ratio graphs ---- 
          #option for ratio
          output$themeforfigure=renderUI({
            req(!is.null(fileisupload()))
@@ -1237,8 +1268,10 @@ df.sub <- reactive({
            tib<-dplyr::select(data.df.calcul.2,starts_with("Tib"))
            mand<-dplyr::select(data.df.calcul.2,starts_with("Mand"))
            max<-dplyr::select(data.df.calcul.2,starts_with("Max"))
-           mol<-dplyr::select(data.df.calcul.2,starts_with("Mol"))+dplyr::select(data.df.calcul.2,starts_with("m1inf"))
-           inc<-dplyr::select(data.df.calcul.2,starts_with("Iinf"))+dplyr::select(data.df.calcul.2,starts_with("Isup"))
+           # mol<-dplyr::select(data.df.calcul.2,starts_with("Mol"))+dplyr::select(data.df.calcul.2,starts_with("m1inf"))
+           # inc<-dplyr::select(data.df.calcul.2,starts_with("Iinf"))+dplyr::select(data.df.calcul.2,starts_with("Isup"))
+           mol<-dplyr::select(data.df.calcul.2,starts_with("Mol"))
+           inc<-dplyr::select(data.df.calcul.2,starts_with("Incisor"))
            mtpod<-dplyr::select(data.df.calcul.2,starts_with("Mtpod"))
            
            sca<-dplyr::select(data.df.calcul.2,starts_with("Scap"))
@@ -1741,4 +1774,66 @@ df.sub <- reactive({
              write.table(df.species.table(), file, row.names = FALSE, sep=";",dec=".") ## to MODIF !!!
            }
          ) 
+         
+         
+## fusion old BDD ----
+file.old.BDD.isupload<-reactiveVal(NULL)
+getdata.oldBDD.launch<-reactiveVal()
+input_oldBDD.name<-reactiveVal()
+input_oldBDD.datapath<-reactiveVal()
+         
+observeEvent(input$file.oldBDD, {
+           input_oldBDD.name(input$file.oldBDD$name)
+           input_oldBDD.datapath(input$file.oldBDD$datapath)
+         })
+observeEvent(input$getData.old.BDD, {
+           getdata.oldBDD.launch(input$getData.old.BDD)
+         })
+observe({
+           req(!is.null(input_oldBDD.datapath()))
+           extension <- tools::file_ext(input_oldBDD.name())
+           switch(extension,
+                  csv = {updateSelectInput(session, "worksheet.old", choices = input_oldBDD.name())},
+                  xls =   {    selectionWorksheet <-excel_sheets(path = input_oldBDD.datapath())
+                  updateSelectInput(session, "worksheet.old", choices = selectionWorksheet)},
+                  xlsx =  {      selectionWorksheet <-excel_sheets(path = input_oldBDD.datapath())
+                  updateSelectInput(session, "worksheet.old", choices = selectionWorksheet)})
+         })
+         observeEvent(getdata.oldBDD.launch(), {
+           req(!is.null(input_oldBDD.datapath()))
+           extension <- tools::file_ext(input_oldBDD.name())
+           global.load$BDD.old<- switch(extension,
+                                          csv =  {    
+                                            sep2 <- if( ";" %in% strsplit(readLines(input_oldBDD.datapath(), n=1)[1], split="")[[1]] ){";"
+                                            } else if( "," %in% strsplit(readLines(input_oldBDD.datapath(), n=1)[1], split="")[[1]] ){","
+                                            } else if ( "\t" %in% strsplit(readLines(input_oldBDD.datapath(), n=1)[1], split="")[[1]] ){"\t"
+                                            } else {";"}
+                                            utils::read.csv(input_oldBDD.datapath(),
+                                                            header = TRUE,
+                                                            sep = sep2, stringsAsFactors = F,  fileEncoding="latin1",
+                                                            dec=".")},
+                                          xls = readxl::read_xls(input_oldBDD.datapath(), sheet=input$worksheet.old),
+                                          xlsx = readxl::read_xlsx(input_oldBDD.datapath(), sheet=input$worksheet.old))
+
+           # fields_theor2<-c("ID_record",fields_theor,"dig_I"	,"dig_MOL",	"dig_m1inf",	"dig_bone",	"dig_bone_others")
+           # assign(x="df",value=global.load$BDD.old, envir = .GlobalEnv)
+
+           file.old.BDD.isupload(1)
+         })#          
+         observeEvent(ignoreInit = TRUE,file.old.BDD.isupload(),{ 
+           
+           global.load$df<-rbind.data.frame(global.load$df,global.load$BDD.old)
+           global.load$k<-global.load$k+nrow(global.load$BDD.old)
+           print(global.load$k)
+           to_save <- reactiveValuesToList(global.load)
+           saveRDS(to_save, file =  paste0(Sys.Date(),".",global.load$site.archaeo,".BDD.uf.fusion",".rds"))
+           test<-data.frame(apply(global.load$df,2,as.character))
+           write.table(test, file =  paste0(Sys.Date(),".",global.load$site.archaeo,".BDD.uf.fusion",".csv",sep=""), row.names = FALSE, sep=";",dec=".") 
+           
+           
+           
+           print("BDD upload")
+           } )
+
+         
 } ## end of server 
