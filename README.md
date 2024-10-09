@@ -44,6 +44,7 @@ Load the package and launch the `microTRI` application:
 
 ``` r
 library(microTRI)
+setwd("path_of_your_directory")
 microTRI()
 ```
 
