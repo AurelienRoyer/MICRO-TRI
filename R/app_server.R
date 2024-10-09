@@ -1,7 +1,7 @@
 app_server <- function(input, output, session) {
   font.size <- "8pt"
   fields_theor <- c("date_record","year_exca","name_sector","ID_dec","name_square","name_dec",
-                    "name_level","name_taxa" ,"name_species","name_anat", 
+                    "name_level","name_us","name_taxa" ,"name_species","name_anat", 
                     "infos_suppl_anat","nb_remains","infos_lat",
                     "infos_completude","infos_completude_detailled",
                     "trace_dig","trace_root","color_patine","trace_heat",
@@ -150,6 +150,7 @@ observeEvent(getdata.launch(), {
   rV$name_square<-global$name_square
   rV$name_dec<-global$name_dec
   rV$name_level<-global$name_level
+  rV$name_us<-global$name_us
   rV$name_sector<-global$name_sector
   rV$year_exca<-global$year_exca
   
@@ -157,6 +158,7 @@ observeEvent(getdata.launch(), {
   last.name.square(global$last.name.square)
   last.name.dec(global$last.name.dec)
   last.name.level(global$last.name.level)
+  last.name.us(global$last.name.us)
   last.name.sector(global$last.name.sector)
   last.year_exca(global$last.year_exca)
 
@@ -181,7 +183,7 @@ observeEvent(fileisupload(), {
 })
 
 ##### loading field database a finir ----
-file.field.BDD.isupload<-reactiveVal(NULL)
+file.field.BDD.isupload<-reactiveVal()
 getdata.fieldBDD.launch<-reactiveVal()
 input_fieldBDD.name<-reactiveVal()
 input_fieldBDD.datapath<-reactiveVal()
@@ -197,11 +199,11 @@ observe({
   req(!is.null(input_fieldBDD.datapath()))
   extension <- tools::file_ext(input_fieldBDD.name())
   switch(extension,
-         csv = {updateSelectInput(session, "worksheet", choices = input_fieldBDD.name())},
+         csv = {updateSelectInput(session, "worksheet.field", choices = input_fieldBDD.name())},
          xls =   {    selectionWorksheet <-excel_sheets(path = input_fieldBDD.datapath())
-         updateSelectInput(session, "worksheet", choices = selectionWorksheet)},
+         updateSelectInput(session, "worksheet.field", choices = selectionWorksheet)},
          xlsx =  {      selectionWorksheet <-excel_sheets(path = input_fieldBDD.datapath())
-         updateSelectInput(session, "worksheet", choices = selectionWorksheet)})
+         updateSelectInput(session, "worksheet.field", choices = selectionWorksheet)})
 })
 observeEvent(getdata.fieldBDD.launch(), {
   req(!is.null(input_fieldBDD.datapath()))
@@ -213,19 +215,69 @@ observeEvent(getdata.fieldBDD.launch(), {
                      } else if ( "\t" %in% strsplit(readLines(input_fieldBDD.datapath(), n=1)[1], split="")[[1]] ){"\t"
                      } else {";"}
                      utils::read.csv(input_fieldBDD.datapath(),
-                                     header = input$header,
+                                     # header = input$header,
                                      sep = sep2, stringsAsFactors = F,  fileEncoding="latin1",
                                      dec=".")},
-                   xls = readxl::read_xls(input_fieldBDD.datapath(), sheet=input$worksheet),
-                   xlsx = readxl::read_xlsx(input_fieldBDD.datapath(), sheet=input$worksheet))
-  print('aa')
-  print(global.load$BDD.field)
+                   xls = readxl::read_xls(input_fieldBDD.datapath(), sheet=input$worksheet.field),
+                   xlsx = readxl::read_xlsx(input_fieldBDD.datapath(), sheet=input$worksheet.field))
   file.field.BDD.isupload(1)
 })# 
+
+output$liste.col.ID=renderUI({
+  req(!is.null(file.field.BDD.isupload()))
+  selectInput("liste.col.ID.select", label = h5("Select the column with ID data"), 
+              choices = colnames(global.load$BDD.field), 
+              selected = colnames(global.load$BDD.field)[1])
+})
+output$liste.col.US=renderUI({
+  req(!is.null(file.field.BDD.isupload()))
+  selectInput("liste.col.us.select", label = h5("Select the column with US data"), 
+              choices = colnames(global.load$BDD.field), 
+              selected = colnames(global.load$BDD.field)[2])
+})
+
+observeEvent(input$go.ng3, { 
+  req(!is.null(input$liste.col.us.select))
+  req(!is.null(input$liste.col.ID.select))
+  global.load$df.datafield<-global.load$BDD.field
+  print((input$liste.col.ID.select != "null" & dim(global.load$df.datafield[duplicated(global.load$df.datafield[,input$liste.col.ID.select]),])[1]>0))
+  if(input$liste.col.ID.select != "null" & dim(global.load$df.datafield[duplicated(global.load$df.datafield[,input$liste.col.ID.select]),])[1]>0) { 
+  showModal(modalDialog(
+    title = "Issues with loaded data",
+      HTML(paste(dim(df$df[duplicated(df$df[,input$setID]),])[1], " object ID(s) is/are not unique !<br> "))
+    
+  ))
+  }
+  
+ 
+  temp<-as.data.frame(unlist(global.load$df[,c("ID_dec")]))
+  temp3<-data.frame(unlist(global.load$df[,c("name_us")]))
+  temp<-data.frame(temp,temp3)
+  colnames(temp)<-c("ID_dec","name_us")
+  assign("ttt",temp, envir=.GlobalEnv)
+  assign("tt2",global.load$df.datafield, envir=.GlobalEnv)
+  temp2<-dplyr::left_join(temp[1],global.load$df.datafield[,c(input$liste.col.ID.select,input$liste.col.us.select)])
+  
+  global.load$df[,"name_us"]<-list(temp2[3])
+
+  print(global.load$df)
+  # to_save <- reactiveValuesToList(global.load)
+  # saveRDS(to_save, file =  paste0(Sys.Date(),".",global.load$site.archaeo,".BDD.uf",".rds"))
+  # test<-data.frame(apply(global.load$df,2,as.character))
+  # write.table(test, file =  paste0(Sys.Date(),".",global.load$site.archaeo,".BDD.uf",".csv",sep=""), row.names = FALSE, sep=";",dec=".") 
+  
+  ################################################################################################################################ revoir le if. revoir la fusion. 
+  
+  })
+
+
+
+#############
 liste.set.square<-reactiveVal(c("Square","null","square","Carré"))
 liste.set.ID.dec<-reactiveVal(c("ID","null","ID.object","numero"))
 liste.set.dec<-reactiveVal(c("dec","null"))
 liste.set.levels<-reactiveVal(c("Levels","null","Couche","levels"))
+liste.set.us<-reactiveVal(c("UAS","null","US"))
 liste.set.sector<-reactiveVal(c("sector","null"))
   liste.set.year.exca<-reactiveVal(c("year","null"))
 output$set.ID.dec=renderUI({
@@ -266,7 +318,12 @@ output$set.levels=renderUI({
               choices = names(global.load$BDD.field)[c(1:ncol(global.load$BDD.field))],
               selected = liste.set.levels())
 }) 
-
+output$set.us=renderUI({
+  req(!is.null(file.field.BDD.isupload()))
+  selectInput("setus", h4("Levels (Default name: us)"),
+              choices = names(global.load$BDD.field)[c(1:ncol(global.load$BDD.field))],
+              selected = liste.set.us())
+}) 
 ##end of loading field database
 
 ##incrementation ----
@@ -274,6 +331,7 @@ output$set.levels=renderUI({
     output$value_name_square <- renderText({ input$name_square })
     output$value_name_dec <- renderText({ input$name_dec })
     output$value_name_level <- renderText({ input$name_level })
+    output$value_name_us <- renderText({ input$name_us })
     output$value_name_sector <- renderText({ input$name_sector })
     output$value_year_exca <- renderText({ input$year_exca })
     
@@ -281,6 +339,7 @@ output$set.levels=renderUI({
     rV <- reactiveValues(name_square = "")
     rV <- reactiveValues(name_dec = "")
     rV <- reactiveValues(name_level = "")
+    rV <- reactiveValues(name_us = "")
     rV <- reactiveValues(name_sector = "")
     rV <- reactiveValues(year_exca = "")
     last.id.dec<-reactiveVal("not_selected")
@@ -289,7 +348,7 @@ output$set.levels=renderUI({
     last.name.dec<-reactiveVal("not_selected")
     last.year_exca<-reactiveVal("not_selected")
     last.name.level<-reactiveVal("not_selected")
-
+    last.name.us<-reactiveVal("not_selected")
     
     output$completude=renderUI({
       if (input$infos_completude==TRUE) {
@@ -562,6 +621,7 @@ observeEvent(input$submit, {
         selectizeInput("name_square","name of square", choices = c(rV$name_square),selected = last.name.square(), options = list(create = TRUE)),
         selectizeInput("name_dec","name of dec", choices = c(rV$name_dec),selected = last.name.dec(), options = list(create = TRUE)),
         selectizeInput("name_level","name of levels", choices = c(rV$name_level),selected = last.name.level(), options = list(create = TRUE)),
+        selectizeInput("name_us","name of stratigraphical units", choices = c(rV$name_us),selected = last.name.us(), options = list(create = TRUE)),
         if (!is.null(file.field.BDD.isupload())) {
           
           uiOutput("txt.field.data")     
@@ -575,13 +635,14 @@ observeEvent(input$submit, {
       last.name.sector(input$name_sector)
       last.name.dec(input$name_dec)
       last.name.level(input$name_level)
+      last.name.us(input$name_us)
       last.year_exca(input$year_exca)
     
     })
   
     output$txt.field.data<-renderUI({
       aa<-global.load$BDD.field[global.load$BDD.field[,input$setIDdec] == input$ID_dec, ]
-      temp.square.ID<-as.character(aa[1,c(input$setIDdec,input$setsquare,input$set.dec,input$setlevels,input$setsector,input$setyear)])
+      temp.square.ID<-as.character(aa[1,c(input$setIDdec,input$setsquare,input$set.dec,input$setlevels,input$us,input$setsector,input$setyear)])
       HTML(paste(" Field information from the database: <br>"))
       HTML(temp.square.ID)
     })
@@ -610,6 +671,11 @@ observeEvent(input$submit, {
       # nchar check, because emptying the text field results in "" choice.
       if (nchar(input$name_level) && !(input$name_level %in% rV$name_level)) {
         rV$name_level <- c(rV$name_level, input$name_level)
+      }})
+    observeEvent(input$name_us, {
+      # nchar check, because emptying the text field results in "" choice.
+      if (nchar(input$name_us) && !(input$name_us %in% rV$name_us)) {
+        rV$name_us <- c(rV$name_us, input$name_us)
       }})
     observeEvent(input$name_sector, {
       # nchar check, because emptying the text field results in "" choice.
@@ -644,7 +710,11 @@ observeEvent(input$submit, {
       req(!is.null(file.field.BDD.isupload()))
         rV$name_level <- c(rV$name_level,global.load$BDD.field[,input$setlevels])
       })
-      
+    observeEvent(ignoreInit = T,input$setus, {
+      req(!is.null(file.field.BDD.isupload()))
+      rV$name_us <- c(rV$name_us,global.load$BDD.field[,input$setus])
+    }) 
+    
     # Whenever a field is filled, aggregate all form data
     formData <- reactive({
         data <- sapply(fields_theor, function(x) input[[x]])
@@ -676,6 +746,8 @@ observeEvent(input$submit, {
          if(length(data$name_dec)==1 && data$name_dec=="") {
            data$name_dec<-"empty"} 
          if(length(data$name_level)==1 && data$name_level=="") {
+           data$name_level<-"empty"}
+         if(length(data$name_us)==1 && data$name_us=="") {
            data$name_level<-"empty"}
          if (input$infos_enc==F) {data$trace_encoche<-"no"}
          if (input$infos_tm==F) {data$trace_tooth_mark<-"no"}
@@ -758,6 +830,7 @@ observeEvent(input$submit, {
       updateSelectizeInput(session = session,inputId = "name_square",selected = last.name.square())
       updateSelectizeInput(session = session,inputId = "name_dec",selected = last.name.dec())
       updateSelectizeInput(session = session,inputId = "name_level",selected = last.name.level())
+      updateSelectizeInput(session = session,inputId = "name_us",selected = last.name.us())
       updateSelectizeInput(session = session,inputId = "name_sector",selected = last.name.sector())
       updateSelectizeInput(session = session,inputId = "year_exca",selected = last.year_exca())
      
@@ -786,12 +859,14 @@ observeEvent(input$submit, {
         global.load$year_exca<-rV$year_exca
         global.load$name_dec<-rV$name_dec
         global.load$name_level<-rV$name_level
+        global.load$name_us<-rV$name_us
         global.load$last.id.dec<-last.id.dec()
         global.load$last.name.square<-last.name.square()
         global.load$last.name.sector<-last.name.sector()
         global.load$last.name.dec<-last.name.dec()
         global.load$last.year_exca<-last.year_exca()
         global.load$last.name.level<-last.name.level()
+        global.load$last.name.us<-last.name.us()
         global.load$input_infos_suppl_anat<-input_infos_suppl_anat()
         global.load$list_info_suppl<-list_info_suppl()
         input_infos_suppl_anat(NULL)
@@ -975,6 +1050,12 @@ output$liste.UAS=renderUI({
   checkboxGroupInput("UAS", h6("Levels"),
                      choices = levels(as.factor(lvl.list)),selected = levels(as.factor(lvl.list)))
 })
+
+output$liste.US=renderUI({
+  us.list<-unique(unlist((df$df[["name_us"]])))
+  checkboxGroupInput("US", h6("US"),
+                     choices = levels(as.factor(us.list)),selected = levels(as.factor(us.list)))
+})
 output$liste.passe=renderUI({
   dec.list<-unique(unlist((df$df[["name_dec"]])))
   checkboxGroupInput("Passe", h6("Split"),
@@ -997,6 +1078,7 @@ df.sub <- reactive({
 
              df.sub <- df.sub[df.sub[["name_sector"]] %in% input$localisation, ]
              df.sub <- df.sub[df.sub[["name_level"]] %in% input$UAS, ]
+             df.sub <- df.sub[df.sub[["name_us"]] %in% input$US, ]
              df.sub <- df.sub[df.sub[["name_dec"]]%in% input$Passe, ]
              df.sub <- df.sub[df.sub[["name_square"]] %in% input$Square, ]
              df.sub <- df.sub[df.sub[["year_exca"]] %in% input$Year, ]
@@ -1243,6 +1325,7 @@ df.sub <- reactive({
          Ratiodatagraph.plot<-reactive({
            df.sub<-df.sub()
             setlevels<-input$setlevels
+            setus<-input$setus
             setanat<-input$setanat
             setnb<-input$setnb
            digcol<-input$digcol
@@ -1513,6 +1596,7 @@ df.sub <- reactive({
          Ratiodatagraph.dig.plot<-reactive({
            df.sub<-df.sub()
            setlevels<-input$setlevels
+           setus<-input$setus
            setanat<-input$setanat
            setnb<-input$setnb
            # digcol<-c("dig_I","dig_MOL","dig_m1inf","dig_bone","dig_bone_others")
@@ -1815,8 +1899,6 @@ observe({
                                           xls = readxl::read_xls(input_oldBDD.datapath(), sheet=input$worksheet.old),
                                           xlsx = readxl::read_xlsx(input_oldBDD.datapath(), sheet=input$worksheet.old))
 
-           # fields_theor2<-c("ID_record",fields_theor,"dig_I"	,"dig_MOL",	"dig_m1inf",	"dig_bone",	"dig_bone_others")
-           # assign(x="df",value=global.load$BDD.old, envir = .GlobalEnv)
 
            file.old.BDD.isupload(1)
          })#          
@@ -1829,11 +1911,30 @@ observe({
            saveRDS(to_save, file =  paste0(Sys.Date(),".",global.load$site.archaeo,".BDD.uf.fusion",".rds"))
            test<-data.frame(apply(global.load$df,2,as.character))
            write.table(test, file =  paste0(Sys.Date(),".",global.load$site.archaeo,".BDD.uf.fusion",".csv",sep=""), row.names = FALSE, sep=";",dec=".") 
-           
-           
-           
-           print("BDD upload")
+          print("BDD upload")
            } )
+## rename option ----
+         output$liste.newgroup2=renderUI({
+           req(!is.null(fileisupload()))
+           selectInput("liste.newgroup.rename", label = h5("Select the new group"), 
+                       choices = colnames(global.load$df), 
+                       selected = global.load$df[,8])
+         })
+         output$liste.newgroup4=renderUI({
+           req(!is.null(fileisupload()))
+           # req(input$liste.newgroup.rename != "")
+           selectInput("liste.newgroup3", label = h5("Select the variable"), 
+                       # choices = levels(as.factor(global.load$df[,input$liste.newgroup.rename])))
+                       choices = levels(as.factor(unlist(global.load$df[,input$liste.newgroup.rename]))))
+         })
+         observeEvent(input$go.ng2, { 
+           req(!is.null(input$liste.newgroup3))
+           aa<- rapply(global.load$df[,input$liste.newgroup.rename],function(x) ifelse(x==input$liste.newgroup3,input$text.new.group2,x), how = "replace")
 
+           global.load$df[,input$liste.newgroup.rename]<-list(aa)
+
+           
+               })
+         
          
 } ## end of server 

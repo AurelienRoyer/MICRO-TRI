@@ -1,12 +1,6 @@
-# ##A faire : ratio data
-# 
 
 # setwd("C:/Users/aurelien/Desktop/R shiny software/TRIS")
 
-# source("PalBER.R")
-# source("incertitude.wilson.R")
-# load("data_species_biozone.RData")
-# load("bioclimatic_spectra_and_climate.RData")
 
 app_ui <- function(){
   # shiny::addResourcePath("microTRI", system.file("R", package="microTRI"))
@@ -52,6 +46,7 @@ sidebar <- dashboardSidebar(
             actionButton(inputId = "refresh",label="refresh"),
              uiOutput("liste.sector"),
              uiOutput("liste.UAS"),
+            uiOutput("liste.US"),
              uiOutput("liste.passe"),
              uiOutput("liste.square"),
             uiOutput("liste.year"),
@@ -108,7 +103,9 @@ body <- dashboardBody(
                          actionButton(inputId = "getData.old.BDD",label="Fusion Database")
                          
                          ),
-                tabPanel(h4("Load a field Database"),
+                tabPanel(h4("Correct US data with a field Database"),
+                         br(),
+                         h4("not yet finish"),
                          br(),
                          fileInput("file.fieldBDD", "Choose File (.csv/.xls/.xlsx)",
                                    multiple = TRUE,
@@ -116,16 +113,13 @@ body <- dashboardBody(
                                               "text/comma-separated-values",
                                               ".csv",
                                               ".xlsx",".xls")),
-                         selectInput(inputId = "worksheet", label="Worksheet Name", choices =''),
+                         selectInput(inputId = "worksheet.field", label="Worksheet Name", choices =''),
                          actionButton(inputId = "getData.fieldBDD",label="Get Data"),
                          # actionButton('reset.BDD', 'Reset Input'),
                          br(),
-                         uiOutput("set.ID.dec"),
-                         uiOutput("set.square"), 
-                         uiOutput("set.dec"),
-                         uiOutput("set.levels") ,
-                         uiOutput("set.year"), 
-                         uiOutput("set.sector") 
+                         uiOutput("liste.col.ID"),
+                         uiOutput("liste.col.US"), 
+                         actionButton("go.ng3", "Modify name_US")
                          
                          
                 ),#end of tabpanel
@@ -227,9 +221,9 @@ body <- dashboardBody(
                 tags$hr(),
                 # br(),
                 fluidRow(
-                  box(title="sector",width = 2,background = "light-blue",
+                  box(title="sector",width = 1,background = "light-blue",
                       verbatimTextOutput("value_name_sector"),),
-                  box(title="Year",width = 2,background = "light-blue",
+                  box(title="Year",width = 1,background = "light-blue",
                       verbatimTextOutput("value_year_exca"),),
                   box(title="ID_dec",width = 2,background = "light-blue",
                       verbatimTextOutput("value_ID_dec"),),
@@ -238,9 +232,10 @@ body <- dashboardBody(
                   box(title="name_dec",width = 2,background = "light-blue",
                       verbatimTextOutput("value_name_dec"),),
                   box(title="level",width = 2,background = "light-blue",
-                      verbatimTextOutput("value_name_level"),
+                      verbatimTextOutput("value_name_level"),), # end of box 
+                    box(title="US",width = 2,background = "light-blue",
+                          verbatimTextOutput("value_name_us"),), # end of box 
                   
-                  ), # end of box 
                 ),
                 hr(),
                 fluidRow(
@@ -399,7 +394,20 @@ body <- dashboardBody(
                 DT::dataTableOutput("responses2", width = 700),  style = "overflow-x: scroll;", 
                 tags$hr(),     
                 actionButton("deleteRows", "Delete Rows")
-                )#end of tabpanel 
+                ),#end of tabpanel 
+                tabPanel(h4("Options"),
+                         tabsetPanel(
+                           tabPanel(tags$h5("rename column modality"),
+                                    tags$h3("Rename new group modality"),
+                                    uiOutput("liste.newgroup2"),
+                                    uiOutput("liste.newgroup4"),
+                                    textInput("text.new.group2", label=h5("New name of the modality"),value = "new.modality"),
+                                    actionButton("go.ng2", "Modify"),),    
+                          
+                           tabPanel(tags$h5("rename column"), 
+                           )
+                           )#end of tabsetpanel   , ou poas ?
+                         )#end of tabpanel 
                 )#end of tabsetpanel     
         ), # end of  tabItem
         tabItem(tabName = "data2",
@@ -584,8 +592,6 @@ body <- dashboardBody(
         )
     )
 )
-
-
 
 
 ui <-dashboardPage(
