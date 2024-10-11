@@ -494,7 +494,14 @@ body <- dashboardBody(
                          column(12,
                          tags$br(),
                            tags$br(),
-                         uiOutput("Ratio.data.graph"),)
+                         uiOutput("Ratio.data.graph"),),
+                         tags$br(),
+                         tags$br(),
+                         column(11, downloadButton("downloadData_ratio.graph", "Download")),
+                         tags$br(),
+                         tags$br(),
+                         DTOutput("table.Data_ratio"),
+                         column(11, downloadButton("downloadData_ratio", "Download"))
                 ),#end tabpanel 
                 
                 tabPanel(tags$h5("Digestion Ratio"),
@@ -535,12 +542,30 @@ body <- dashboardBody(
                          column(12,
                            
                                 tags$br(),
-                                uiOutput("Ratio.data.dig.graph"),)
+                                uiOutput("Ratio.data.dig.graph"),),
+                         tags$br(),
+                         tags$br(),
+                         column(11, downloadButton("downloadData_dig.graph", "Download")),
+                         tags$br(),
+                         tags$br(),
+                         DTOutput("table.Data_dig"),
+                         column(11, downloadButton("downloadData_dig", "Download"))
+                         
                 ),#end tabpanel 
                 tabPanel(tags$h5("Completude"),
                          tags$br(),
-                         uiOutput("Ratio.completude.graph")
+                         uiOutput("select.ratio.comp.list"),
+                         tags$br(),
+                         uiOutput("Ratio.completude.graph"),
+                         tags$br(),
+                         tags$br(),
+                         column(11, downloadButton("downloadData_comp.graph", "Download")),
+                         tags$br(),
+                         tags$br(),
+                         DTOutput("table.Data_comp"),
+                         column(11, downloadButton("downloadData_comp", "Download"))
                 ),#end tabpanel   
+                
                 tabPanel(tags$h5("rarity curves"),
                          tags$br(),
                          materialSwitch(
