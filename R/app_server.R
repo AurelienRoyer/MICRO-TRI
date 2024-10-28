@@ -1,3 +1,5 @@
+#### corriger digestion avec seulement colonne 1?2?34 et 0 et pas NA et ind.
+
 app_server <- function(input, output, session) {
   font.size <- "8pt"
   fields_theor <- c("date_record","year_exca","name_sector","ID_dec","name_square","name_dec",
@@ -6,7 +8,8 @@ app_server <- function(input, output, session) {
                     "infos_completude","infos_completude_detailled",
                     "trace_dig","trace_root","color_patine","trace_heat",
                     "trace_tooth_mark","trace_encoche",
-                    "observation","observation_suppl","txt_photo")  
+                    "observation","observation_suppl","txt_photo",
+                    "specimen_age","measurement")  
     ID_record<-reactiveVal(1)
     input_file1.name<-reactiveVal()
     input_file1.datapath<-reactiveVal()
@@ -31,11 +34,29 @@ app_server <- function(input, output, session) {
     font_tick<-reactiveVal(12)
     legendplotlyfig<-reactiveVal(TRUE) ##for legends.
     
-    
+    listeoflist<-reactiveVal(c("list_perso_rod","list_perso_euli","list_perso_herpeto","list_perso_others",
+                             "list_perso_chiro"))
 ## NEW BDD ----
+
+
+    ############# prob here ########## 
+observeEvent(ignoreInit = TRUE,input$go.ng4, {
+      yourimportedlistofspecies2<-global.load$list.extraspecies
+      names(yourimportedlistofspecies2)[1]<-paste0("yourimportedlist-",listofspeciesisimported())
+      
+      
+      yourimportedlistofspecies(c(yourimportedlistofspecies2,yourimportedlistofspecies()))
+      print(yourimportedlistofspecies())
+      listofspeciesisimported(listofspeciesisimported()+1)
+      
+      # choices=c(list_species_rod,names(yourimportedlistofspecies()))
+      choices=c(list_species_rod,yourimportedlistofspecies())
+      print(names(yourimportedlistofspecies()))
+      updateSelectInput(session, "rod.list.select", choices = choices)
+    })
+    
+    
 output$liste.faun4=renderUI({
-      # selectInput("liste.newgroup3", label = h5("Select the variable"), 
-      #             choices = factor(df$df[,input$liste.newgroup.rename]))
       selectInput("rod.list.select", label = h5("Rodentia List"), 
                   choices = list_species_rod, 
                    selected = list_species_rod[[1]]) 
@@ -69,8 +90,10 @@ output$liste.faun4.others=renderUI({
               selected = list_species_others[[1]]) 
 })
 observeEvent(ignoreInit = TRUE,input$rod.list.select,{
+  
   global.load$rod.list.select<-input$rod.list.select
-})
+
+  })
 observeEvent(ignoreInit = TRUE,input$euli.list.select,{
   global.load$euli.list.select<-input$euli.list.select
 })
@@ -84,7 +107,27 @@ observeEvent(ignoreInit = TRUE,input$other.list.select,{
   global.load$other.list.select<-input$other.list.select
 })
 
+yourimportedlistofspecies<-reactiveVal(NULL)
+listofspeciesisimported<-reactiveVal(1)
+observe({
+  req(input$list.extraspecies)
+  extension <- tools::file_ext(input$list.extraspecies$name)
+  list.extraspecies <- switch(extension,
+                                 csv = {
+                                   sep2 <- if( ";" %in% strsplit(readLines(input$list.extraspecies$datapath, n=1)[1], split="")[[1]] ){";"
+                                   } else if( "," %in% strsplit(readLines(input$list.extraspecies$datapath, n=1)[1], split="")[[1]] ){","
+                                   } else if ( "\t" %in% strsplit(readLines(input$list.extraspecies$datapath, n=1)[1], split="")[[1]] ){"\t"
+                                   } else {";"}
+                                   utils::read.csv(input$list.extraspecies$datapath,
+                                                   header = F,
+                                                   sep = sep2, stringsAsFactors = F,
+                                                   dec=".")},
+                                 xls = readxl::read_xls(input$list.extraspecies$datapath),
+                                 xlsx = readxl::read_xlsx(input$list.extraspecies$datapath))
 
+  global.load$list.extraspecies<-c(list.extraspecies)
+
+})
 
 output$liste.faun1=renderUI({
 pickerInput(
@@ -352,13 +395,31 @@ output$set.us=renderUI({
     
     output$completude=renderUI({
       if (input$infos_completude==TRUE) {
+        extension<-input$name_anat
+        if (extension=="Hum" || extension=="Fem" || extension=="Mand"|| extension=="Mol"){ 
+        switch(extension,
+                                    Mand = {
+                                      sep2 <-c("Diasteme", 
+                                               "corps", "Branche_montante") },
+                                    Hum = {
+                                      sep2 <-c("Prox", 
+                                               "diaphyse", "Dist") },
+                                    Hum = {
+                                      sep2 <-c("BA", 
+                                               "TR", "BP") },
+                                    Fem = {
+                                      sep2 <-c("Prox", 
+                                               "diaphyse", "Dist") })
+
       checkboxGroupButtons(
         inputId = "infos_completude_detailled",
         label = "Label",
-        choices = c("Prox", 
-                    "diaphyse", "Dist"),
-        selected =c("Prox", 
-                    "diaphyse", "Dist"),
+        choices = sep2,
+        selected =sep2,
+        # choices = c("Prox", 
+        #             "diaphyse", "Dist"),
+        # selected =c("Prox", 
+        #             "diaphyse", "Dist"),
         status = "primary",
         checkIcon = list(
           yes = icon("ok", 
@@ -366,6 +427,8 @@ output$set.us=renderUI({
           no = icon("remove",
                     lib = "glyphicon"))
       )
+        }#end if name_anat
+
       }
       
     })
@@ -387,8 +450,6 @@ output$set.us=renderUI({
         multiple = TRUE,
         options = list(create = TRUE,
                                        `live-search` = TRUE)
-      
-        
       )
       
     })
@@ -412,12 +473,28 @@ output$set.us=renderUI({
       global.load$photo<-input$txt_photo
     })
     
+    output$name_anat_list_boneteeth=renderUI({
+      switch(input$name_anat2,
+             bone = {list.bb<-get(list_bone[1]) },
+             teeth= {list.bb<-get(list_bone[2])})
+             
+      pickerInput(
+        inputId = "name_anat",
+        label = "Anatomy", 
+        # choices = get(list_bone[1]),
+        choices = list.bb,
+        options = list(create = TRUE,
+          `live-search` = TRUE))
+    })
+    
+    
     output$species_pickerinput=renderUI({
       switch(input$name_taxa,
 
              Rodentia = {
                # species.menu<-get(list_species_rod[1])
                species.menu<-get(global.load$rod.list.select)
+               
                },
              Eulipotyphla =   {
                # species.menu<-get(list_species_euli[1])
@@ -517,8 +594,8 @@ observeEvent(input$color_patine, {
           inputId = "Id_max",
           label = "Select/deselect all options", 
           choices = list(
-            left=c("Isup","M1sup","M2sup","M3sup"),
-            right=c("Isup","M1sup","M2sup","M3sup")
+            left=c("Isup","(P4)","M1sup","M2sup","M3sup"),
+            right=c("Isup","(P4)","M1sup","M2sup","M3sup")
           ),
           options = list(
             `actions-box` = TRUE), 
@@ -754,34 +831,45 @@ observeEvent(input$submit, {
            
         #"Mand","Max",
         if (!input$trace_dig=="IND"){
-          data$dig_bone_others<-input$trace_dig
+          
+          if(input$name_anat2=="bone"){
+            data$dig_bone_others<-input$trace_dig
+            switch(input$name_anat,
+                   Fem =   {
+                     data$dig_bone<-input$trace_dig
+                     data$dig_bone_others<-"NA"
+                   },
+                   Hum =  { 
+                     data$dig_bone<-input$trace_dig
+                     data$dig_bone_others<-"NA"
+                   })
+            
+          } else {
+            data$dig_MOL<-input$trace_dig
          switch(input$name_anat,
-
                 Iinf = {
                   data$dig_I<-input$trace_dig
                   data$dig_bone_others<-"NA"
+                  data$dig_MOL<-"NA"
                 },
                 Isup =   {
                   data$dig_I<-input$trace_dig
                   data$dig_bone_others<-"NA"
+                  data$dig_MOL<-"NA"
                 },
                 m1inf =   {
                   data$dig_m1inf<-input$trace_dig
                   data$dig_bone_others<-"NA"
+                  data$dig_MOL<-"NA"
                 },
-                MOL =   {
+                mol =   {
                   data$dig_MOL<-input$trace_dig
                   data$dig_bone_others<-"NA"
-                },
-                FEM =   {
-                  data$dig_bone<-input$trace_dig
-                  data$dig_bone_others<-"NA"
-                },
-                HUM =  { 
-                  data$dig_bone<-input$trace_dig
-                  data$dig_bone_others<-"NA"
                 })
-          } #end of if
+          }
+         
+        } #end of if
+         
          if (input$name_anat=="m1inf"){
            data$name_anat<-"Mol"
            data$infos_suppl_anat<-"m1inf"
@@ -794,6 +882,28 @@ observeEvent(input$submit, {
            data$name_anat<-"Incisor"
            data$infos_suppl_anat<-"Iinf"
          }
+         
+         ### correction of completude
+         if (input$infos_completude=="FALSE"){
+           data$infos_completude<-"Complete"
+         }
+         if (input$infos_completude=="TRUE"){
+           data$infos_completude<-"Frag"
+           
+           assign("df2",data,envir=.GlobalEnv)
+           a<-sum(str_count(data$infos_completude_detailled,pattern = "Prox"))
+           b<-sum(str_count(data$infos_completude_detailled,pattern = "diaphyse"))
+           c<-sum(str_count(data$infos_completude_detailled,pattern = "Dist"))
+           x<-a+b+c
+          
+           if (x==3){
+             data$infos_completude<-"Complete"
+           } else{}
+           
+         }
+         
+         
+         ###
          data
         
     })
@@ -834,6 +944,7 @@ observeEvent(input$submit, {
       updateSelectizeInput(session = session,inputId = "name_sector",selected = last.name.sector())
       updateSelectizeInput(session = session,inputId = "year_exca",selected = last.year_exca())
      
+
       
         # saveData(formData())
         data <- as.data.frame(t(formData()))
@@ -899,6 +1010,7 @@ observeEvent(input$submit, {
           test<-data.frame(apply(global.load$df,2,as.character))
           write.table(test, file =  paste0(Sys.Date(),".",global.load$site.archaeo,".BDD.uf",".csv",sep=""), row.names = FALSE, sep=";",dec=".") 
 
+          assign("df",global.load$df,envir = .GlobalEnv)
           })
     
     
@@ -1034,6 +1146,29 @@ observeEvent(input$Record_the_observation,{
      to_save <- reactiveValuesToList(global.load)
      saveRDS(to_save, file =  paste0(Sys.Date(),".",global.load$site.archaeo,".BDD.uf",".rds"))
          })
+
+############# a finir ----
+
+trigger.button.prevnext<-reactivalues(TRUE)
+output$previous=renderUI({
+  if(trigger.button.prevnext==TRUE){
+  actionButton("Previous.button", "Previous")}
+})
+observeEvent(input$Previous.button,{
+  
+  trigger.button.prevnext(FALSE)
+})
+output$next=renderUI({
+  if(trigger.button.prevnext==FALSE){
+  actionButton("Next.button", "Next")}
+})
+observeEvent(input$Next.button,{
+  
+  trigger.button.prevnext(TRUE)
+})
+
+
+
 #### Microfauna treatment ----
   
 ##### df.sub and co   ----  
@@ -1175,6 +1310,8 @@ df.sub <- reactive({
          output$table.species.perlevels <-  DT::renderDataTable({
            req(!is.null(number.species.per.levels()))
            data.df.tot2<-as.data.frame(number.species.per.levels())
+           # assign("data.df.tot2",data.df.tot2, envir=.GlobalEnv)
+           # data.df.tot2<-t(data.df.tot2)
            DT::datatable(
              data= data.df.tot2, 
              extensions = 'Buttons', options = list(
@@ -1285,6 +1422,7 @@ df.sub <- reactive({
          
 ######  Ratio graphs ---- 
          #option for ratio
+         save.table.ratio<-reactiveVal(NULL)  
          output$themeforfigure=renderUI({
            req(!is.null(fileisupload()))
            themes <- c("theme_bw", "theme_classic", "theme_dark", "theme_grey", "theme_light", "theme_linedraw", "theme_minimal")
@@ -1399,7 +1537,6 @@ df.sub <- reactive({
                      somme.ratio<-fem+hum
                     axis.var.name<-"ratio AN/PO %"
                   },
-                  "3"={},
                   "4"={
                     
                     valide.sup.base<-length(dplyr::select(data.df.calcul.verif,starts_with("Fem")))+
@@ -1548,12 +1685,12 @@ df.sub <- reactive({
            
            f_vec <-Vectorize(WilsonBinCI, vectorize.args = c("n","p"), SIMPLIFY = FALSE)
            
-           data.df.calcul.anpo<-matrix(unlist(f_vec(c(somme.ratio),c(ratio))),ncol=2, byrow=F)
+           data.df.calcul.anpo<-matrix(unlist(f_vec(c(somme.ratio),c(ratio))),ncol=2, byrow=T)
            
            df.ratio<-cbind.data.frame(data.df.calcul.2["name_level"],ratio,data.df.calcul.anpo)
            
            colnames(df.ratio)<-c("name_level","ratio","lower","upper")
-           
+           save.table.ratio(df.ratio)
            ############################################################################################a creer pour ordonner niveau
            # if (!is.null(factor.order.level.activation())){
            #   df.ratio[[setlevels]]<-factor(df.ratio[[setlevels]], levels = factor.order.level())
@@ -1579,9 +1716,42 @@ df.sub <- reactive({
          output$Ratio.data.list=renderUI({
            req(!is.null(fileisupload()))
            selectInput("select.ratio", label = h5("Select the ratio to plot"), 
-                       choices = list("CRA/POSTCRA%" = 1, "AN/PO% (mand+hum+fem)" = 2,"AN/PO% (2)" = 9,"AUT/ZE%"=7,"Z/E%" = 8, "PCRLB/CR%"=6, "PCRAP/CR%"=5,"PCRT/CR%"=4,"Proportion digested element" = 3 ), 
+                       choices = list("CRA/POSTCRA%" = 1, "AN/PO% (mand+hum+fem)" = 2,"AN/PO% (2)" = 9,"AUT/ZE%"=7,"Z/E%" = 8, "PCRLB/CR%"=6, "PCRAP/CR%"=5,"PCRT/CR%"=4), 
                        selected = 1)
          })
+         
+ ##### save ratio data ----
+         output$downloadData_ratio<- downloadHandler( 
+           filename = function() {
+             paste0(Sys.Date(),"ratio.data.table",".csv")
+           },
+           content = function(file) {
+             write.table(as.data.frame(save.table.ratio()), file, row.names = FALSE, sep=";",dec=".") 
+           }
+         )    
+         output$downloadData_ratio.graph<- downloadHandler( 
+           filename = function(){
+             paste("ratio.graph - ",paste(input$file1$name)," - ", Sys.Date(), '.pdf', sep = '')},
+           content = function(file) {
+             ggsave(session_store$Ratiodatagraph.plot,filename=file, device = "pdf")
+           }
+         ) 
+         output$table.Data_ratio <-  DT::renderDataTable({
+           req(!is.null(save.table.ratio()))
+           data.df.tot2<-as.data.frame(save.table.ratio())
+           DT::datatable(
+             data= data.df.tot2, 
+             extensions = 'Buttons', options = list(
+               initComplete = htmlwidgets::JS(
+                 "function(settings, json) {",
+                 paste0("$(this.api().table().container()).css({'font-size': '", font.size, "'});"),
+                 "}")
+             ))
+         })#end renderDataTable
+         
+         
+### ratio dig ----      
+         save.table.dig<-reactiveVal(NULL)
          output$Ratio.data.dig.graph <- renderUI({
            plotOutput("Ratiodatagraph.dig"
                       # , height = height.size(), width = width.size()
@@ -1601,31 +1771,34 @@ df.sub <- reactive({
            setnb<-input$setnb
            # digcol<-c("dig_I","dig_MOL","dig_m1inf","dig_bone","dig_bone_others")
            df.sub$nb_remains<-as.numeric(df.sub$nb_remains)
-           data.df.calcul.gh<-df.sub %>% group_by(.data[["name_level"]],.data[["name_anat"]],.data[["dig_I"]],
+           data.df.calcul.gh<-df.sub %>% group_by(.data[["name_level"]],.data[["name_anat"]],.data[["infos_suppl_anat"]],.data[["dig_I"]],
                                                   .data[["dig_MOL"]],.data[["dig_m1inf"]],
                                                   ,.data[["dig_bone"]],.data[["dig_bone_others"]])%>%
              summarize(nb_total = sum(!!sym("nb_remains")))
            
-          
+           
            list.element<-c("0","1","2","3","4","IND")
            
-          
+          assign("tt",data.df.calcul.gh,envir=.GlobalEnv)
            switch(input$select.ratio.dig,
                   "1"={
                     FEM.dig<-subset(data.df.calcul.gh, name_anat == "Fem")
                     validate(need(nrow(FEM.dig) > 0 ,"No 'Fem' elements found in the database"))
 
-                    FEM.dig<-FEM.dig[,c(1,2,7,8)]
-                    digcol<-"dig_bone_others"
-                    myFormula <- as.formula(paste0("name_level", " ~ ",digcol))
-                    data.df.calcul.verif<-reshape2::dcast(FEM.dig, myFormula , fill = 0L)
-                    new.element <-setdiff(list.element,colnames(data.df.calcul.verif))
-                    new.element.tab<-matrix(data=0,ncol
-                                            =length(new.element),dimnames =list(c(),new.element))
-                    
-                    data.df.calcul.verif<- cbind(data.df.calcul.verif,new.element.tab)
-                    somme.ratio<-rowSums(data.df.calcul.verif[2:ncol(data.df.calcul.verif)])
-                    ratio<-rowSums(data.df.calcul.verif[3:6])/(rowSums(data.df.calcul.verif[2:6])+somme.ratio)
+                    # FEM.dig<-FEM.dig[,c(1,2,7,9)]
+                    # digcol<-"dig_bone_others"
+                    digcol<-"dig_bone"
+                    # myFormula <- as.formula(paste0("name_level", " ~ ",digcol))
+                    # data.df.calcul.verif<-reshape2::dcast(FEM.dig, myFormula , fill = 0L)
+                    # print(data.df.calcul.verif)
+                    # new.element <-setdiff(list.element,colnames(data.df.calcul.verif))
+                    # new.element.tab<-matrix(data=0,ncol
+                    #                         =length(new.element),dimnames =list(c(),new.element))
+                    # 
+                    # data.df.calcul.verif<- cbind(data.df.calcul.verif,new.element.tab)
+                    # print(data.df.calcul.verif)
+                    # somme.ratio<-rowSums(data.df.calcul.verif[2:ncol(data.df.calcul.verif)])
+                    # ratio<-rowSums(data.df.calcul.verif[3:6])/(rowSums(data.df.calcul.verif[2:6])+somme.ratio)
                     axis.var.name<-"% Fem dig"
                     
                   },
@@ -1633,138 +1806,162 @@ df.sub <- reactive({
                     FEM.dig<-subset(data.df.calcul.gh, name_anat == "Hum")
                     validate(need(nrow(FEM.dig) > 0 ,"No 'Hum' elements found in the database"))
                     
-                    FEM.dig<-FEM.dig[,c(1,2,7,8)]
-                    digcol<-"dig_bone_others"
-                    myFormula <- as.formula(paste0("name_level", " ~ ",digcol))
-                    data.df.calcul.verif<-reshape2::dcast(FEM.dig, myFormula , fill = 0L)
-                    new.element <-setdiff(list.element,colnames(data.df.calcul.verif))
-                    new.element.tab<-matrix(data=0,ncol
-                                            =length(new.element),dimnames =list(c(),new.element))
+                    # FEM.dig<-FEM.dig[,c(1,2,7,9)]
+                    # digcol<-"dig_bone_others"
+                    digcol<-"dig_bone"
                     
-                    data.df.calcul.verif<- cbind(data.df.calcul.verif,new.element.tab)
-                    somme.ratio<-rowSums(data.df.calcul.verif[2:ncol(data.df.calcul.verif)])
-                    ratio<-rowSums(data.df.calcul.verif[3:6])/(rowSums(data.df.calcul.verif[2:6])+somme.ratio)
+                    
+                    # myFormula <- as.formula(paste0("name_level", " ~ ",digcol))
+                    # data.df.calcul.verif<-reshape2::dcast(FEM.dig, myFormula , fill = 0L)
+                    # new.element <-setdiff(list.element,colnames(data.df.calcul.verif))
+                    # new.element.tab<-matrix(data=0,ncol
+                    #                         =length(new.element),dimnames =list(c(),new.element))
+                    # 
+                    # data.df.calcul.verif<- cbind(data.df.calcul.verif,new.element.tab)
+                    # print(data.df.calcul.verif)
+                    # somme.ratio<-rowSums(data.df.calcul.verif[2:ncol(data.df.calcul.verif)])
+                    # ratio<-rowSums(data.df.calcul.verif[3:6])/(rowSums(data.df.calcul.verif[2:6])+somme.ratio)
                     axis.var.name<-"% Hum dig"
                   },
                   "3"={
                     FEM.dig<-subset(data.df.calcul.gh, name_anat == "Hum" | name_anat == "Fem" )
                     validate(need(nrow(FEM.dig) > 0 ,"No 'Hum' and 'Fem' elements found in the database"))
+                    print(FEM.dig)
+                    print(data.df.calcul.gh)
+                    # FEM.dig<-FEM.dig[,c(1,2,7,9)]
+                    # digcol<-"dig_bone_others"
+                    digcol<-"dig_bone"
                     
-                    FEM.dig<-FEM.dig[,c(1,2,7,8)]
-                    digcol<-"dig_bone_others"
-                    myFormula <- as.formula(paste0("name_level", " ~ ",digcol))
-                    data.df.calcul.verif<-reshape2::dcast(FEM.dig, myFormula , fill = 0L)
-                    new.element <-setdiff(list.element,colnames(data.df.calcul.verif))
-                    new.element.tab<-matrix(data=0,ncol
-                                            =length(new.element),dimnames =list(c(),new.element))
-                    
-                    data.df.calcul.verif<- cbind(data.df.calcul.verif,new.element.tab)
-                    somme.ratio<-rowSums(data.df.calcul.verif[2:ncol(data.df.calcul.verif)])
-                    ratio<-rowSums(data.df.calcul.verif[3:6])/(rowSums(data.df.calcul.verif[2:6])+somme.ratio)
+                    # myFormula <- as.formula(paste0("name_level", " ~ ",digcol))
+                    # data.df.calcul.verif<-reshape2::dcast(FEM.dig, myFormula , fill = 0L)
+                    # print(data.df.calcul.verif)
+                    # new.element <-setdiff(list.element,colnames(data.df.calcul.verif))
+                    # new.element.tab<-matrix(data=0,ncol
+                    #                         =length(new.element),dimnames =list(c(),new.element))
+                    # 
+                    # data.df.calcul.verif<- cbind(data.df.calcul.verif,new.element.tab)
+                    # print(data.df.calcul.verif)
+                    #  somme.ratio<-rowSums(data.df.calcul.verif[2:ncol(data.df.calcul.verif)])
+                    # ratio<-rowSums(data.df.calcul.verif[3:6])/(rowSums(data.df.calcul.verif[2:6])+somme.ratio)
                     axis.var.name<-"% Hum dig"
                   },
                   "4"={
-                    FEM.dig<-subset(data.df.calcul.gh, name_anat == "Iinf")
+                    FEM.dig<-subset(data.df.calcul.gh, infos_suppl_anat == "Iinf")
                     validate(need(nrow(FEM.dig) > 0 ,"No 'Iinf' elements found in the database"))
                     
-                    FEM.dig<-FEM.dig[,c(1,2,3,8)]
+                    # FEM.dig<-FEM.dig[,c(1,2,4,9)]
                     digcol<-"dig_I"
-                    myFormula <- as.formula(paste0("name_level", " ~ ",digcol))
-                    data.df.calcul.verif<-reshape2::dcast(FEM.dig, myFormula , fill = 0L)
-                    new.element <-setdiff(list.element,colnames(data.df.calcul.verif))
-                    new.element.tab<-matrix(data=0,ncol
-                                            =length(new.element),dimnames =list(c(),new.element))
-                    
-                    data.df.calcul.verif<- cbind(data.df.calcul.verif,new.element.tab)
-                    somme.ratio<-rowSums(data.df.calcul.verif[2:ncol(data.df.calcul.verif)])
-                    ratio<-rowSums(data.df.calcul.verif[3:6])/(rowSums(data.df.calcul.verif[2:6])+somme.ratio)
+                    # myFormula <- as.formula(paste0("name_level", " ~ ",digcol))
+                    # data.df.calcul.verif<-reshape2::dcast(FEM.dig, myFormula , fill = 0L)
+                    # new.element <-setdiff(list.element,colnames(data.df.calcul.verif))
+                    # new.element.tab<-matrix(data=0,ncol
+                    #                         =length(new.element),dimnames =list(c(),new.element))
+                    # 
+                    # data.df.calcul.verif<- cbind(data.df.calcul.verif,new.element.tab)
+                    # print(data.df.calcul.verif)
+                    # somme.ratio<-rowSums(data.df.calcul.verif[2:ncol(data.df.calcul.verif)])
+                    # ratio<-rowSums(data.df.calcul.verif[3:6])/(rowSums(data.df.calcul.verif[2:6])+somme.ratio)
                     axis.var.name<-"% Iinf dig"
                   },
                   "5"={
-                    FEM.dig<-subset(data.df.calcul.gh, name_anat == "Isup")
+                    FEM.dig<-subset(data.df.calcul.gh, infos_suppl_anat == "Isup")
                     validate(need(nrow(FEM.dig) > 0 ,"No 'Isup' elements found in the database"))
                     
-                    FEM.dig<-FEM.dig[,c(1,2,3,8)]
+                    # FEM.dig<-FEM.dig[,c(1,2,4,9)]
                     digcol<-"dig_I"
-                    myFormula <- as.formula(paste0("name_level", " ~ ",digcol))
-                    data.df.calcul.verif<-reshape2::dcast(FEM.dig, myFormula , fill = 0L)
-                    new.element <-setdiff(list.element,colnames(data.df.calcul.verif))
-                    new.element.tab<-matrix(data=0,ncol
-                                            =length(new.element),dimnames =list(c(),new.element))
-                    
-                    data.df.calcul.verif<- cbind(data.df.calcul.verif,new.element.tab)
-                    somme.ratio<-rowSums(data.df.calcul.verif[2:ncol(data.df.calcul.verif)])
-                    ratio<-rowSums(data.df.calcul.verif[3:6])/(rowSums(data.df.calcul.verif[2:6])+somme.ratio)
+                    # myFormula <- as.formula(paste0("name_level", " ~ ",digcol))
+                    # data.df.calcul.verif<-reshape2::dcast(FEM.dig, myFormula , fill = 0L)
+                    # new.element <-setdiff(list.element,colnames(data.df.calcul.verif))
+                    # new.element.tab<-matrix(data=0,ncol
+                    #                         =length(new.element),dimnames =list(c(),new.element))
+                    # 
+                    # data.df.calcul.verif<- cbind(data.df.calcul.verif,new.element.tab)
+                    # somme.ratio<-rowSums(data.df.calcul.verif[2:ncol(data.df.calcul.verif)])
+                    # ratio<-rowSums(data.df.calcul.verif[3:6])/(rowSums(data.df.calcul.verif[2:6])+somme.ratio)
                     axis.var.name<-"% Isup dig"
                    
                   },
                   "6"={
-                    FEM.dig<-subset(data.df.calcul.gh, name_anat == "Isup"| name_anat == "Iinf")
+                    FEM.dig<-subset(data.df.calcul.gh, infos_suppl_anat == "Isup"| infos_suppl_anat == "Iinf")
                     validate(need(nrow(FEM.dig) > 0 ,"No 'Incisor' elements found in the database"))
                     
-                    FEM.dig<-FEM.dig[,c(1,2,3,8)]
+                    # FEM.dig<-FEM.dig[,c(1,2,4,9)]
                     digcol<-"dig_I"
-                    myFormula <- as.formula(paste0("name_level", " ~ ",digcol))
-                    data.df.calcul.verif<-reshape2::dcast(FEM.dig, myFormula , fill = 0L)
-                    new.element <-setdiff(list.element,colnames(data.df.calcul.verif))
-                    new.element.tab<-matrix(data=0,ncol
-                                            =length(new.element),dimnames =list(c(),new.element))
-                    
-                    data.df.calcul.verif<- cbind(data.df.calcul.verif,new.element.tab)
-                    somme.ratio<-rowSums(data.df.calcul.verif[2:ncol(data.df.calcul.verif)])
-                    ratio<-rowSums(data.df.calcul.verif[3:6])/(rowSums(data.df.calcul.verif[2:6])+somme.ratio)
+                    # myFormula <- as.formula(paste0("name_level", " ~ ",digcol))
+                    # data.df.calcul.verif<-reshape2::dcast(FEM.dig, myFormula , fill = 0L)
+                    # new.element <-setdiff(list.element,colnames(data.df.calcul.verif))
+                    # new.element.tab<-matrix(data=0,ncol
+                    #                         =length(new.element),dimnames =list(c(),new.element))
+                    # 
+                    # data.df.calcul.verif<- cbind(data.df.calcul.verif,new.element.tab)
+                    # somme.ratio<-rowSums(data.df.calcul.verif[2:ncol(data.df.calcul.verif)])
+                    # ratio<-rowSums(data.df.calcul.verif[3:6])/(rowSums(data.df.calcul.verif[2:6])+somme.ratio)
                     axis.var.name<-"% incisor dig"
                     
                   },
                   "7"={
-                    FEM.dig<-subset(data.df.calcul.gh, name_anat == "m1inf")
+                    FEM.dig<-subset(data.df.calcul.gh, infos_suppl_anat == "m1inf")
                     validate(need(nrow(FEM.dig) > 0 ,"No 'm1inf' elements found in the database"))
                     
-                    FEM.dig<-FEM.dig[,c(1,2,5,8)]
+                    # FEM.dig<-FEM.dig[,c(1,2,6,9)]
                     digcol<-"dig_m1inf"
-                    myFormula <- as.formula(paste0("name_level", " ~ ",digcol))
-                    data.df.calcul.verif<-reshape2::dcast(FEM.dig, myFormula , fill = 0L)
-                    new.element <-setdiff(list.element,colnames(data.df.calcul.verif))
-                    new.element.tab<-matrix(data=0,ncol
-                                            =length(new.element),dimnames =list(c(),new.element))
-                    
-                    data.df.calcul.verif<- cbind(data.df.calcul.verif,new.element.tab)
-                    somme.ratio<-rowSums(data.df.calcul.verif[2:ncol(data.df.calcul.verif)])
-                    ratio<-rowSums(data.df.calcul.verif[3:6])/(rowSums(data.df.calcul.verif[2:6])+somme.ratio)
+                    # myFormula <- as.formula(paste0("name_level", " ~ ",digcol))
+                    # data.df.calcul.verif<-reshape2::dcast(FEM.dig, myFormula , fill = 0L)
+                    # print(data.df.calcul.verif)
+                    # new.element <-setdiff(list.element,colnames(data.df.calcul.verif))
+                    # new.element.tab<-matrix(data=0,ncol
+                    #                         =length(new.element),dimnames =list(c(),new.element))
+                    # 
+                    # data.df.calcul.verif<- cbind(data.df.calcul.verif,new.element.tab)
+                    # somme.ratio<-rowSums(data.df.calcul.verif[2:ncol(data.df.calcul.verif)])
+                    # ratio<-rowSums(data.df.calcul.verif[3:6])/(rowSums(data.df.calcul.verif[2:6])+somme.ratio)
                     axis.var.name<-"% m1inf dig"
                     
                   },
                   "8"={
-                    FEM.dig<-subset(data.df.calcul.gh, name_anat == "MOL")
+                    FEM.dig<-subset(data.df.calcul.gh, name_anat == "Mol")
                     validate(need(nrow(FEM.dig) > 0 ,"No 'MOL' elements found in the database"))
                     
-                    FEM.dig<-FEM.dig[,c(1,2,4,8)]
+                    # FEM.dig<-FEM.dig[,c(1,2,5,9)]
                     digcol<-"dig_MOL"
-                    myFormula <- as.formula(paste0("name_level", " ~ ",digcol))
-                    data.df.calcul.verif<-reshape2::dcast(FEM.dig, myFormula , fill = 0L)
-                    new.element <-setdiff(list.element,colnames(data.df.calcul.verif))
-                    new.element.tab<-matrix(data=0,ncol
-                                            =length(new.element),dimnames =list(c(),new.element))
-                    
-                    data.df.calcul.verif<- cbind(data.df.calcul.verif,new.element.tab)
-                    somme.ratio<-rowSums(data.df.calcul.verif[2:ncol(data.df.calcul.verif)])
-                    ratio<-rowSums(data.df.calcul.verif[3:6])/(rowSums(data.df.calcul.verif[2:6])+somme.ratio)
+                    # myFormula <- as.formula(paste0("name_level", " ~ ",digcol))
+                    # data.df.calcul.verif<-reshape2::dcast(FEM.dig, myFormula , fill = 0L)
+                    # new.element <-setdiff(list.element,colnames(data.df.calcul.verif))
+                    # new.element.tab<-matrix(data=0,ncol
+                    #                         =length(new.element),dimnames =list(c(),new.element))
+                    # 
+                    # data.df.calcul.verif<- cbind(data.df.calcul.verif,new.element.tab)
+                    # somme.ratio<-rowSums(data.df.calcul.verif[2:ncol(data.df.calcul.verif)])
+                    # ratio<-rowSums(data.df.calcul.verif[3:6])/(rowSums(data.df.calcul.verif[2:6])+somme.ratio)
                     axis.var.name<-"% MO dig"
                   }
            )
            ## test de somme.ratio si =0
            # somme.ratio<-somme.ratio[-(which(rowSums(somme.ratio)==0)),]
-           ##
-           print(data.df.calcul.verif)
+           ##                    FEM.dig<-subset(tt, name_anat == "Fem")
+          myFormula <- as.formula(paste0("name_level + nb_total", " ~ ",digcol))
+          print(FEM.dig)
+          data.df.calcul.verif<-reshape2::dcast(FEM.dig, myFormula , fill = 0L)
+            
+          print(data.df.calcul.verif)
+          new.element <-setdiff(list.element,colnames(data.df.calcul.verif))
+          if(length(new.element)>0){
+            new.element.tab<-matrix(data=0,ncol
+                                    =length(new.element),dimnames =list(c(),new.element))
+            
+            data.df.calcul.verif<- cbind(data.df.calcul.verif,new.element.tab)}
+          data.df.calcul.verif2<-data.df.calcul.verif %>% group_by(.data[["name_level"]])%>%
+          summarise(across(c("0","1","2","3","4"),sum))
+
+           somme.ratio<-rowSums(data.df.calcul.verif2[2:ncol(data.df.calcul.verif2)])
+           ratio<-rowSums(data.df.calcul.verif2[c("1","2","3","4")])/(rowSums(data.df.calcul.verif2[c("0","1","2","3","4")]))
+           
            
            f_vec <-Vectorize(WilsonBinCI, vectorize.args = c("n","p"), SIMPLIFY = FALSE)
-           
-           data.df.calcul.anpo<-matrix(unlist(f_vec(c(somme.ratio),c(ratio))),ncol=2, byrow=F)
-           
-           df.ratio<-cbind.data.frame(data.df.calcul.2["name_level"],ratio,data.df.calcul.anpo)
-           
-           colnames(df.ratio)<-c("name_level","ratio","lower","upper")
-           
+           data.df.calcul.anpo<-matrix(unlist(f_vec(c(somme.ratio),c(ratio))),ncol=2, byrow=T)
+           df.ratio<-cbind.data.frame(data.df.calcul.verif2["name_level"],ratio,data.df.calcul.anpo,somme.ratio)
+           colnames(df.ratio)<-c("name_level","ratio","lower","upper","n_remains")
+           save.table.dig(df.ratio)
            ############################################################################################a creer pour ordonner niveau
            # if (!is.null(factor.order.level.activation())){
            #   df.ratio[[setlevels]]<-factor(df.ratio[[setlevels]], levels = factor.order.level())
@@ -1790,8 +1987,8 @@ df.sub <- reactive({
          output$Ratio.dig.list=renderUI({
            req(!is.null(fileisupload()))
            selectInput("select.ratio.dig", label = h5("Select the ratio to plot"), 
-                       choices = list("Proportion digested hum" = 1,
-                                      "Proportion digested fem" = 2,
+                       choices = list("Proportion digested fem" = 1,
+                                      "Proportion digested hum" = 2,
                                       "Proportion digested bones" = 3,
                                       "Proportion digested Iinf" = 4,
                                       "Proportion digested Isup" = 5,
@@ -1801,9 +1998,211 @@ df.sub <- reactive({
                                       ), 
                        selected = 7)
          })
+##### save Dig data ----
+         output$downloadData_dig<- downloadHandler( 
+           filename = function() {
+             paste0(Sys.Date(),"ratio.data.dig",".csv")
+           },
+           content = function(file) {
+             write.table(as.data.frame(save.table.dig()), file, row.names = FALSE, sep=";",dec=".") 
+           }
+         )    
+         output$downloadData_dig.graph<- downloadHandler( 
+           filename = function(){
+             paste("dig.graph - ",paste(input$file1$name)," - ", Sys.Date(), '.pdf', sep = '')},
+           content = function(file) {
+             ggsave(session_store$Ratiodatagraph.dig.plot,filename=file, device = "pdf")
+           }
+         ) 
+         output$table.Data_dig <-  DT::renderDataTable({
+           req(!is.null(save.table.dig()))
+           data.df.tot2<-as.data.frame(save.table.dig())
+           DT::datatable(
+             data= data.df.tot2, 
+             extensions = 'Buttons', options = list(
+               initComplete = htmlwidgets::JS(
+                 "function(settings, json) {",
+                 paste0("$(this.api().table().container()).css({'font-size': '", font.size, "'});"),
+                 "}")
+             ))
+         })#end renderDataTable
          
          
          
+ #### completude ----  
+         save.table.comp<-reactiveVal(NULL)
+         output$Ratio.completude.graph <- renderUI({
+           plotOutput("Ratiodatagraph.comp"
+                      # , height = height.size(), width = width.size()
+           )
+         })
+         
+         output$Ratiodatagraph.comp <- renderPlot({
+           plot(Ratio.completude())
+           session_store$Ratio.completude<- Ratio.completude()
+         })   
+         
+         Ratio.completude<-reactive({
+           df.sub<-df.sub()
+           setlevels<-input$setlevels
+           # setus<-input$setus
+           # setanat<-input$setanat
+           # setnb<-input$setnb
+           df.sub$nb_remains<-as.numeric(df.sub$nb_remains)
+           data.df.calcul.gh<-df.sub %>% group_by(.data[["name_level"]],.data[["name_anat"]],.data[["infos_completude"]],
+                                                  .data[["infos_completude_detailled"]])%>%
+             summarize(nb_total = sum(!!sym("nb_remains")))
+
+           switch(input$select.ratio.comp,
+                  "1"={
+                    data.df.calcul.gh2<-as.data.frame(subset(data.df.calcul.gh,name_anat=="Fem"))
+                    validate(need(nrow(data.df.calcul.gh2) > 0 ,"No 'Fem' elements found in the database"))
+                    
+                    data.df.calcul.gh2[["name_level"]]<-lapply(data.df.calcul.gh2[["name_level"]], function(x){ifelse(is.null(x), NA, x)})
+                    data.df.calcul.gh2[["infos_completude_detailled"]]<-lapply(data.df.calcul.gh2[["infos_completude_detailled"]], function(x){ifelse(is.null(x), "no", x)})
+
+                    name_level<-unlist(data.df.calcul.gh2[["name_level"]])
+                    infos_completude<-unlist(data.df.calcul.gh2[["infos_completude"]])
+                    infos_completude_detailled<-unlist(data.df.calcul.gh2[["infos_completude_detailled"]])
+                    nb_total<-unlist(data.df.calcul.gh2[["nb_total"]])
+                    temp<-cbind.data.frame(name_level,infos_completude,infos_completude_detailled,nb_total)
+                     digcol<-c("infos_completude")
+                    myFormula <- as.formula(paste0("name_level", " ~ ",digcol))
+                    data.df.calcul.verif<-reshape2::dcast(temp, myFormula , fill = 0L)
+                    if(ncol(data.df.calcul.verif)<3){
+                    new.element <-setdiff(c("Complete","Frag"),colnames(data.df.calcul.verif))
+                    new.element.tab<-matrix(data=0,ncol
+                                            =length(new.element),dimnames =list(c(),new.element))
+                    data.df.calcul.verif<- cbind(data.df.calcul.verif,new.element.tab)}
+                    
+                    somme.ratio<-rowSums(data.df.calcul.verif[2:ncol(data.df.calcul.verif)])
+                    ratio<-rowSums(data.df.calcul.verif[2])/(rowSums(data.df.calcul.verif[2:3]))
+                   
+                    # str_count(data.df.calcul.gh$infos_completude_detailled,pattern = "Prox")*data.df.calcul.gh$nb_total
+                   # dplyr::select(data.df.calcul.gh2,starts_with("infos_completude"))
+                    axis.var.name<-"% Fem fragmentation"
+                    
+                  },
+                  "2"={
+                    data.df.calcul.gh2<-as.data.frame(subset(data.df.calcul.gh,name_anat=="Hum"))
+                    validate(need(nrow(data.df.calcul.gh2) > 0 ,"No 'Hum' elements found in the database"))
+                    
+                    data.df.calcul.gh2[["name_level"]]<-lapply(data.df.calcul.gh2[["name_level"]], function(x){ifelse(is.null(x), NA, x)})
+                    data.df.calcul.gh2[["infos_completude_detailled"]]<-lapply(data.df.calcul.gh2[["infos_completude_detailled"]], function(x){ifelse(is.null(x), "no", x)})
+                    
+                    name_level<-unlist(data.df.calcul.gh2[["name_level"]])
+                    infos_completude<-unlist(data.df.calcul.gh2[["infos_completude"]])
+                    infos_completude_detailled<-unlist(data.df.calcul.gh2[["infos_completude_detailled"]])
+                    nb_total<-unlist(data.df.calcul.gh2[["nb_total"]])
+                    temp<-cbind.data.frame(name_level,infos_completude,infos_completude_detailled,nb_total)
+                    digcol<-c("infos_completude")
+                    myFormula <- as.formula(paste0("name_level", " ~ ",digcol))
+                    data.df.calcul.verif<-reshape2::dcast(temp, myFormula , fill = 0L)
+                    if(ncol(data.df.calcul.verif)<3){
+                      new.element <-setdiff(c("Complete","Frag"),colnames(data.df.calcul.verif))
+                      new.element.tab<-matrix(data=0,ncol
+                                              =length(new.element),dimnames =list(c(),new.element))
+                      data.df.calcul.verif<- cbind(data.df.calcul.verif,new.element.tab)}
+                    
+                    somme.ratio<-rowSums(data.df.calcul.verif[2:ncol(data.df.calcul.verif)])
+                    ratio<-rowSums(data.df.calcul.verif[2])/(rowSums(data.df.calcul.verif[2:3]))
+                    
+                    axis.var.name<-"% Hum fragmentation"
+                  },
+                  "3"={
+                    data.df.calcul.gh2<-as.data.frame(subset(data.df.calcul.gh,name_anat=="Fem" | name_anat=="Hum"))
+                    validate(need(nrow(data.df.calcul.gh2) > 0 ,"No 'Hum' or 'fem' elements found in the database"))
+                    
+                    data.df.calcul.gh2[["name_level"]]<-lapply(data.df.calcul.gh2[["name_level"]], function(x){ifelse(is.null(x), NA, x)})
+                    data.df.calcul.gh2[["infos_completude_detailled"]]<-lapply(data.df.calcul.gh2[["infos_completude_detailled"]], function(x){ifelse(is.null(x), "no", x)})
+                    
+                    name_level<-unlist(data.df.calcul.gh2[["name_level"]])
+                    infos_completude<-unlist(data.df.calcul.gh2[["infos_completude"]])
+                    infos_completude_detailled<-unlist(data.df.calcul.gh2[["infos_completude_detailled"]])
+                    nb_total<-unlist(data.df.calcul.gh2[["nb_total"]])
+                    temp<-cbind.data.frame(name_level,infos_completude,infos_completude_detailled,nb_total)
+                    digcol<-c("infos_completude")
+                    myFormula <- as.formula(paste0("name_level", " ~ ",digcol))
+                    data.df.calcul.verif<-reshape2::dcast(temp, myFormula , fill = 0L)
+                    if(ncol(data.df.calcul.verif)<3){
+                      new.element <-setdiff(c("Complete","Frag"),colnames(data.df.calcul.verif))
+                      new.element.tab<-matrix(data=0,ncol
+                                              =length(new.element),dimnames =list(c(),new.element))
+                      data.df.calcul.verif<- cbind(data.df.calcul.verif,new.element.tab)}
+                    
+                    somme.ratio<-rowSums(data.df.calcul.verif[2:ncol(data.df.calcul.verif)])
+                    ratio<-rowSums(data.df.calcul.verif[2])/(rowSums(data.df.calcul.verif[2:3]))
+                    axis.var.name<-"% bone fragmentation"
+                  }
+           )
+
+           f_vec <-Vectorize(WilsonBinCI, vectorize.args = c("n","p"), SIMPLIFY = FALSE)
+           data.df.calcul.anpo<-matrix(unlist(f_vec(c(somme.ratio),c(ratio))),ncol=2, byrow=T)
+           df.ratio<-cbind.data.frame(data.df.calcul.verif["name_level"],ratio,data.df.calcul.anpo)
+           colnames(df.ratio)<-c("name_level","ratio","lower","upper")
+           save.table.comp(df.ratio)
+           ############################################################################################a creer pour ordonner niveau
+           # if (!is.null(factor.order.level.activation())){
+           #   df.ratio[[setlevels]]<-factor(df.ratio[[setlevels]], levels = factor.order.level())
+           # }
+           
+           p <- ggplot2::ggplot(df.ratio, 
+                                ggplot2::aes(x = .data[["ratio"]]*100, y = .data[["name_level"]], xmin = .data[["lower"]]*100, xmax = .data[["upper"]]*100))+ 
+             scale_x_continuous(limits=c(0,100))
+           p<-p+geom_pointrange()+
+             xlab(paste(axis.var.name))+ylab(paste("name_level")) +
+             do.call(themeforfigure.choice(), list()) +
+             theme(axis.title.x = element_text(size=font_size()),
+                   axis.title.y = element_text(size=font_size()),
+                   axis.text.x = element_text(size=font_tick()),
+                   axis.text.y = element_text(size=font_tick()),
+                   legend.title = element_blank())+
+             theme(legend.position='none')
+           p
+           
+         }) 
+         
+         output$select.ratio.comp.list=renderUI({
+           req(!is.null(fileisupload()))
+           selectInput("select.ratio.comp", label = h5("Select the bone"), 
+                       choices = list("Completude hum" = 2,
+                                      "Completude fem" = 1,
+                                      "Completude Hum & Fem" = 3
+                       ), 
+                       selected = 3)
+         })      
+         
+##### save completude data ----
+         output$downloadData_comp<- downloadHandler( 
+           filename = function() {
+             paste0(Sys.Date(),"ratio.data.completude",".csv")
+           },
+           content = function(file) {
+             write.table(as.data.frame(save.table.comp()), file, row.names = FALSE, sep=";",dec=".") 
+           }
+         )    
+         output$downloadData_comp.graph<- downloadHandler( 
+           filename = function(){
+             paste("completude.graph - ",paste(input$file1$name)," - ", Sys.Date(), '.pdf', sep = '')},
+           content = function(file) {
+             ggsave(session_store$Ratio.completude,filename=file, device = "pdf")
+           }
+         ) 
+         output$table.Data_comp <-  DT::renderDataTable({
+           req(!is.null(save.table.comp()))
+           data.df.tot2<-as.data.frame(save.table.comp())
+           DT::datatable(
+             data= data.df.tot2, 
+             extensions = 'Buttons', options = list(
+               initComplete = htmlwidgets::JS(
+                 "function(settings, json) {",
+                 paste0("$(this.api().table().container()).css({'font-size': '", font.size, "'});"),
+                 "}")
+             ))
+         })#end renderDataTable
+         
+         
+ #### privot table -----        
          output$liste.summary=renderUI({
            req(!is.null(fileisupload()))
            checkboxGroupInput("listesum", h4("Variables for summary table"),
@@ -1839,6 +2238,9 @@ df.sub <- reactive({
          
          output$table.species <-  DT::renderDataTable({
            data.df.tot2<-df.species.table()
+           assign("data.df.tot2",data.df.tot2, envir=.GlobalEnv)
+           data.df.tot2<-t(data.df.tot2)
+           
            DT::datatable(
              data= data.df.tot2, 
              extensions = 'Buttons', options = list(

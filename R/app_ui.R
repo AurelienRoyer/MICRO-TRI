@@ -72,13 +72,23 @@ body <- dashboardBody(
                 tabPanel(h4("New Database"),
                          textInput("name_site", label="Name of the site", value = "", width = NULL,
                                    placeholder = NULL),
-                         uiOutput ("liste.faun4"),
+                         column(10 , uiOutput ("liste.faun4"),
                          uiOutput ("liste.faun4.eulipo"),
                          uiOutput ("liste.faun4.chiro"),
                          uiOutput ("liste.faun4.herpeto"),
                          uiOutput ("liste.faun4.others"),
-                         actionButton("create_bdd", "Create the BDD"),
+                         ),#end of column
+                         column(2 ,
+                                fileInput("list.extraspecies", "Choose File to import species list (.csv)",
+                                   multiple = TRUE,
+                                   accept = c("text/csv",
+                                              "text/comma-separated-values,text/plain",
+                                              ".csv")), ),
+                         column(2 ,
+                                actionButton("go.ng4", "load it"), ),
                          
+                         column(12 ,actionButton("create_bdd", "Create the BDD"),
+                         ),#end of column
                 ),#end of tabpanel
                 tabPanel(h4("Import an old database"),
                          br(),
@@ -163,6 +173,8 @@ body <- dashboardBody(
                       # collapsible = TRUE,
                 actionButton("submit", "New bag"),
                 actionButton("submit2", "New line"),
+                uiOutput ("previous"),
+                uiOutput ("next")
                   ),# end of box  
                 box(width = 6,background = "olive",
                     uiOutput ("site")
@@ -256,21 +268,57 @@ body <- dashboardBody(
 
                 ),# end of box
                 
-                box(width = 3,
+                box(width = 4,
                     br(),
-                    numericInput("nb_remains", label = h5("Numeric input"), value = 1),
-                   br(),
+                    radioGroupButtons(
+                      inputId = "trace_dig",
+                      label = "Digestion marks",
+                      choices = c("IND","0","1","2","3","4"),
+                      selected =("0"),
+                      status = "primary",
+                      checkIcon = list(
+                        yes = icon("ok", 
+                                   lib = "glyphicon"),
+                        no = icon("remove",
+                                  lib = "glyphicon"))
+                    ),
+                    br(),
+                    sliderTextInput(
+                      inputId = "specimen_age",
+                      label = "specimen age",
+                      choices = c("Young","Adult","Old"),
+                      selected =c("Adult")
+                    ),
+                ),# end of box
+                box(width = 2,
+                    br(),
+                    numericInput("nb_remains", label = h5("Numeric input"), value = 1,width ='1000px'),
+                  
                     br()
                     ),# end of box
                 # box(width = 3,),
+                ),# end of fluidRow
+                fluidRow(
                 box(width = 6,
-                    pickerInput(
-                      inputId = "name_anat",
-                      label = "Anatomy", 
-                      choices = get(list_bone[1]),
-                      options = list(
-                        `live-search` = TRUE)),
+                    box(width = 8,
+                        uiOutput("name_anat_list_boneteeth"),
+                    # pickerInput(
+                    #   inputId = "name_anat",
+                    #   label = "Anatomy", 
+                    #   choices = get(list_bone[1]),
+                    #   options = list(
+                    #     `live-search` = TRUE)),
                     
+                    ),# end of box
+                    box(width = 4,
+                   sliderTextInput(
+                     inputId = "name_anat2",
+                     label = "bone/teeth",
+                     choices = c("bone","teeth"),
+                     selected =c("teeth"),
+                   ),
+                    ),# end of box
+                   box(width = 7,
                     radioGroupButtons(
                   inputId = "infos_lat",
                   label = "Lateralisation",
@@ -283,18 +331,21 @@ body <- dashboardBody(
                     no = icon("remove",
                               lib = "glyphicon"))
                 ),
-                
+                   ),# end of box
+                box(width = 5,
                     prettySwitch(
                       inputId = "infos_completude",
                       label = "Complet or broke",
                       status = "success",
-                      fill = TRUE
+                      value= FALSE,
+                      fill = FALSE
                     ),
                     
                     uiOutput ("completude"),
+                ),# end of box
                 ),
                
-                box(width=6,
+                box(width=5,
                     prettySwitch(
                       inputId = "infos_obs",
                       label = "Observation",
@@ -311,7 +362,7 @@ body <- dashboardBody(
                     ),
                     uiOutput ("photo"),
                 )
-                ),
+                ), # enf of fluirdow
                 
                 fluidRow(
                 #   box(width = 4,
@@ -327,18 +378,18 @@ body <- dashboardBody(
                 ),
                 fluidRow(
                 box(width = 4,
-                    radioGroupButtons(
-                      inputId = "trace_dig",
-                      label = "Digestion marks",
-                      choices = c("IND","0","1","2","3","4"),
-                      selected =("0"),
-                      status = "primary",
-                      checkIcon = list(
-                        yes = icon("ok", 
-                                   lib = "glyphicon"),
-                        no = icon("remove",
-                                  lib = "glyphicon"))
-                    ),
+                    # radioGroupButtons(
+                    #   inputId = "trace_dig",
+                    #   label = "Digestion marks",
+                    #   choices = c("IND","0","1","2","3","4"),
+                    #   selected =("0"),
+                    #   status = "primary",
+                    #   checkIcon = list(
+                    #     yes = icon("ok", 
+                    #                lib = "glyphicon"),
+                    #     no = icon("remove",
+                    #               lib = "glyphicon"))
+                    # ),
                 # sliderInput(
                 #   inputId = "trace_dig",
                 #   label = "Digestion marks",
@@ -493,7 +544,14 @@ body <- dashboardBody(
                          column(12,
                          tags$br(),
                            tags$br(),
-                         uiOutput("Ratio.data.graph"),)
+                         uiOutput("Ratio.data.graph"),),
+                         tags$br(),
+                         tags$br(),
+                         column(11, downloadButton("downloadData_ratio.graph", "Download")),
+                         tags$br(),
+                         tags$br(),
+                         DTOutput("table.Data_ratio"),
+                         column(11, downloadButton("downloadData_ratio", "Download"))
                 ),#end tabpanel 
                 
                 tabPanel(tags$h5("Digestion Ratio"),
@@ -534,8 +592,29 @@ body <- dashboardBody(
                          column(12,
                            
                                 tags$br(),
-                                uiOutput("Ratio.data.dig.graph"),)
+                                uiOutput("Ratio.data.dig.graph"),),
+                         tags$br(),
+                         tags$br(),
+                         column(11, downloadButton("downloadData_dig.graph", "Download")),
+                         tags$br(),
+                         tags$br(),
+                         DTOutput("table.Data_dig"),
+                         column(11, downloadButton("downloadData_dig", "Download"))
+                         
                 ),#end tabpanel 
+                tabPanel(tags$h5("Completude"),
+                         tags$br(),
+                         uiOutput("select.ratio.comp.list"),
+                         tags$br(),
+                         uiOutput("Ratio.completude.graph"),
+                         tags$br(),
+                         tags$br(),
+                         column(11, downloadButton("downloadData_comp.graph", "Download")),
+                         tags$br(),
+                         tags$br(),
+                         DTOutput("table.Data_comp"),
+                         column(11, downloadButton("downloadData_comp", "Download"))
+                ),#end tabpanel   
                 
                 tabPanel(tags$h5("rarity curves"),
                          tags$br(),
