@@ -909,7 +909,7 @@ observeEvent(input$submit, {
     })
     
     # When the Submit button is clicked, save the form data
-    observeEvent(ignoreInit = TRUE, input$submit2, {
+    observeEvent(ignoreInit = TRUE, list(input$submit2 , input$Next.button), {
       if (is.null(input$ID_dec)){
         showModal(
           modalDialog(
@@ -1149,21 +1149,77 @@ observeEvent(input$Record_the_observation,{
 
 ############# a finir ----
 
-trigger.button.prevnext<-reactivalues(TRUE)
+trigger.button.prevnext<-reactiveVal(TRUE)
 output$previous=renderUI({
-  if(trigger.button.prevnext==TRUE){
+  if(isTRUE(trigger.button.prevnext())){
   actionButton("Previous.button", "Previous")}
 })
 observeEvent(input$Previous.button,{
-  
+  req(!is.null(df$save5))
+  print("ee")
+  updateSelectizeInput(session = session,inputId = "ID_dec", selected = last.id.dec())
+  updateSelectizeInput(session = session,inputId = "name_square",selected = last.name.square())
+  updateSelectizeInput(session = session,inputId = "name_dec",selected = last.name.dec())
+  updateSelectizeInput(session = session,inputId = "name_level",selected = last.name.level())
+  updateSelectizeInput(session = session,inputId = "name_us",selected = last.name.us())
+  updateSelectizeInput(session = session,inputId = "name_sector",selected = last.name.sector())
+  updateSelectizeInput(session = session,inputId = "year_exca",selected = last.year_exca())
+
+  # data <- as.data.frame(t(formData()))
+  # global.load$df<-rbind(global.load$df, data)
+  # 
+  k<-ID_record()-1
+  ID_record(k)
+  rV$ID_dec<-global.load$ID_dec
+  rV$name_sector<-global.load$name_sector
+  rV$name_square<-global.load$name_square
+  rV$year_exca<-global.load$year_exca
+  rV$name_dec<-global.load$name_dec
+  rV$name_level<-global.load$name_level
+  rV$name_us<-global.load$name_us
+  last.id.dec(global.load$last.id.dec)
+  last.name.square(global.load$last.name.square)
+  last.name.sector(global.load$last.name.sector)
+  last.name.dec(global.load$last.name.dec)
+  last.year_exca(global.load$last.year_exca)
+  last.name.level(global.load$last.name.level)
+  last.name.us(global.load$last.name.us)
+  input_infos_suppl_anat(global.load$input_infos_suppl_anat)
+  list_info_suppl(global.load$list_info_suppl)
+  patine.list(global.load$patine.list)
+  ###to finish
+  print(df$save5)
+  assign("tt2",df$save5,envir=.GlobalEnv)
+  # 
+  updateSelectizeInput(session = session, inputId = "name_species",selected =df$save5$name_species)
+  updatePickerInput(session = session, inputId = "infos_suppl_anat",selected =df$save5$infos_suppl_anat)
+  updatePickerInput(session = session, inputId = "name_anat",selected = df$save5$name_anat)
+  updateNumericInput(session = session, inputId = "nb_remains",value =df$save5$nb_remains)
+  updateRadioGroupButtons(session = session, inputId = "infos_lat", selected = df$save5$infos_lat)  
+  updatePrettySwitch(session = session, inputId = "infos_completude",value = df$save5$infos_completude)
+  updateCheckboxGroupButtons(session = session, inputId = "infos_completude_detailled",selected = df$save5$infos_completude_detailled)  
+  updateRadioGroupButtons(session = session, inputId = "trace_dig",selected = df$save5$trace_dig)
+  updateRadioGroupButtons(session = session, inputId ="trace_root",selected = df$save5$trace_root)
+  updateRadioGroupButtons(session = session, inputId ="trace_heat",selected = df$save5$trace_heat)
+  # updatePrettySwitch(session = session, inputId = "infos_tm",value = FALSE)
+  # updatePrettySwitch(session = session, inputId = "infos_enc",value = FALSE)
+  updateRadioGroupButtons(session = session, inputId ="trace_tooth_mark",selected = df$save5$trace_tooth_mark)
+  updateRadioGroupButtons(session = session, inputId ="trace_encoche",selected = df$save5$trace_encoche)
+  updateTextInput(session = session, inputId = "observation",value = df$save5$observation)
+  updateTextInput(session = session, inputId = "txt_photo",value = df$save5$txt_photo)
+  # updatePrettySwitch(session = session, inputId = "infos_photo",value = FALSE)
+  updatePickerInput(session = session, inputId = "observation_suppl",selected = df$save5$observation_suppl)
+  updateSelectizeInput(session = session, inputId = "color_patine",selected =df$save5$color_patine)
+  # updatePrettySwitch(session = session, inputId = "infos_obs",value = FALSE)
   trigger.button.prevnext(FALSE)
 })
-output$next=renderUI({
-  if(trigger.button.prevnext==FALSE){
+output$next2=renderUI({
+  if(!isTRUE(trigger.button.prevnext())){
   actionButton("Next.button", "Next")}
+  
 })
 observeEvent(input$Next.button,{
-  
+  print(trigger.button.prevnext())
   trigger.button.prevnext(TRUE)
 })
 
@@ -1206,7 +1262,11 @@ output$liste.year=renderUI({
   checkboxGroupInput("Year", h6("Year"),
                      choices = levels(as.factor(y.list)),selected = levels(as.factor(y.list)))
 })
-
+output$liste.species=renderUI({
+  sq.list<-unique(unlist((df$df[["name_species"]])))
+  checkboxGroupInput("Species", h6("Species"),
+                     choices = levels(as.factor(sq.list)),selected = levels(as.factor(sq.list)))
+})
 df.sub <- reactive({ 
            req(!is.null(fileisupload))
           df.sub<-global.load$df
@@ -1216,6 +1276,7 @@ df.sub <- reactive({
              df.sub <- df.sub[df.sub[["name_us"]] %in% input$US, ]
              df.sub <- df.sub[df.sub[["name_dec"]]%in% input$Passe, ]
              df.sub <- df.sub[df.sub[["name_square"]] %in% input$Square, ]
+             df.sub <- df.sub[df.sub[["name_species"]] %in% input$Species, ]
              df.sub <- df.sub[df.sub[["year_exca"]] %in% input$Year, ]
 
              df.sub[,1:29][df.sub[,1:29]=="NULL"] <- "NA"
