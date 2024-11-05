@@ -44,12 +44,54 @@ sidebar <- dashboardSidebar(
         menuItem("Exploration", tabName = "data2", icon = icon("chart-line")),
         div(id = "single", style="display: none;", 
             actionButton(inputId = "refresh",label="refresh"),
-             uiOutput("liste.sector"),
-             uiOutput("liste.UAS"),
-            uiOutput("liste.US"),
-             uiOutput("liste.passe"),
-             uiOutput("liste.square"),
-            uiOutput("liste.year"),
+            radioButtons(
+              "bt2", h4("QUICK SIDEBAR"),
+              choices = c("Species" = 1,
+                          "Level " = 2,
+                          "US"=6,
+                          "Sector " = 3,
+                          "Square" = 4,
+                          "Year"=5,
+                          
+                          "Spit"=7),
+              selected = "1", inline=TRUE), style = "font-size:70%",
+            
+            tags$hr(),
+            conditionalPanel(condition="input.bt2==1",
+                             h4(style = "font-size:70%","color: red;","Subsetting dataset"),
+                             tags$br(),
+                             uiOutput("liste.species")),
+            conditionalPanel(condition="input.bt2==4",
+                             h4(style = "font-size:70%","color: red;","Subsetting dataset"),
+                             tags$br(),
+                             uiOutput("liste.square")),
+            conditionalPanel(condition="input.bt2==2",
+                             h4(style = "font-size:70%","color: red;","Subsetting dataset"),
+                             tags$br(),
+                             uiOutput("liste.UAS")),
+            conditionalPanel(condition="input.bt2==3",
+                             h4(style = "font-size:70%","color: red;","Subsetting dataset"),
+                             tags$br(),
+                             uiOutput("liste.sector")),
+            conditionalPanel(condition="input.bt2==5",
+                             h4(style = "font-size:70%","color: red;","Subsetting dataset"),
+                             tags$br(),
+                             uiOutput("liste.year")),
+            conditionalPanel(condition="input.bt2==6",
+                             h4(style = "font-size:70%","color: red;","Subsetting dataset"),
+                             tags$br(),
+                             uiOutput("liste.US")),
+            conditionalPanel(condition="input.bt2==7",
+                             h4(style = "font-size:70%","color: red;","Subsetting dataset"),
+                             tags$br(),
+                             uiOutput("liste.passe")),
+            # 
+             # uiOutput("liste.sector"),
+            #  uiOutput("liste.UAS"),
+            # uiOutput("liste.US"),
+            #  uiOutput("liste.passe"),
+            #  uiOutput("liste.square"),
+            # uiOutput("liste.year"),
             ),
         menuItem("Note", tabName = "data3", icon = icon("comment"))
     )
@@ -173,10 +215,12 @@ body <- dashboardBody(
                       # collapsible = TRUE,
                 actionButton("submit", "New bag"),
                 actionButton("submit2", "New line"),
-                uiOutput ("previous"),
-                uiOutput ("next")
                   ),# end of box  
-                box(width = 6,background = "olive",
+                box(width = 2,background = "blue", 
+                uiOutput ("previous"),
+                uiOutput ("next2")
+                  ),# end of box  
+                box(width = 4,background = "olive",
                     uiOutput ("site")
                 )
                 ), # end of fluidRow
