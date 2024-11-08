@@ -140,7 +140,7 @@ observeEvent(ignoreInit = TRUE,input$create_bdd,{
   
 })
 
-##loading ----
+##launch data ----
 output$site=renderPrint({
   tags$p("Archaeological site")
   HTML(paste0("Archaeological site: ",global.load$site.archaeo))
@@ -158,6 +158,7 @@ observeEvent(input$getData, {
    df$df<-global.load$df
    df.sub()
  })
+### loading data ----
 observeEvent(getdata.launch(), {
   req(!is.null(input_file1.datapath()))
   extension <- tools::file_ext(input_file1.name())
@@ -216,7 +217,7 @@ observeEvent(fileisupload(), {
                     selected = "About")
 })
 
-##### loading field database a finir ----
+### loading field database a finir ----
 file.field.BDD.isupload<-reactiveVal()
 getdata.fieldBDD.launch<-reactiveVal()
 input_fieldBDD.name<-reactiveVal()
@@ -306,7 +307,7 @@ observeEvent(input$go.ng3, {
 
 
 
-#############
+###### load field BDD
 liste.set.square<-reactiveVal(c("Square","null","square","Carré"))
 liste.set.ID.dec<-reactiveVal(c("ID","null","ID.object","numero"))
 liste.set.dec<-reactiveVal(c("dec","null"))
@@ -390,23 +391,16 @@ output$set.us=renderUI({
                
              },
              Eulipotyphla =   {
-               # species.menu<-get(list_species_euli[1])
-               # species.menu<-get(global.load$euli.list.select)
                isolate ({species.menu<-(reactiveValuesToList(global.load$listeoflist2))[[paste(global.load$euli.list.select)]]})
              },
              others =   {
-               # species.menu<-get(list_species_others[1])
-               # species.menu<-get(global.load$other.list.select)
                isolate ({species.menu<-(reactiveValuesToList(global.load$listeoflist2))[[paste(global.load$other.list.select)]]})
              },
              Herpetofauna =   {
-               # species.menu<-get(list_species_herpeto[1])
-               # species.menu<-get(global.load$herpeto.list.select)
-               isolate ({species.menu<-(reactiveValuesToList(global.load$listeoflist2))[[paste(global.load$herpeto.list.select)]]})
+                isolate ({species.menu<-(reactiveValuesToList(global.load$listeoflist2))[[paste(global.load$herpeto.list.select)]]})
              },
              Chiroptera =  { 
-               # species.menu<-get(list_species_chiro[1])
-               # species.menu<-get(global.load$chiro.list.select)
+
                isolate ({species.menu<-(reactiveValuesToList(global.load$listeoflist2))[[paste(global.load$chiro.list.select)]]})
              })
       
@@ -422,8 +416,8 @@ output$set.us=renderUI({
 
       if (input$infos_completude==TRUE) {
         extension<-input$name_anat
+        sep2<-"frag"
         if (extension=="Hum" || extension=="Fem" || extension=="Mand"|| extension=="Mol"){ 
-          print(extension)
           switch(extension,
                                     Mand = {
                                       sep2 <-c("Diasteme", 
@@ -437,16 +431,16 @@ output$set.us=renderUI({
                                     Fem = {
                                       sep2 <-c("Prox", 
                                                "diaphyse", "Dist") })
-
+        }#end if name_anat
+       sep3<-sep2
+          if (!isTRUE(trigger.next.prev())){
+            sep2<-paste(df$save5$infos_completude_detailled)}
+          
       checkboxGroupButtons(
         inputId = "infos_completude_detailled",
         label = "Label",
-        choices = sep2,
+        choices = sep3,
         selected =sep2,
-        # choices = c("Prox", 
-        #             "diaphyse", "Dist"),
-        # selected =c("Prox", 
-        #             "diaphyse", "Dist"),
         status = "primary",
         checkIcon = list(
           yes = icon("ok", 
@@ -454,14 +448,21 @@ output$set.us=renderUI({
           no = icon("remove",
                     lib = "glyphicon"))
       )
-        }#end if name_anat
+       
 
       }
       
     })
     output$obs=renderUI({
+      
+      if (!isTRUE(trigger.next.prev())){
+        choice2<-paste(df$save5$observation)}
+      else{
+        choice2<-c("")
+      }
+      
       if (input$infos_obs==TRUE) {
-        textInput("observation", label="observation", value = "", width = NULL,
+        textInput("observation", label="observation", value = choice2, width = NULL,
                   placeholder = NULL)
       }
       
@@ -469,11 +470,16 @@ output$set.us=renderUI({
 
     output$obs2=renderUI({
       list_info2<-list_info_suppl()
+      if (!isTRUE(trigger.next.prev())){
+        choice2<-paste(df$save5$trace_tooth_mark)}
+      else{
+        choice2<-c("")
+      }
        selectizeInput(
         inputId = "observation_suppl",
         label = "Supplementary observation", 
         choices = list_info2,
-        selected = "",
+        selected = choice2,
         multiple = TRUE,
         options = list(create = TRUE,
                                        `live-search` = TRUE)
@@ -487,8 +493,14 @@ output$set.us=renderUI({
     })
     
     output$photo=renderUI({
+      if (!isTRUE(trigger.next.prev())){
+        choice2<-paste(df$save5$txt_photo)}
+      else{
+        choice2<-c("Photo:")
+      }
+      
       if (input$infos_photo==TRUE) {
-        textInput("txt_photo", label="photo information", value = "Photo:", width = NULL,
+        textInput("txt_photo", label="photo information", value = choice2, width = NULL,
                   placeholder = "No photo")
       } else {
         
@@ -541,12 +553,18 @@ observeEvent(input$color_patine, {
 })      
 
     output$tm_output=renderUI({
+      if (!isTRUE(trigger.next.prev())){
+        choice2<-paste(df$save5$trace_tooth_mark)}
+      else{
+        choice2<-c("1")
+      }
+      
       if (input$infos_tm==TRUE) {
         radioGroupButtons(
           inputId = "trace_tooth_mark",
           label = "Tooth marks",
           choices = c("?","1","multiple","opposite"),
-          selected =("1"),
+          selected = choice2,
           status = "primary",
           checkIcon = list(
             yes = icon("ok", 
@@ -558,12 +576,17 @@ observeEvent(input$color_patine, {
       
     }) 
     output$enc_output=renderUI({
+      if (!isTRUE(trigger.next.prev())){
+        choice2<-paste(df$save5$trace_encoche)}
+      else{
+        choice2<-c("1")
+      }
       if (input$infos_enc==TRUE) {
         radioGroupButtons(
           inputId = "trace_encoche",
           label = "Pit",
           choices = c("?","1","multiple","opposite"),
-          selected =("1"),
+          selected =choice2,
           status = "primary",
           checkIcon = list(
             yes = icon("ok", 
@@ -684,7 +707,7 @@ observeEvent(input$color_patine, {
       input_infos_suppl_anat(input$Id_mand)
       
     })
-###saving ----
+##saving ----
 observeEvent(input$submit, {
       
       showModal(
@@ -792,7 +815,7 @@ observeEvent(input$submit, {
       req(!is.null(file.field.BDD.isupload()))
       rV$name_us <- c(rV$name_us,global.load$BDD.field[,input$setus])
     }) 
-    
+### formdata reactive ----
     # Whenever a field is filled, aggregate all form data
     formData <- reactive({
         data <- sapply(fields_theor, function(x) input[[x]])
@@ -887,6 +910,7 @@ observeEvent(input$submit, {
          ### correction of completude
          if (input$infos_completude==FALSE){
            data$infos_completude<-"Complete"
+           data$infos_completude_detailled<-""
          }
          if (input$infos_completude==TRUE){
            data$infos_completude<-"Frag"
@@ -908,7 +932,7 @@ observeEvent(input$submit, {
          data
         
     })
-    
+### data writting     ----
     # When the Submit button is clicked, save the form data
     observeEvent(ignoreInit = TRUE, c(input$submit2 , input$Next.button), {
       if (is.null(input$ID_dec)){
@@ -944,17 +968,15 @@ observeEvent(input$submit, {
       updateSelectizeInput(session = session,inputId = "name_us",selected = last.name.us())
       updateSelectizeInput(session = session,inputId = "name_sector",selected = last.name.sector())
       updateSelectizeInput(session = session,inputId = "year_exca",selected = last.year_exca())
-     
-
       
-        # saveData(formData())
-        data <- as.data.frame(t(formData()))
+      data <- as.data.frame(t(formData()))
 
         if(!isTRUE(trigger.button.prevnext())){
           global.load$df<-global.load$df[-c(nrow(global.load$df)),]
           data$observation<-paste(as.character(df$save5$observation))
           
           trigger.button.prevnext(TRUE)
+          trigger.next.prev(TRUE)
           }
         
         global.load$df<-rbind(global.load$df, data)
@@ -1027,7 +1049,7 @@ observeEvent(input$submit, {
           assign("df",global.load$df,envir = .GlobalEnv)
           })
     
-    
+### rapide button saving ----   
     observeEvent(ignoreInit = TRUE, c(input$goButton1),{
       req(!is.null(df$save1))
       k<-ID_record()+1
@@ -1080,13 +1102,8 @@ observeEvent(input$submit, {
       write.table(test, file =  paste0(Sys.Date(),".",global.load$site.archaeo,".BDD.uf",".csv",sep=""), row.names = FALSE, sep=";",dec=".") 
       
     })
-   
-    
-   refresh_dtoutput<-reactiveVal(0)
-    observeEvent(input$submit2,{
-      refresh_dtoutput(rnorm(1,mean=100,sd=100))
-    })
-    
+
+### table modification ----    
     curPgInd<-reactiveVal(1)  
     observeEvent(global.load$df, {
       user<-nrow(global.load$df)
@@ -1137,18 +1154,19 @@ observeEvent(input$submit, {
       }
     })
     
-
-         output$obs.note.torender <- renderText({ global.load$note.obs })
-         
+### note saving -----   
+output$obs.note.torender <- renderText({ global.load$note.obs })
 observeEvent(input$Record_the_observation,{
      global.load$note.obs<-paste0(global.load$note.obs,"<p>",input$note.obs,"</p>")
      to_save <- reactiveValuesToList(global.load)
      saveRDS(to_save, file =  paste0(Sys.Date(),".",global.load$site.archaeo,".BDD.uf",".rds"))
          })
 
-############# a finir ----
+############# Prev/nex button a finir ----
 
 trigger.button.prevnext<-reactiveVal(TRUE)
+trigger.next.prev<-reactiveVal(TRUE)
+
 output$previous=renderUI({
   if(isTRUE(trigger.button.prevnext())){
   actionButton("Previous.button", "Previous")}
@@ -1199,10 +1217,10 @@ observeEvent(input$Previous.button,{
 
   updateRadioGroupButtons(session = session, inputId = "infos_lat", selected = df$save5$infos_lat)  
   
-  updateRadioGroupButtons(session = session, inputId ="trace_tooth_mark",selected = df$save5$trace_tooth_mark)
-  updateRadioGroupButtons(session = session, inputId ="trace_encoche",selected = df$save5$trace_encoche)
-  updateTextInput(session = session, inputId = "txt_photo",value = paste(df$save5$txt_photo))
-  updateTextInput(session = session, inputId = "observation",value = paste(as.character(df$save5$observation)))
+  # updateRadioGroupButtons(session = session, inputId ="trace_tooth_mark",selected = df$save5$trace_tooth_mark)
+  # updateRadioGroupButtons(session = session, inputId ="trace_encoche",selected = df$save5$trace_encoche)
+  # updateTextInput(session = session, inputId = "txt_photo",value = paste(df$save5$txt_photo))
+  # updateTextInput(session = session, inputId = "observation",value = paste(as.character(df$save5$observation)))
   updatePickerInput(session = session, inputId = "observation_suppl",selected = paste(df$save5$observation_suppl))
   updateCheckboxGroupButtons(session = session, inputId = "infos_completude_detailled",selected = df$save5$infos_completude_detailled)
   
@@ -1212,43 +1230,57 @@ observeEvent(input$Previous.button,{
   updateRadioGroupButtons(session = session, inputId ="trace_heat",selected = df$save5$trace_heat)
 
   updateSelectizeInput(session = session, inputId = "color_patine",selected =df$save5$color_patine)
-
-   trigger.button.prevnext(FALSE)
+trigger.next.prev(FALSE)
+    trigger.button.prevnext(FALSE)
 },priority=10)
 
 
-
-output$next2=renderUI({
-  
-  if(!isTRUE(trigger.button.prevnext())){
-    actionButton("Next.button", "Next")}
-  
-})
-
-#
-
-
-# observeEvent(input$Previous.button,{
-#   req(!isTRUE(trigger.button.prevnext()))
-#   print("aaaaaaaaaaa")
-#   print(paste(as.character(df$save5$observation)))
-#   # updateTextInput(session = session, inputId = "observation",value = paste(as.character(df$save5$observation)))
-#   # updateTextInput(session = session, inputId = "txt_photo",value = paste(df$save5$txt_photo))
-#   # updatePickerInput(session = session, inputId = "observation_suppl",selected = paste(df$save5$observation_suppl))
-#   # updateRadioGroupButtons(session = session, inputId ="trace_tooth_mark",selected = paste(df$save5$trace_tooth_mark))
-#   # updateRadioGroupButtons(session = session, inputId ="trace_encoche",selected = paste(df$save5$trace_encoche))
-#   # updateCheckboxGroupButtons(session = session, inputId = "infos_completude_detailled",selected = df$save5$infos_completude_detailled)  
-#   # 
+ # observeEvent(trigger.next.prev(),{
+# observe({
+# #   req(!isTRUE(trigger.button.prevnext()))
+# 
+#    req(!isTRUE(trigger.next.prev()))
+# print("aaaaaaaaaaa")
+# Sys.sleep(1)
+# print(df$save5$trace_encoche)
 #   updatePrettySwitch(session = session, inputId = "infos_completude",value = as.logical(global.load$infos_completude))
 #   updatePrettySwitch(session = session, inputId = "infos_photo",value = as.logical(global.load$infos_photo))
 #   updatePrettySwitch(session = session, inputId = "infos_tm",value = as.logical(global.load$infos_tm))
 #   updatePrettySwitch(session = session, inputId = "infos_enc",value = as.logical(global.load$infos_enc))
 #   updatePrettySwitch(session = session, inputId = "infos_obs",value = as.logical(global.load$infos_obs))
+#   
+#   # print(paste(as.character(df$save5$observation)))
+#  # updateTextInput(session = session, inputId = "observation",value = paste(as.character(df$save5$observation)))
+#  updateTextInput(session = session, inputId = "observation",value = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
+#  updateTextInput(session = session, inputId = "txt_photo",value = paste(df$save5$txt_photo))
+#  updatePickerInput(session = session, inputId = "observation_suppl",selected = paste(df$save5$observation_suppl))
+#  updateRadioGroupButtons(session = session, inputId ="trace_tooth_mark",selected = paste(df$save5$trace_tooth_mark))
+#  updateRadioGroupButtons(session = session, inputId ="trace_tooth_mark",selected = "multiple")
+# updateRadioGroupButtons(session = session, inputId ="trace_encoche",selected = paste(df$save5$trace_encoche))
+# updateCheckboxGroupButtons(session = session, inputId = "infos_completude_detailled",selected = df$save5$infos_completude_detailled)  
 # 
-#   })
+# # trigger.next.prev(TRUE)
+# # trigger.button.prevnext(FALSE)
+#    })
+
+# output$next2=renderUI({
+#   
+#   if(!isTRUE(trigger.button.prevnext())){
+#     actionButton("Next.button", "Next")}
+#   
+# })
+
+#
 
 
-#### Microfauna treatment ----
+
+
+##refresh----    
+refresh_dtoutput<-reactiveVal(0)
+observeEvent(input$submit2,{
+  refresh_dtoutput(rnorm(1,mean=100,sd=100))
+})
+## Microfauna treatment ----
   
 ##### df.sub and co   ----  
 somme.indiv<-reactiveVal()
@@ -2400,7 +2432,6 @@ observe({
            saveRDS(to_save, file =  paste0(Sys.Date(),".",global.load$site.archaeo,".BDD.uf.fusion",".rds"))
            test<-data.frame(apply(global.load$df,2,as.character))
            write.table(test, file =  paste0(Sys.Date(),".",global.load$site.archaeo,".BDD.uf.fusion",".csv",sep=""), row.names = FALSE, sep=";",dec=".") 
-          print("BDD upload")
            } )
 ## rename option ----
          output$liste.newgroup2=renderUI({
