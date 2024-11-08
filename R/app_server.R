@@ -33,64 +33,49 @@ app_server <- function(input, output, session) {
     font_size<-reactiveVal(12)
     font_tick<-reactiveVal(12)
     legendplotlyfig<-reactiveVal(TRUE) ##for legends.
-    
-    listeoflist<-reactiveVal(c("list_perso_rod","list_perso_euli","list_perso_herpeto","list_perso_others",
-                             "list_perso_chiro"))
+    global.load$listeoflist2<-reactiveValues(list_perso_rod=list_perso_rod,
+                                 list_perso_euli=list_perso_euli,
+                                 list_perso_herpeto=list_perso_herpeto,
+                                 list_perso_others=list_perso_others,
+                                 list_perso_chiro=list_perso_chiro,
+                                 list_species_all=list_species_all)
 ## NEW BDD ----
 
-
-    ############# prob here ########## 
 observeEvent(ignoreInit = TRUE,input$go.ng4, {
-      yourimportedlistofspecies2<-global.load$list.extraspecies
-      names(yourimportedlistofspecies2)[1]<-paste0("yourimportedlist-",listofspeciesisimported())
-      
-      
-      yourimportedlistofspecies(c(yourimportedlistofspecies2,yourimportedlistofspecies()))
-      print(yourimportedlistofspecies())
+      req(!is.null(input$list.extraspecies))
+      yourimportedlistofspecies2<-unlist(global.load$list.extraspecies, use.names = FALSE)
+      global.load$listeoflist2[[paste0("yourimportedlist_",listofspeciesisimported())]]<-c("not_selected",yourimportedlistofspecies2)
       listofspeciesisimported(listofspeciesisimported()+1)
-      
-      # choices=c(list_species_rod,names(yourimportedlistofspecies()))
-      choices=c(list_species_rod,yourimportedlistofspecies())
-      print(names(yourimportedlistofspecies()))
-      updateSelectInput(session, "rod.list.select", choices = choices)
     })
     
     
 output$liste.faun4=renderUI({
-      selectInput("rod.list.select", label = h5("Rodentia List"), 
-                  choices = list_species_rod, 
-                   selected = list_species_rod[[1]]) 
+    selectInput("rod.list.select", label = h5("Rodentia List"), 
+                  choices = names(reactiveValuesToList(global.load$listeoflist2)), 
+                   selected = names(reactiveValuesToList(global.load$listeoflist2))[[1]]) 
     })
 output$liste.faun4.eulipo=renderUI({
-  # selectInput("liste.newgroup3", label = h5("Select the variable"), 
-  #             choices = factor(df$df[,input$liste.newgroup.rename]))
   selectInput("euli.list.select", label = h5("Eulipotyphla List"), 
-              choices = list_species_euli, 
-              selected = list_species_euli[[1]]) 
+              choices = names(reactiveValuesToList(global.load$listeoflist2)), 
+              selected = names(reactiveValuesToList(global.load$listeoflist2))[[2]])
 })
 output$liste.faun4.chiro=renderUI({
-  # selectInput("liste.newgroup3", label = h5("Select the variable"), 
-  #             choices = factor(df$df[,input$liste.newgroup.rename]))
   selectInput("chiro.list.select", label = h5("Chiroptera List"), 
-              choices = list_species_chiro, 
-              selected = list_species_chiro[[1]]) 
+              choices = names(reactiveValuesToList(global.load$listeoflist2)), 
+              selected = names(reactiveValuesToList(global.load$listeoflist2))[[5]])
 })
 output$liste.faun4.herpeto=renderUI({
-  # selectInput("liste.newgroup3", label = h5("Select the variable"), 
-  #             choices = factor(df$df[,input$liste.newgroup.rename]))
   selectInput("herpeto.list.select", label = h5("Herpetofauna List"), 
-              choices = list_species_herpeto, 
-              selected = list_species_herpeto[[1]]) 
+              choices = names(reactiveValuesToList(global.load$listeoflist2)), 
+              selected = names(reactiveValuesToList(global.load$listeoflist2))[[3]]) 
 })
 output$liste.faun4.others=renderUI({
-  # selectInput("liste.newgroup3", label = h5("Select the variable"), 
-  #             choices = factor(df$df[,input$liste.newgroup.rename]))
   selectInput("other.list.select", label = h5("Other List"), 
-              choices = list_species_others, 
-              selected = list_species_others[[1]]) 
+              choices = names(reactiveValuesToList(global.load$listeoflist2)), 
+              selected = names(reactiveValuesToList(global.load$listeoflist2))[[4]])
 })
+
 observeEvent(ignoreInit = TRUE,input$rod.list.select,{
-  
   global.load$rod.list.select<-input$rod.list.select
 
   })
@@ -107,7 +92,6 @@ observeEvent(ignoreInit = TRUE,input$other.list.select,{
   global.load$other.list.select<-input$other.list.select
 })
 
-yourimportedlistofspecies<-reactiveVal(NULL)
 listofspeciesisimported<-reactiveVal(1)
 observe({
   req(input$list.extraspecies)
@@ -181,8 +165,8 @@ observeEvent(getdata.launch(), {
   global<-readRDS(file=input_file1.name())
 
   df$df<-global$df
+
   ID_record(global$k)
-  # responses <<- global$df
   global.load$df<-global$df
   df$save1<-global$df_save1
   df$save2<-global$df_save2
@@ -212,11 +196,18 @@ observeEvent(getdata.launch(), {
   global.load$chiro.list.select<-global$chiro.list.select
   global.load$euli.list.select<-global$euli.list.select
   global.load$rod.list.select<-global$rod.list.select
+  
   global.load$note.obs<-global$note.obs
   list_info_suppl(global$list_info_suppl)
   patine.list(global$patine.list)
-  fileisupload(1)
   
+  
+  fileisupload(1)
+  isolate({
+  x <- as.list(global$listeoflist2)
+  names(x) <- names(reactiveValuesToList(global$listeoflist2))
+  global.load$listeoflist2<-do.call("reactiveValues",x) ## prob n'enresitre pas
+  })
 })# end observe of df$df2
 observeEvent(fileisupload(), {   
   updateTabItems(session, "tabs", "SMALLvert")
@@ -392,12 +383,48 @@ output$set.us=renderUI({
     last.year_exca<-reactiveVal("not_selected")
     last.name.level<-reactiveVal("not_selected")
     last.name.us<-reactiveVal("not_selected")
-    
+    output$species_pickerinput=renderUI({
+      switch(input$name_taxa,
+             Rodentia = {
+               isolate ({species.menu<-(reactiveValuesToList(global.load$listeoflist2))[[paste(global.load$rod.list.select)]]})
+               
+             },
+             Eulipotyphla =   {
+               # species.menu<-get(list_species_euli[1])
+               # species.menu<-get(global.load$euli.list.select)
+               isolate ({species.menu<-(reactiveValuesToList(global.load$listeoflist2))[[paste(global.load$euli.list.select)]]})
+             },
+             others =   {
+               # species.menu<-get(list_species_others[1])
+               # species.menu<-get(global.load$other.list.select)
+               isolate ({species.menu<-(reactiveValuesToList(global.load$listeoflist2))[[paste(global.load$other.list.select)]]})
+             },
+             Herpetofauna =   {
+               # species.menu<-get(list_species_herpeto[1])
+               # species.menu<-get(global.load$herpeto.list.select)
+               isolate ({species.menu<-(reactiveValuesToList(global.load$listeoflist2))[[paste(global.load$herpeto.list.select)]]})
+             },
+             Chiroptera =  { 
+               # species.menu<-get(list_species_chiro[1])
+               # species.menu<-get(global.load$chiro.list.select)
+               isolate ({species.menu<-(reactiveValuesToList(global.load$listeoflist2))[[paste(global.load$chiro.list.select)]]})
+             })
+      
+      selectizeInput(
+        inputId = "name_species",
+        label = "Name species", 
+        choices = species.menu,
+        options = list(create = TRUE,
+                       `live-search` = TRUE)
+      )
+    })
     output$completude=renderUI({
+
       if (input$infos_completude==TRUE) {
         extension<-input$name_anat
         if (extension=="Hum" || extension=="Fem" || extension=="Mand"|| extension=="Mol"){ 
-        switch(extension,
+          print(extension)
+          switch(extension,
                                     Mand = {
                                       sep2 <-c("Diasteme", 
                                                "corps", "Branche_montante") },
@@ -475,8 +502,14 @@ output$set.us=renderUI({
     
     output$name_anat_list_boneteeth=renderUI({
       switch(input$name_anat2,
-             bone = {list.bb<-get(list_bone[1]) },
-             teeth= {list.bb<-get(list_bone[2])})
+             bone = {
+               isolate({list.bb<-get(list_bone[1]) })
+               },
+             teeth= {
+               
+               isolate({list.bb<-get(list_bone[2])})
+               
+               })
              
       pickerInput(
         inputId = "name_anat",
@@ -488,39 +521,7 @@ output$set.us=renderUI({
     })
     
     
-    output$species_pickerinput=renderUI({
-      switch(input$name_taxa,
-
-             Rodentia = {
-               # species.menu<-get(list_species_rod[1])
-               species.menu<-get(global.load$rod.list.select)
-               
-               },
-             Eulipotyphla =   {
-               # species.menu<-get(list_species_euli[1])
-                 species.menu<-get(global.load$euli.list.select)
-             },
-             others =   {
-               # species.menu<-get(list_species_others[1])
-               species.menu<-get(global.load$other.list.select)
-             },
-             Herpetofauna =   {
-               # species.menu<-get(list_species_herpeto[1])
-               species.menu<-get(global.load$herpeto.list.select)
-             },
-             Chiroptera =  { 
-               # species.menu<-get(list_species_chiro[1])
-               species.menu<-get(global.load$chiro.list.select)
-             })
-       
-      selectizeInput(
-      inputId = "name_species",
-      label = "Name species", 
-      choices = species.menu,
-      options = list(create = TRUE,
-        `live-search` = TRUE)
-    )
-    })
+    
  
 output$patine_pickerinput=renderUI({
       # patine.menu<-get(global.load$patine.list.select)
@@ -556,7 +557,6 @@ observeEvent(input$color_patine, {
       }
       
     }) 
-    
     output$enc_output=renderUI({
       if (input$infos_enc==TRUE) {
         radioGroupButtons(
@@ -573,7 +573,8 @@ observeEvent(input$color_patine, {
         )
       }
       
-    }) 
+    })     
+
     
     output$mand_output=renderUI({
       if (input$Id_mand_empty==TRUE) {
@@ -884,10 +885,10 @@ observeEvent(input$submit, {
          }
          
          ### correction of completude
-         if (input$infos_completude=="FALSE"){
+         if (input$infos_completude==FALSE){
            data$infos_completude<-"Complete"
          }
-         if (input$infos_completude=="TRUE"){
+         if (input$infos_completude==TRUE){
            data$infos_completude<-"Frag"
            
            assign("df2",data,envir=.GlobalEnv)
@@ -909,7 +910,7 @@ observeEvent(input$submit, {
     })
     
     # When the Submit button is clicked, save the form data
-    observeEvent(ignoreInit = TRUE, list(input$submit2 , input$Next.button), {
+    observeEvent(ignoreInit = TRUE, c(input$submit2 , input$Next.button), {
       if (is.null(input$ID_dec)){
         showModal(
           modalDialog(
@@ -948,6 +949,14 @@ observeEvent(input$submit, {
       
         # saveData(formData())
         data <- as.data.frame(t(formData()))
+
+        if(!isTRUE(trigger.button.prevnext())){
+          global.load$df<-global.load$df[-c(nrow(global.load$df)),]
+          data$observation<-paste(as.character(df$save5$observation))
+          
+          trigger.button.prevnext(TRUE)
+          }
+        
         global.load$df<-rbind(global.load$df, data)
         
         k<-ID_record()+1
@@ -958,7 +967,6 @@ observeEvent(input$submit, {
         df$save3<-df$save4
         df$save4<-df$save5
         df$save5<-data
-        # global.load$df<-responses
         global.load$df_save1<-df$save1
         global.load$df_save2<-df$save2
         global.load$df_save3<-df$save3
@@ -982,7 +990,12 @@ observeEvent(input$submit, {
         global.load$list_info_suppl<-list_info_suppl()
         input_infos_suppl_anat(NULL)
         global.load$patine.list<-patine.list()
-
+        global.load$infos_photo<-input$infos_photo
+        global.load$infos_tm<-input$infos_tm
+        global.load$infos_enc<-input$infos_enc
+        global.load$infos_obs<-input$infos_obs
+        global.load$infos_completude<-input$infos_completude
+          
         updateSelectizeInput(session = session, inputId = "name_species",selected ="not_selected")
         updatePickerInput(session = session, inputId = "infos_suppl_anat",selected =NULL,choices = NULL)
         updatePickerInput(session = session, inputId = "name_anat",choices = get(list_bone[1]))
@@ -1003,12 +1016,13 @@ observeEvent(input$submit, {
         updatePrettySwitch(session = session, inputId = "infos_photo",value = FALSE)
         updatePickerInput(session = session, inputId = "observation_suppl",selected = "")
         updateSelectizeInput(session = session, inputId = "color_patine",selected ="")
-
-          updatePrettySwitch(session = session, inputId = "infos_obs",value = FALSE)
-          to_save <- reactiveValuesToList(global.load)
-          saveRDS(to_save, file =  paste0(Sys.Date(),".",global.load$site.archaeo,".BDD.uf",".rds"))
-          test<-data.frame(apply(global.load$df,2,as.character))
-          write.table(test, file =  paste0(Sys.Date(),".",global.load$site.archaeo,".BDD.uf",".csv",sep=""), row.names = FALSE, sep=";",dec=".") 
+        updatePrettySwitch(session = session, inputId = "infos_obs",value = FALSE)
+        global.load$listeoflist2<-global.load$listeoflist2
+          
+        to_save <- reactiveValuesToList(global.load)
+        saveRDS(to_save, file =  paste0(Sys.Date(),".",global.load$site.archaeo,".BDD.uf",".rds"))
+        test<-data.frame(apply(global.load$df,2,as.character))
+        write.table(test, file =  paste0(Sys.Date(),".",global.load$site.archaeo,".BDD.uf",".csv",sep=""), row.names = FALSE, sep=";",dec=".") 
 
           assign("df",global.load$df,envir = .GlobalEnv)
           })
@@ -1057,13 +1071,9 @@ observeEvent(input$submit, {
       df$save3<-df$save4
       df$save4<-df$save5
       df$save5<-temp
-      
       data <- as.data.frame(t(formData()))
       global.load$df<-rbind(global.load$df, temp)
-      
-      # responses <<- rbind(responses, temp) #### a modif
       refresh_dtoutput(rnorm(1,mean=100,sd=100))
-      
       to_save <- reactiveValuesToList(global.load)
       saveRDS(to_save, file =  paste0(Sys.Date(),".",global.load$site.archaeo,".BDD.uf",".rds"))
       test<-data.frame(apply(global.load$df,2,as.character))
@@ -1087,16 +1097,10 @@ observeEvent(input$submit, {
     })
     
     output$responses <- DT::renderDataTable({
-      # curPgInd <- ceiling(curRowInd() / defaultPgRows)
-      # curPgInd <-5
-      # pgLoadJS <- paste0('setTimeout(function() {table.page(', curPgInd - 1,').draw(false);}, 100);')
       refresh_dtoutput()
       global.load$df
      
     }, 
-     # server = FALSE,
-    # callback = JS("table.page('last').draw(false);"),
-    # callback = JS(pgLoadJS),
     callback = JS(paste0('setTimeout(function() {table.page(', curPgInd() - 1,').draw(false);}, 100);')),
     options = list(lengthMenu = c(1,2,3,5,10,25,50), pageLength = 5)
     )
@@ -1114,24 +1118,19 @@ observeEvent(input$submit, {
       clmn <- input$responses2_cell_edit$col
       data2[row, clmn] <- input$responses2_cell_edit$value
       global.load$df<-data2
-      # responses <<- data2
       to_save <- reactiveValuesToList(global.load)
       saveRDS(to_save, file =  paste0(Sys.Date(),".",global.load$site.archaeo,".BDD.uf",".rds"))
-      # write.table(as.data.frame(fields_theor), file =  paste0(Sys.Date(),".",global.load$site.archaeo,".BDD.uf",".csv",sep=""), row.names = FALSE, sep=";",dec=".") 
       test<-data.frame(apply(global.load$df,2,as.character))
       write.table(test, file =  paste0(Sys.Date(),".",global.load$site.archaeo,".BDD.uf",".csv",sep=""), row.names = FALSE, sep=";",dec=".") 
       
     })
     observeEvent(input$deleteRows,{
         if (!is.null(input$responses2_rows_selected)) {
-        # data2<-loadData()
          data2<-global.load$df
          data2 <-  data2[-as.numeric(input$responses2_rows_selected),]
          global.load$df<-data2
-         # responses <<- data2
          to_save <- reactiveValuesToList(global.load)
          saveRDS(to_save, file =  paste0(Sys.Date(),".",global.load$site.archaeo,".BDD.uf",".rds"))
-         # write.table(as.data.frame(fields_theor), file =  paste0(Sys.Date(),".",global.load$site.archaeo,".BDD.uf",".csv",sep=""), row.names = FALSE, sep=";",dec=".") 
          test<-data.frame(apply(global.load$df,2,as.character))
          write.table(test, file =  paste0(Sys.Date(),".",global.load$site.archaeo,".BDD.uf",".csv",sep=""), row.names = FALSE, sep=";",dec=".") 
          
@@ -1154,9 +1153,10 @@ output$previous=renderUI({
   if(isTRUE(trigger.button.prevnext())){
   actionButton("Previous.button", "Previous")}
 })
+
 observeEvent(input$Previous.button,{
   req(!is.null(df$save5))
-  print("ee")
+  req(isTRUE(trigger.button.prevnext()))
   updateSelectizeInput(session = session,inputId = "ID_dec", selected = last.id.dec())
   updateSelectizeInput(session = session,inputId = "name_square",selected = last.name.square())
   updateSelectizeInput(session = session,inputId = "name_dec",selected = last.name.dec())
@@ -1164,10 +1164,6 @@ observeEvent(input$Previous.button,{
   updateSelectizeInput(session = session,inputId = "name_us",selected = last.name.us())
   updateSelectizeInput(session = session,inputId = "name_sector",selected = last.name.sector())
   updateSelectizeInput(session = session,inputId = "year_exca",selected = last.year_exca())
-
-  # data <- as.data.frame(t(formData()))
-  # global.load$df<-rbind(global.load$df, data)
-  # 
   k<-ID_record()-1
   ID_record(k)
   rV$ID_dec<-global.load$ID_dec
@@ -1187,42 +1183,69 @@ observeEvent(input$Previous.button,{
   input_infos_suppl_anat(global.load$input_infos_suppl_anat)
   list_info_suppl(global.load$list_info_suppl)
   patine.list(global.load$patine.list)
-  ###to finish
-  print(df$save5)
-  assign("tt2",df$save5,envir=.GlobalEnv)
-  # 
+  print(df$save5) 
+  print(global.load$infos_completude)
+  
+  updatePrettySwitch(session = session, inputId = "infos_completude",value = as.logical(global.load$infos_completude))
+  updatePrettySwitch(session = session, inputId = "infos_photo",value = as.logical(global.load$infos_photo))
+  updatePrettySwitch(session = session, inputId = "infos_tm",value = as.logical(global.load$infos_tm))
+  updatePrettySwitch(session = session, inputId = "infos_enc",value = as.logical(global.load$infos_enc))
+  updatePrettySwitch(session = session, inputId = "infos_obs",value = as.logical(global.load$infos_obs))
+
+  updateNumericInput(session = session, inputId = "nb_remains",value = as.numeric(df$save5$nb_remains))
   updateSelectizeInput(session = session, inputId = "name_species",selected =df$save5$name_species)
   updatePickerInput(session = session, inputId = "infos_suppl_anat",selected =df$save5$infos_suppl_anat)
   updatePickerInput(session = session, inputId = "name_anat",selected = df$save5$name_anat)
-  updateNumericInput(session = session, inputId = "nb_remains",value =df$save5$nb_remains)
+
   updateRadioGroupButtons(session = session, inputId = "infos_lat", selected = df$save5$infos_lat)  
-  updatePrettySwitch(session = session, inputId = "infos_completude",value = df$save5$infos_completude)
-  updateCheckboxGroupButtons(session = session, inputId = "infos_completude_detailled",selected = df$save5$infos_completude_detailled)  
+  
+  updateRadioGroupButtons(session = session, inputId ="trace_tooth_mark",selected = df$save5$trace_tooth_mark)
+  updateRadioGroupButtons(session = session, inputId ="trace_encoche",selected = df$save5$trace_encoche)
+  updateTextInput(session = session, inputId = "txt_photo",value = paste(df$save5$txt_photo))
+  updateTextInput(session = session, inputId = "observation",value = paste(as.character(df$save5$observation)))
+  updatePickerInput(session = session, inputId = "observation_suppl",selected = paste(df$save5$observation_suppl))
+  updateCheckboxGroupButtons(session = session, inputId = "infos_completude_detailled",selected = df$save5$infos_completude_detailled)
+  
+  
   updateRadioGroupButtons(session = session, inputId = "trace_dig",selected = df$save5$trace_dig)
   updateRadioGroupButtons(session = session, inputId ="trace_root",selected = df$save5$trace_root)
   updateRadioGroupButtons(session = session, inputId ="trace_heat",selected = df$save5$trace_heat)
-  # updatePrettySwitch(session = session, inputId = "infos_tm",value = FALSE)
-  # updatePrettySwitch(session = session, inputId = "infos_enc",value = FALSE)
-  updateRadioGroupButtons(session = session, inputId ="trace_tooth_mark",selected = df$save5$trace_tooth_mark)
-  updateRadioGroupButtons(session = session, inputId ="trace_encoche",selected = df$save5$trace_encoche)
-  updateTextInput(session = session, inputId = "observation",value = df$save5$observation)
-  updateTextInput(session = session, inputId = "txt_photo",value = df$save5$txt_photo)
-  # updatePrettySwitch(session = session, inputId = "infos_photo",value = FALSE)
-  updatePickerInput(session = session, inputId = "observation_suppl",selected = df$save5$observation_suppl)
+
   updateSelectizeInput(session = session, inputId = "color_patine",selected =df$save5$color_patine)
-  # updatePrettySwitch(session = session, inputId = "infos_obs",value = FALSE)
-  trigger.button.prevnext(FALSE)
-})
+
+   trigger.button.prevnext(FALSE)
+},priority=10)
+
+
+
 output$next2=renderUI({
+  
   if(!isTRUE(trigger.button.prevnext())){
-  actionButton("Next.button", "Next")}
+    actionButton("Next.button", "Next")}
   
 })
-observeEvent(input$Next.button,{
-  print(trigger.button.prevnext())
-  trigger.button.prevnext(TRUE)
-})
 
+#
+
+
+# observeEvent(input$Previous.button,{
+#   req(!isTRUE(trigger.button.prevnext()))
+#   print("aaaaaaaaaaa")
+#   print(paste(as.character(df$save5$observation)))
+#   # updateTextInput(session = session, inputId = "observation",value = paste(as.character(df$save5$observation)))
+#   # updateTextInput(session = session, inputId = "txt_photo",value = paste(df$save5$txt_photo))
+#   # updatePickerInput(session = session, inputId = "observation_suppl",selected = paste(df$save5$observation_suppl))
+#   # updateRadioGroupButtons(session = session, inputId ="trace_tooth_mark",selected = paste(df$save5$trace_tooth_mark))
+#   # updateRadioGroupButtons(session = session, inputId ="trace_encoche",selected = paste(df$save5$trace_encoche))
+#   # updateCheckboxGroupButtons(session = session, inputId = "infos_completude_detailled",selected = df$save5$infos_completude_detailled)  
+#   # 
+#   updatePrettySwitch(session = session, inputId = "infos_completude",value = as.logical(global.load$infos_completude))
+#   updatePrettySwitch(session = session, inputId = "infos_photo",value = as.logical(global.load$infos_photo))
+#   updatePrettySwitch(session = session, inputId = "infos_tm",value = as.logical(global.load$infos_tm))
+#   updatePrettySwitch(session = session, inputId = "infos_enc",value = as.logical(global.load$infos_enc))
+#   updatePrettySwitch(session = session, inputId = "infos_obs",value = as.logical(global.load$infos_obs))
+# 
+#   })
 
 
 #### Microfauna treatment ----
@@ -2366,10 +2389,13 @@ observe({
            file.old.BDD.isupload(1)
          })#          
          observeEvent(ignoreInit = TRUE,file.old.BDD.isupload(),{ 
-           
+           global.load$BDD.old<-as.data.frame(global.load$BDD.old)
+           liste.nom.colonne<-c("ID_record",fields_theor,"dig_I", "dig_MOL", "dig_m1inf", "dig_bone" ,"dig_bone_others")
+           new.element <-setdiff(colnames(global.load$BDD.old),liste.nom.colonne)
+           global.load$BDD.old<-global.load$BDD.old[,!colnames(global.load$BDD.old) %in% c(new.element)]
+           print(global.load$BDD.old)
            global.load$df<-rbind.data.frame(global.load$df,global.load$BDD.old)
            global.load$k<-global.load$k+nrow(global.load$BDD.old)
-           print(global.load$k)
            to_save <- reactiveValuesToList(global.load)
            saveRDS(to_save, file =  paste0(Sys.Date(),".",global.load$site.archaeo,".BDD.uf.fusion",".rds"))
            test<-data.frame(apply(global.load$df,2,as.character))

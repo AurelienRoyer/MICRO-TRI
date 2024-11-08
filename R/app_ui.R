@@ -37,9 +37,6 @@ sidebar <- dashboardSidebar(
     sidebarMenu(id = "tabs",
         menuItem("Dashboard database", tabName = "dashboard", icon = icon("dashboard")),
         menuItem("Acquisition", icon = icon("list"), tabName = "SMALLvert"
-                 # ,
-                 # badgeLabel = "new"
-                 # , badgeColor = "green"
                  ),
         menuItem("Exploration", tabName = "data2", icon = icon("chart-line")),
         div(id = "single", style="display: none;", 
@@ -85,13 +82,6 @@ sidebar <- dashboardSidebar(
                              h4(style = "font-size:70%","color: red;","Subsetting dataset"),
                              tags$br(),
                              uiOutput("liste.passe")),
-            # 
-             # uiOutput("liste.sector"),
-            #  uiOutput("liste.UAS"),
-            # uiOutput("liste.US"),
-            #  uiOutput("liste.passe"),
-            #  uiOutput("liste.square"),
-            # uiOutput("liste.year"),
             ),
         menuItem("Note", tabName = "data3", icon = icon("comment"))
     )
