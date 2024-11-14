@@ -2,6 +2,7 @@
 
 app_server <- function(input, output, session) {
   font.size <- "8pt"
+  list_bone<-c("list_bone_1","list_bone_2")
   fields_theor <- c("date_record","year_exca","name_sector","ID_dec","name_square","name_dec",
                     "name_level","name_us","name_taxa" ,"name_species","name_anat", 
                     "infos_suppl_anat","nb_remains","infos_lat",
