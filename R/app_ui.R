@@ -294,7 +294,7 @@ body <- dashboardBody(
                   box(width = 6,
                       selectInput(inputId="name_taxa", 
                                   label= "order level" , 
-                                  choices=c("Rodentia","Eulipotyphla","Chiroptera","others"), 
+                                  choices=c("Rodentia","Eulipotyphla","Herpetofauna","Chiroptera","others"), 
                                   selected = "Rodentia", 
                                   multiple = FALSE, 
                                   selectize = TRUE),
