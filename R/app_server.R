@@ -2,7 +2,7 @@
 
 app_server <- function(input, output, session) {
   font.size <- "8pt"
-  list_bone<-c("list_bone_1","list_bone_2")
+
   fields_theor <- c("date_record","year_exca","name_sector","ID_dec","name_square","name_dec",
                     "name_level","name_us","name_taxa" ,"name_species","name_anat", 
                     "infos_suppl_anat","nb_remains","infos_lat",
@@ -34,6 +34,9 @@ app_server <- function(input, output, session) {
     font_size<-reactiveVal(12)
     font_tick<-reactiveVal(12)
     legendplotlyfig<-reactiveVal(TRUE) ##for legends.
+    # list_bone<-c("list_bone_1","list_bone_2")
+    global.load$listeoflist_bone<-reactiveValues(list_bone_1=list_bone_1,
+                                                 list_bone_2=list_bone_2)
     global.load$listeoflist2<-reactiveValues(list_rod=list_perso_rod,
                                  list_euli=list_species_euli,
                                  list_herpeto=list_species_herpeto,
@@ -208,6 +211,8 @@ observeEvent(getdata.launch(), {
   global.load$chiro.list.select<-global$chiro.list.select
   global.load$euli.list.select<-global$euli.list.select
   global.load$rod.list.select<-global$rod.list.select
+ 
+
   global.load$lago.list.select<-global$lago.list.select
   
   global.load$note.obs<-global$note.obs
@@ -219,8 +224,14 @@ observeEvent(getdata.launch(), {
   isolate({
   x <- as.list(global$listeoflist2)
   names(x) <- names(reactiveValuesToList(global$listeoflist2))
-  global.load$listeoflist2<-do.call("reactiveValues",x) ## prob n'enresitre pas
+  global.load$listeoflist2<-do.call("reactiveValues",x) 
   })
+  isolate({
+    x2 <- as.list(global$listeoflist_bone)
+    names(x2) <- names(reactiveValuesToList(global$listeoflist_bone))
+    global.load$listeoflist_bone<-do.call("reactiveValues",x2) 
+  })
+  
 })# end observe of df$df2
 observeEvent(fileisupload(), {   
   updateTabItems(session, "tabs", "SMALLvert")
@@ -396,26 +407,36 @@ output$set.us=renderUI({
     last.year_exca<-reactiveVal("not_selected")
     last.name.level<-reactiveVal("not_selected")
     last.name.us<-reactiveVal("not_selected")
+    last.taxa.name<-reactiveVal("not_selected")
+    
     output$species_pickerinput=renderUI({
       switch(input$name_taxa,
              Rodentia = {
+               last.taxa.name("Rodentia")
                isolate ({species.menu<-(reactiveValuesToList(global.load$listeoflist2))[[paste(global.load$rod.list.select)]]})
-               
+              
              },
              Eulipotyphla =   {
+               
+               last.taxa.name("Eulipotyphla")
                isolate ({species.menu<-(reactiveValuesToList(global.load$listeoflist2))[[paste(global.load$euli.list.select)]]})
              },
              Lagomorpha =   {
+               last.taxa.name("Lagomorpha")
+           
                isolate ({species.menu<-(reactiveValuesToList(global.load$listeoflist2))[[paste(global.load$lago.list.select)]]})
              },
-             others =   {
+             others =   { 
+               
+               last.taxa.name("others")
                isolate ({species.menu<-(reactiveValuesToList(global.load$listeoflist2))[[paste(global.load$other.list.select)]]})
              },
              Herpetofauna =   {
+               last.taxa.name("Herpetofauna")
                 isolate ({species.menu<-(reactiveValuesToList(global.load$listeoflist2))[[paste(global.load$herpeto.list.select)]]})
              },
              Chiroptera =  { 
-
+               last.taxa.name("Chiroptera")
                isolate ({species.menu<-(reactiveValuesToList(global.load$listeoflist2))[[paste(global.load$chiro.list.select)]]})
              })
       
@@ -530,15 +551,16 @@ output$set.us=renderUI({
     output$name_anat_list_boneteeth=renderUI({
       switch(input$name_anat2,
              bone = {
-               isolate({list.bb<-get(list_bone[1]) })
+               # isolate({list.bb<-get(list_bone[1]) })
+               isolate({list.bb<-reactiveValuesToList(global.load$listeoflist_bone)[[1]]})
                },
              teeth= {
                
-               isolate({list.bb<-get(list_bone[2])})
-               
+               # isolate({list.bb<-get(list_bone[2])})
+               isolate({list.bb<-reactiveValuesToList(global.load$listeoflist_bone)[[2]]})
                })
              
-      pickerInput(
+      selectizeInput(
         inputId = "name_anat",
         label = "Anatomy", 
         # choices = get(list_bone[1]),
@@ -940,7 +962,7 @@ observeEvent(input$submit, {
          if (input$infos_completude==TRUE){
            data$infos_completude<-"Frag"
            
-           assign("df2",data,envir=.GlobalEnv)
+           
            a<-sum(stringr::str_count(data$infos_completude_detailled,pattern = "Prox"))
            b<-sum(stringr::str_count(data$infos_completude_detailled,pattern = "diaphyse"))
            c<-sum(stringr::str_count(data$infos_completude_detailled,pattern = "Dist"))
@@ -1045,7 +1067,7 @@ observeEvent(input$submit, {
           
         updateSelectizeInput(session = session, inputId = "name_species",selected ="not_selected")
         updatePickerInput(session = session, inputId = "infos_suppl_anat",selected =NULL,choices = NULL)
-        updatePickerInput(session = session, inputId = "name_anat",choices = get(list_bone[1]))
+        updateSelectizeInput(session = session, inputId = "name_anat",selected = get(list_bone[1]))
 
         updateNumericInput(session = session, inputId = "nb_remains",value =1)
         updateRadioGroupButtons(session = session, inputId = "infos_lat", selected = "IND")  
@@ -1064,8 +1086,64 @@ observeEvent(input$submit, {
         updatePickerInput(session = session, inputId = "observation_suppl",selected = "")
         updateSelectizeInput(session = session, inputId = "color_patine",selected ="")
         updatePrettySwitch(session = session, inputId = "infos_obs",value = FALSE)
-        global.load$listeoflist2<-global.load$listeoflist2
-          
+        print("aaaa")
+        print(input$name_anat2)
+        print(reactiveValuesToList(global.load$listeoflist_bone)[[1]])
+        switch(input$name_anat2,
+               bone = {
+                 isolate ({
+                   if(!data$name_anat %in% reactiveValuesToList(global.load$listeoflist_bone)[[1]] ){
+                     print("OOO")
+                     global.load$listeoflist_bone[["list_bone_1"]]<-c(reactiveValuesToList(global.load$listeoflist_bone)[[1]],levels(factor(as.character(data$name_anat)))) }
+                    })
+               },
+               teeth =  { 
+                 isolate ({
+                 if(!data$name_anat %in% reactiveValuesToList(global.load$listeoflist_bone)[[2]] ){
+                   global.load$listeoflist_bone[["list_bone_2"]]<-c(reactiveValuesToList(global.load$listeoflist_bone)[[2]],levels(factor(as.character(data$name_anat)))) }
+               })
+               })
+        switch(last.taxa.name(),
+            
+               Rodentia = {
+                 isolate ({
+                   if(!data$name_species %in% reactiveValuesToList(global.load$listeoflist2)[[paste(global.load$rod.list.select)]] ){
+                     global.load$listeoflist2[[paste(global.load$rod.list.select)]]<-c(reactiveValuesToList(global.load$listeoflist2)[[paste(global.load$rod.list.select)]],levels(factor(as.character(data$name_species)))) }
+                   })
+               },
+               Eulipotyphla =   {
+                 isolate ({
+                   if(!data$name_species %in% reactiveValuesToList(global.load$listeoflist2)[[paste(global.load$euli.list.select)]] ){
+                     global.load$listeoflist2[[paste(global.load$euli.list.select)]]<-c(reactiveValuesToList(global.load$listeoflist2)[[paste(global.load$euli.list.select)]],levels(factor(as.character(data$name_species)))) }
+                 })
+               },
+               Lagomorpha =   {
+                 isolate ({
+                   if(!data$name_species %in% reactiveValuesToList(global.load$listeoflist2)[[paste(global.load$lago.list.select)]] ){
+                     global.load$listeoflist2[[paste(global.load$lago.list.select)]]<-c(reactiveValuesToList(global.load$listeoflist2)[[paste(global.load$lago.list.select)]],levels(factor(as.character(data$name_species)))) }
+                 })
+               },
+               others =   { 
+                 isolate ({
+                   if(!data$name_species %in% reactiveValuesToList(global.load$listeoflist2)[[paste(global.load$other.list.select)]] ){
+                     global.load$listeoflist2[[paste(global.load$other.list.select)]]<-c(reactiveValuesToList(global.load$listeoflist2)[[paste(global.load$other.list.select)]],levels(factor(as.character(data$name_species)))) }
+                 })
+               },
+               Herpetofauna =   {
+                 isolate ({
+                   if(!data$name_species %in% reactiveValuesToList(global.load$listeoflist2)[[paste(global.load$herpeto.list.select)]] ){
+                     global.load$listeoflist2[[paste(global.load$herpeto.list.select)]]<-c(reactiveValuesToList(global.load$listeoflist2)[[paste(global.load$herpeto.list.select)]],levels(factor(as.character(data$name_species)))) }
+                 })
+               },
+               Chiroptera =  { 
+                 isolate ({
+                   if(!data$name_species %in% reactiveValuesToList(global.load$listeoflist2)[[paste(global.load$chiro.list.select)]] ){
+                     global.load$listeoflist2[[paste(global.load$chiro.list.select)]]<-c(reactiveValuesToList(global.load$listeoflist2)[[paste(global.load$chiro.list.select)]],levels(factor(as.character(data$name_species)))) }
+                 })
+               })
+    
+    global.load$listeoflist2<-global.load$listeoflist2
+    global.load$listeoflist_bone<-global.load$listeoflist_bone
         to_save <- reactiveValuesToList(global.load)
         saveRDS(to_save, file =  paste0(Sys.Date(),".",global.load$site.archaeo,".BDD.uf",".rds"))
         test<-data.frame(apply(global.load$df,2,as.character))

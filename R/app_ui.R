@@ -114,6 +114,7 @@ body <- dashboardBody(
                          uiOutput ("liste.faun4.eulipo"),
                          uiOutput ("liste.faun4.chiro"),
                          uiOutput ("liste.faun4.herpeto"),
+                         uiOutput ("liste.faun4.lago"),
                          uiOutput ("liste.faun4.others"),
                          ),#end of column
                          column(2 ,
