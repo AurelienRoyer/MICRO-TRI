@@ -1427,17 +1427,24 @@ output$liste.species=renderUI({
 })
 df.sub <- reactive({ 
            req(!is.null(fileisupload))
-  isolate({
+print(input$localisation)
   
           df.sub<-global.load$df
 
-             df.sub <- df.sub[df.sub[["name_sector"]] %in% input$localisation, ]
-             df.sub <- df.sub[df.sub[["name_level"]] %in% input$UAS, ]
-             df.sub <- df.sub[df.sub[["name_us"]] %in% input$US, ]
-             df.sub <- df.sub[df.sub[["name_dec"]]%in% input$Passe, ]
-             df.sub <- df.sub[df.sub[["name_square"]] %in% input$Square, ]
-             df.sub <- df.sub[df.sub[["name_species"]] %in% input$Species, ]
-             df.sub <- df.sub[df.sub[["year_exca"]] %in% input$Year, ]
+             if (!is.null(input$localisation)) {
+          df.sub <- df.sub[df.sub[["name_sector"]] %in% input$localisation, ]}
+          if (!is.null(input$UAS)) {
+             df.sub <- df.sub[df.sub[["name_level"]] %in% input$UAS, ]}
+          if (!is.null(input$US)) {
+             df.sub <- df.sub[df.sub[["name_us"]] %in% input$US, ]}
+          if (!is.null(input$Passe)) {
+             df.sub <- df.sub[df.sub[["name_dec"]]%in% input$Passe, ]}
+          if (!is.null(input$Square)) {
+             df.sub <- df.sub[df.sub[["name_square"]] %in% input$Square, ]}
+          if (!is.null(input$Species)) {
+             df.sub <- df.sub[df.sub[["name_species"]] %in% input$Species, ]}
+          if (!is.null(input$Year)) {
+             df.sub <- df.sub[df.sub[["year_exca"]] %in% input$Year, ]}
 
              df.sub[,1:29][df.sub[,1:29]=="NULL"] <- "NA"
                # df.sub<-as.data.frame(t(apply(df.sub,2, function(x) unlist(x))))
@@ -1465,7 +1472,7 @@ df.sub <- reactive({
            number.total.of.species(ncol(df.species.table)-1)
            ####
            df.sub
-  })# end of isolate
+  
          })  # end of df.sub reactive
          
 
