@@ -102,8 +102,14 @@ body <- dashboardBody(
                              
                     ),#end of tabpanel
                 tabPanel(h4("New Database"),
-                         textInput("name_site", label="Name of the site", value = "", width = NULL,
-                                   placeholder = NULL),
+                         column(4 ,textInput("name_site", label="Name of the site", value = "", width = NULL,
+                                   placeholder = NULL),),
+                         column(5 ,actionButton("create_bdd", "Create the BDD"),),
+                         tags$br(),
+                         column(12 ,  
+                                
+                                 h5("settings: lists of species name"), 
+                                ),  
                          column(10 , uiOutput ("liste.faun4"),
                          uiOutput ("liste.faun4.eulipo"),
                          uiOutput ("liste.faun4.chiro"),
@@ -119,8 +125,8 @@ body <- dashboardBody(
                          column(2 ,
                                 actionButton("go.ng4", "load it"), ),
                          
-                         column(12 ,actionButton("create_bdd", "Create the BDD"),
-                         ),#end of column
+                         tags$br(),
+                         # ),#end of column
                 ),#end of tabpanel
                 tabPanel(h4("Import an old database"),
                          br(),
@@ -294,7 +300,7 @@ body <- dashboardBody(
                   box(width = 6,
                       selectInput(inputId="name_taxa", 
                                   label= "order level" , 
-                                  choices=c("Rodentia","Eulipotyphla","Herpetofauna","Chiroptera","others"), 
+                                  choices=c("Rodentia","Eulipotyphla","Herpetofauna","Chiroptera","Lagomorpha","others"), 
                                   selected = "Rodentia", 
                                   multiple = FALSE, 
                                   selectize = TRUE),

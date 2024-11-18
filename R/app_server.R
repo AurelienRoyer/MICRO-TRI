@@ -34,11 +34,12 @@ app_server <- function(input, output, session) {
     font_size<-reactiveVal(12)
     font_tick<-reactiveVal(12)
     legendplotlyfig<-reactiveVal(TRUE) ##for legends.
-    global.load$listeoflist2<-reactiveValues(list_perso_rod=list_perso_rod,
-                                 list_perso_euli=list_perso_euli,
-                                 list_perso_herpeto=list_perso_herpeto,
-                                 list_perso_others=list_perso_others,
-                                 list_perso_chiro=list_perso_chiro,
+    global.load$listeoflist2<-reactiveValues(list_rod=list_perso_rod,
+                                 list_euli=list_species_euli,
+                                 list_herpeto=list_species_herpeto,
+                                 list_others=list_fauna_others,
+                                 list_chiro=list_species_chiro,
+                                 list_lago=list_lago,
                                  list_species_all=list_species_all)
 ## NEW BDD ----
 
@@ -70,6 +71,12 @@ output$liste.faun4.herpeto=renderUI({
               choices = names(reactiveValuesToList(global.load$listeoflist2)), 
               selected = names(reactiveValuesToList(global.load$listeoflist2))[[3]]) 
 })
+output$liste.faun4.lago=renderUI({
+  selectInput("lago.list.select", label = h5("Lagomorpha List"), 
+              choices = names(reactiveValuesToList(global.load$listeoflist2)), 
+              selected = names(reactiveValuesToList(global.load$listeoflist2))[[6]]) 
+})
+
 output$liste.faun4.others=renderUI({
   selectInput("other.list.select", label = h5("Other List"), 
               choices = names(reactiveValuesToList(global.load$listeoflist2)), 
@@ -88,6 +95,9 @@ observeEvent(ignoreInit = TRUE,input$chiro.list.select,{
 })
 observeEvent(ignoreInit = TRUE,input$herpeto.list.select,{
   global.load$herpeto.list.select<-input$herpeto.list.select
+})
+observeEvent(ignoreInit = TRUE,input$lago.list.select,{
+  global.load$lago.list.select<-input$lago.list.select
 })
 observeEvent(ignoreInit = TRUE,input$other.list.select,{
   global.load$other.list.select<-input$other.list.select
@@ -198,6 +208,7 @@ observeEvent(getdata.launch(), {
   global.load$chiro.list.select<-global$chiro.list.select
   global.load$euli.list.select<-global$euli.list.select
   global.load$rod.list.select<-global$rod.list.select
+  global.load$lago.list.select<-global$lago.list.select
   
   global.load$note.obs<-global$note.obs
   list_info_suppl(global$list_info_suppl)
@@ -393,6 +404,9 @@ output$set.us=renderUI({
              },
              Eulipotyphla =   {
                isolate ({species.menu<-(reactiveValuesToList(global.load$listeoflist2))[[paste(global.load$euli.list.select)]]})
+             },
+             Lagomorpha =   {
+               isolate ({species.menu<-(reactiveValuesToList(global.load$listeoflist2))[[paste(global.load$lago.list.select)]]})
              },
              others =   {
                isolate ({species.menu<-(reactiveValuesToList(global.load$listeoflist2))[[paste(global.load$other.list.select)]]})
@@ -602,10 +616,16 @@ observeEvent(input$color_patine, {
     
     output$mand_output=renderUI({
       if (input$Id_mand_empty==TRUE) {
+        list_name<-c("Iinf","I2inf",'canine','p2inf','p3inf','p4inf',"m1inf","m2inf","m3inf")
+        switch(input$name_taxa,
+               Rodentia = {list_name<-c("Iinf",'p4inf',"m1inf","m2inf","m3inf")},
+               Eulipotyphla= {list_name<-c("Iinf","I2inf",'canine','p1inf','p2inf','p3inf','p4inf',"m1inf","m2inf","m3inf")},
+               Chiroptera= {list_name<-c("Iinf","I2inf","I3inf",'canine','p2inf','p3inf','p4inf',"m1inf","m2inf","m3inf")}
+               )
         pickerInput(
           inputId = "Id_mand",
           label = "Select/deselect all options", 
-          choices = c("Iinf","m1inf","m2inf","m3inf"),
+          choices = list_name,
           options = list(
             `actions-box` = TRUE), 
           multiple = TRUE
@@ -615,12 +635,16 @@ observeEvent(input$color_patine, {
     })    
     output$max_output=renderUI({
       if (input$Id_max_empty==TRUE) {
+        list_name<-c("Isup","I2sup","I3sup",'Canine',"P1sup",'P2sup','P3sup','P4sup',"M1sup","M2sup","M3sup")
+        switch(input$name_taxa,
+               Rodentia = {list_name<-c("Isup","(P3sup)","(P4sup)","M1sup","M2sup","M3sup")}
+        )
         pickerInput(
           inputId = "Id_max",
           label = "Select/deselect all options", 
           choices = list(
-            left=c("Isup","(P4)","M1sup","M2sup","M3sup"),
-            right=c("Isup","(P4)","M1sup","M2sup","M3sup")
+            left=list_name,
+            right=list_name
           ),
           options = list(
             `actions-box` = TRUE), 
@@ -917,9 +941,9 @@ observeEvent(input$submit, {
            data$infos_completude<-"Frag"
            
            assign("df2",data,envir=.GlobalEnv)
-           a<-sum(str_count(data$infos_completude_detailled,pattern = "Prox"))
-           b<-sum(str_count(data$infos_completude_detailled,pattern = "diaphyse"))
-           c<-sum(str_count(data$infos_completude_detailled,pattern = "Dist"))
+           a<-sum(stringr::str_count(data$infos_completude_detailled,pattern = "Prox"))
+           b<-sum(stringr::str_count(data$infos_completude_detailled,pattern = "diaphyse"))
+           c<-sum(stringr::str_count(data$infos_completude_detailled,pattern = "Dist"))
            x<-a+b+c
           
            if (x==3){
@@ -1325,6 +1349,8 @@ output$liste.species=renderUI({
 })
 df.sub <- reactive({ 
            req(!is.null(fileisupload))
+  isolate({
+  
           df.sub<-global.load$df
 
              df.sub <- df.sub[df.sub[["name_sector"]] %in% input$localisation, ]
@@ -1361,6 +1387,7 @@ df.sub <- reactive({
            number.total.of.species(ncol(df.species.table)-1)
            ####
            df.sub
+  })# end of isolate
          })  # end of df.sub reactive
          
 
