@@ -228,7 +228,11 @@ observeEvent(getdata.launch(), {
   })
   isolate({
     x2 <- as.list(global$listeoflist_bone)
+    print(x2)
+    print(reactiveValuesToList(global$listeoflist_bone))
     names(x2) <- names(reactiveValuesToList(global$listeoflist_bone))
+    print(do.call("reactiveValues",x2))
+    print(global.load$listeoflist_bone)
     global.load$listeoflist_bone<-do.call("reactiveValues",x2) 
   })
   
@@ -298,7 +302,7 @@ observeEvent(input$go.ng3, {
   req(!is.null(input$liste.col.us.select))
   req(!is.null(input$liste.col.ID.select))
   global.load$df.datafield<-global.load$BDD.field
-  print((input$liste.col.ID.select != "null" & dim(global.load$df.datafield[duplicated(global.load$df.datafield[,input$liste.col.ID.select]),])[1]>0))
+  # print((input$liste.col.ID.select != "null" & dim(global.load$df.datafield[duplicated(global.load$df.datafield[,input$liste.col.ID.select]),])[1]>0))
   if(input$liste.col.ID.select != "null" & dim(global.load$df.datafield[duplicated(global.load$df.datafield[,input$liste.col.ID.select]),])[1]>0) { 
   showModal(modalDialog(
     title = "Issues with loaded data",
@@ -318,7 +322,6 @@ observeEvent(input$go.ng3, {
   
   global.load$df[,"name_us"]<-list(temp2[3])
 
-  print(global.load$df)
   # to_save <- reactiveValuesToList(global.load)
   # saveRDS(to_save, file =  paste0(Sys.Date(),".",global.load$site.archaeo,".BDD.uf",".rds"))
   # test<-data.frame(apply(global.load$df,2,as.character))
@@ -745,7 +748,6 @@ observeEvent(input$color_patine, {
     })
     observeEvent(input$Id_max, {
        input_infos_suppl_anat(input$Id_max)
-      # print(input$Id_max)
       # if(!is.null(input$Id_max))
       # {input_infos_suppl_anat(input$Id_max)}
       # else{input_infos_suppl_anat("0")}
@@ -1067,7 +1069,7 @@ observeEvent(input$submit, {
           
         updateSelectizeInput(session = session, inputId = "name_species",selected ="not_selected")
         updatePickerInput(session = session, inputId = "infos_suppl_anat",selected =NULL,choices = NULL)
-        updateSelectizeInput(session = session, inputId = "name_anat",selected = get(list_bone[1]))
+        updateSelectizeInput(session = session, inputId = "name_anat",selected = "not_selected")
 
         updateNumericInput(session = session, inputId = "nb_remains",value =1)
         updateRadioGroupButtons(session = session, inputId = "infos_lat", selected = "IND")  
@@ -1086,14 +1088,11 @@ observeEvent(input$submit, {
         updatePickerInput(session = session, inputId = "observation_suppl",selected = "")
         updateSelectizeInput(session = session, inputId = "color_patine",selected ="")
         updatePrettySwitch(session = session, inputId = "infos_obs",value = FALSE)
-        print("aaaa")
-        print(input$name_anat2)
-        print(reactiveValuesToList(global.load$listeoflist_bone)[[1]])
+        
         switch(input$name_anat2,
                bone = {
                  isolate ({
                    if(!data$name_anat %in% reactiveValuesToList(global.load$listeoflist_bone)[[1]] ){
-                     print("OOO")
                      global.load$listeoflist_bone[["list_bone_1"]]<-c(reactiveValuesToList(global.load$listeoflist_bone)[[1]],levels(factor(as.character(data$name_anat)))) }
                     })
                },
@@ -1304,9 +1303,7 @@ observeEvent(input$Previous.button,{
   input_infos_suppl_anat(global.load$input_infos_suppl_anat)
   list_info_suppl(global.load$list_info_suppl)
   patine.list(global.load$patine.list)
-  print(df$save5) 
-  print(global.load$infos_completude)
-  
+
   updatePrettySwitch(session = session, inputId = "infos_completude",value = as.logical(global.load$infos_completude))
   updatePrettySwitch(session = session, inputId = "infos_photo",value = as.logical(global.load$infos_photo))
   updatePrettySwitch(session = session, inputId = "infos_tm",value = as.logical(global.load$infos_tm))
@@ -1427,8 +1424,7 @@ output$liste.species=renderUI({
 })
 df.sub <- reactive({ 
            req(!is.null(fileisupload))
-print(input$localisation)
-  
+
           df.sub<-global.load$df
 
              if (!is.null(input$localisation)) {
@@ -1638,7 +1634,7 @@ print(input$localisation)
            data.sp.used<-levels(as.factor(df.sub()[["name_species"]]))
 
            # data_allspecies <- data_species_biozone                         #### faire attention au chargement de ce jeu de donnée avec le script palber
-           taxNamesTot <- as.character(unlist(data_species_biozone()["Taxon"]))
+           taxNamesTot <- as.character(unlist(data_species_biozone["Taxon"]))
            
            
            # data.sp.used<- mutate_all(data.sp.used, .funs=stringr::str_to_lower)
@@ -2055,8 +2051,7 @@ print(input$localisation)
                   "3"={
                     FEM.dig<-subset(data.df.calcul.gh, name_anat == "Hum" | name_anat == "Fem" )
                     validate(need(nrow(FEM.dig) > 0 ,"No 'Hum' and 'Fem' elements found in the database"))
-                    print(FEM.dig)
-                    print(data.df.calcul.gh)
+
                     # FEM.dig<-FEM.dig[,c(1,2,7,9)]
                     # digcol<-"dig_bone_others"
                     digcol<-"dig_bone"
@@ -2169,10 +2164,10 @@ print(input$localisation)
            # somme.ratio<-somme.ratio[-(which(rowSums(somme.ratio)==0)),]
            ##                    FEM.dig<-subset(tt, name_anat == "Fem")
           myFormula <- as.formula(paste0("name_level + nb_total", " ~ ",digcol))
-          print(FEM.dig)
+         
           data.df.calcul.verif<-reshape2::dcast(FEM.dig, myFormula , fill = 0L)
             
-          print(data.df.calcul.verif)
+      
           new.element <-setdiff(list.element,colnames(data.df.calcul.verif))
           if(length(new.element)>0){
             new.element.tab<-matrix(data=0,ncol
@@ -2538,7 +2533,7 @@ observe({
            liste.nom.colonne<-c("ID_record",fields_theor,"dig_I", "dig_MOL", "dig_m1inf", "dig_bone" ,"dig_bone_others")
            new.element <-setdiff(colnames(global.load$BDD.old),liste.nom.colonne)
            global.load$BDD.old<-global.load$BDD.old[,!colnames(global.load$BDD.old) %in% c(new.element)]
-           print(global.load$BDD.old)
+        
            global.load$df<-rbind.data.frame(global.load$df,global.load$BDD.old)
            global.load$k<-global.load$k+nrow(global.load$BDD.old)
            to_save <- reactiveValuesToList(global.load)
