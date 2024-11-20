@@ -1590,12 +1590,12 @@ df.sub <- reactive({
              list.of.site[[1]]<-rownames(data.df.tot3)
            }
            
-           BCI_LVLn_of_siteS <- Func_BCI_Calcul(list.of.site, EUL = input$var.bioclim, verif = F)
+           BCI_LVLn_of_siteS <- Func_BCI_Calcul.list(list.of.site, EUL = input$var.bioclim, verif = F)
            names(BCI_LVLn_of_siteS)<-colnames(data.df.tot3)
            BCI_LVLn_of_siteS2<-as.data.frame(do.call(rbind, BCI_LVLn_of_siteS))
            BCI_LVLn_of_siteS2(BCI_LVLn_of_siteS2)
            BCI_LVLn_of_siteS[sapply(BCI_LVLn_of_siteS, is.null)] <- NULL ## to remove null element
-           res_lda<-func_LDA(BCI_LVLn_of_siteS, quantiv = TRUE) ########################################probleme ici
+           res_lda<-func_LDA.list(BCI_LVLn_of_siteS, quantiv = TRUE) ########################################probleme ici
            res_lda<-as.data.frame(do.call(rbind, res_lda))
            res_lda(res_lda)
            DT::datatable(

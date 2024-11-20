@@ -73,19 +73,19 @@ Func_BIOCLIM2.character <- function(Data, EUL = TRUE, quantiv = TRUE, interval =
 }
 
 
-#test car bug trouve pas character
-# Func_BCI_Calcul.list <- function(List, BioZoneFile = data_species_biozone,
-#                                  taxcol = "Taxon", ordercol = "Ordre",
-#                                  rodentiaName = "rodentia", eulipotyphlaName =
-#                                  "eulipotyphla", EUL = TRUE, verif = FALSE){
-# 
-#   lres <- lapply(List, Func_BCI_Calcul, BioZoneFile = BioZoneFile,
-#                  taxcol = taxcol, ordercol = ordercol, rodentiaName =
-#                  rodentiaName, eulipotyphlaName = eulipotyphlaName, EUL = EUL,
-#                  verif = verif)
-# 
-#   return(lres)
-# }
+
+Func_BCI_Calcul.list <- function(List, BioZoneFile = data_species_biozone,
+                                 taxcol = "Taxon", ordercol = "Ordre",
+                                 rodentiaName = "rodentia", eulipotyphlaName =
+                                 "eulipotyphla", EUL = TRUE, verif = FALSE){
+
+  lres <- lapply(List, Func_BCI_Calcul, BioZoneFile = BioZoneFile,
+                 taxcol = taxcol, ordercol = ordercol, rodentiaName =
+                 rodentiaName, eulipotyphlaName = eulipotyphlaName, EUL = EUL,
+                 verif = verif)
+
+  return(lres)
+}
 
 # function computing biozone composition
 Func_BCI_Calcul.character <- function(Data, BioZoneFile = data_species_biozone,
