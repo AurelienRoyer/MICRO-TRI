@@ -1574,7 +1574,7 @@ df.sub <- reactive({
          
          output$bioclim.react <-  DT::renderDataTable({  
            tab.raref_fossil<-df.species.table()
-           assign("temp3",tab.raref_fossil,envir=.GlobalEnv)
+           # assign("temp3",tab.raref_fossil,envir=.GlobalEnv)
            names(tab.raref_fossil)<-stringr::str_to_lower(names(tab.raref_fossil))
            rownames(tab.raref_fossil)<-tab.raref_fossil[,1]
            data.df.tot2<-tab.raref_fossil[2:ncol(tab.raref_fossil)]
@@ -1590,12 +1590,12 @@ df.sub <- reactive({
              list.of.site[[1]]<-rownames(data.df.tot3)
            }
            
-           BCI_LVLn_of_siteS <- Func_BCI_Calcul.list(list.of.site, EUL = input$var.bioclim, verif = F)
+           BCI_LVLn_of_siteS <- Func_BCI_Calcul(list.of.site, EUL = input$var.bioclim, verif = F)
            names(BCI_LVLn_of_siteS)<-colnames(data.df.tot3)
            BCI_LVLn_of_siteS2<-as.data.frame(do.call(rbind, BCI_LVLn_of_siteS))
            BCI_LVLn_of_siteS2(BCI_LVLn_of_siteS2)
            BCI_LVLn_of_siteS[sapply(BCI_LVLn_of_siteS, is.null)] <- NULL ## to remove null element
-           res_lda<-func_LDA.list(BCI_LVLn_of_siteS, quantiv = TRUE) ########################################probleme ici
+           res_lda<-func_LDA(BCI_LVLn_of_siteS, quantiv = TRUE) ########################################probleme ici
            res_lda<-as.data.frame(do.call(rbind, res_lda))
            res_lda(res_lda)
            DT::datatable(
@@ -2564,5 +2564,15 @@ observe({
            
                })
          
+##########PALBER function
+         Func_BIOCLIM2 <- function(M, ...){
+           UseMethod("Func_BIOCLIM2", M)
+         }
+         Func_BCI_Calcul <- function(M, ...){
+           UseMethod("Func_BCI_Calcul", M)
+         }
+         func_LDA <- function(M, ...){
+           UseMethod("func_LDA", M)
+         }
          
 } ## end of server 
