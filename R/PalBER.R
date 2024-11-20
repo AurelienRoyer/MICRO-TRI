@@ -1,7 +1,14 @@
 Func_BIOCLIM2 <- function(M, ...){
   UseMethod("Func_BIOCLIM2", M)
 }
-
+Func_BCI_Calcul <- function(M, ...){
+  UseMethod("Func_BCI_Calcul", M)
+}
+func_LDA <- function(M, ...){
+  UseMethod("func_LDA", M)
+}
+#import::here(lda, .from = MASS)
+# library(MASS)
 Func_BIOCLIM2.list <- function(List, EUL = TRUE, quantiv = TRUE, interval =
                                "prediction", verif = FALSE, BioZoneFile =
                                  data_species_biozone, taxcol = "Taxon",
@@ -66,9 +73,6 @@ Func_BIOCLIM2.character <- function(Data, EUL = TRUE, quantiv = TRUE, interval =
 }
 
 
-Func_BCI_Calcul <- function(M, ...){
-  UseMethod("Func_BCI_Calcul", M)
-}
 
 Func_BCI_Calcul.list <- function(List, BioZoneFile = data_species_biozone,
                                  taxcol = "Taxon", ordercol = "Ordre",
@@ -165,9 +169,6 @@ Func_BCI_Calcul.character <- function(Data, BioZoneFile = data_species_biozone,
 }
 
 
-func_LDA <- function(M, ...){
-  UseMethod("func_LDA", M)
-}
 
 func_LDA.list <- function(List, quantiv = TRUE, interval = "prediction",
                           EUL = lapply(List, attr, "EUL"),  BioClimFile =
@@ -203,7 +204,7 @@ func_LDA.numeric <- function(Names, EUL = attr(Names, "EUL"), quantiv = TRUE,
                              "II.III", "III", "IV", "V", "VI", "VII", "VIII",
                              "IX")), keepCol = rep(TRUE, 10)) {
 
-  library(MASS)
+
 
   # reading file with bioclimatic spectra and climate data
  # data_bci <- read.table(BioClimFile, header = T, sep = ";", check.names = FALSE)
