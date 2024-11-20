@@ -200,6 +200,9 @@ observeEvent(getdata.launch(), {
   last.name.square(global$last.name.square)
   last.name.dec(global$last.name.dec)
   last.name.level(global$last.name.level)
+  
+ 
+  
   last.name.us(global$last.name.us)
   last.name.sector(global$last.name.sector)
   last.year_exca(global$last.year_exca)
@@ -228,11 +231,7 @@ observeEvent(getdata.launch(), {
   })
   isolate({
     x2 <- as.list(global$listeoflist_bone)
-    print(x2)
-    print(reactiveValuesToList(global$listeoflist_bone))
     names(x2) <- names(reactiveValuesToList(global$listeoflist_bone))
-    print(do.call("reactiveValues",x2))
-    print(global.load$listeoflist_bone)
     global.load$listeoflist_bone<-do.call("reactiveValues",x2) 
   })
   
@@ -898,7 +897,7 @@ observeEvent(input$submit, {
          if(length(data$name_level)==1 && data$name_level=="") {
            data$name_level<-"empty"}
          if(length(data$name_us)==1 && data$name_us=="") {
-           data$name_level<-"empty"}
+           data$name_us<-"empty"}
          if (input$infos_enc==F) {data$trace_encoche<-"no"}
          if (input$infos_tm==F) {data$trace_tooth_mark<-"no"}
            
@@ -1299,6 +1298,7 @@ observeEvent(input$Previous.button,{
   last.name.dec(global.load$last.name.dec)
   last.year_exca(global.load$last.year_exca)
   last.name.level(global.load$last.name.level)
+
   last.name.us(global.load$last.name.us)
   input_infos_suppl_anat(global.load$input_infos_suppl_anat)
   list_info_suppl(global.load$list_info_suppl)
@@ -1427,12 +1427,18 @@ df.sub <- reactive({
 
           df.sub<-global.load$df
 
+
              if (!is.null(input$localisation)) {
           df.sub <- df.sub[df.sub[["name_sector"]] %in% input$localisation, ]}
           if (!is.null(input$UAS)) {
-             df.sub <- df.sub[df.sub[["name_level"]] %in% input$UAS, ]}
+             df.sub <- df.sub[df.sub[["name_level"]] %in% input$UAS, ]} else {
+               df.sub <- df.sub[df.sub[["name_level"]] %in% rV$name_level, ]
+              
+             }
+          
           if (!is.null(input$US)) {
-             df.sub <- df.sub[df.sub[["name_us"]] %in% input$US, ]}
+             df.sub <- df.sub[df.sub[["name_us"]] %in% input$US, ]} 
+          
           if (!is.null(input$Passe)) {
              df.sub <- df.sub[df.sub[["name_dec"]]%in% input$Passe, ]}
           if (!is.null(input$Square)) {
@@ -1567,14 +1573,13 @@ df.sub <- reactive({
          ) 
          
          
-         ###### Bioclim methods  ----
-         # to fix : issue with data.species and bioclim data
+###### Bioclim methods  ----
          BCI_LVLn_of_siteS2<-reactiveVal(NULL)
          res_lda<-reactiveVal(NULL)
-         
          output$bioclim.react <-  DT::renderDataTable({  
+
+           
            tab.raref_fossil<-df.species.table()
-           # assign("temp3",tab.raref_fossil,envir=.GlobalEnv)
            names(tab.raref_fossil)<-stringr::str_to_lower(names(tab.raref_fossil))
            rownames(tab.raref_fossil)<-tab.raref_fossil[,1]
            data.df.tot2<-tab.raref_fossil[2:ncol(tab.raref_fossil)]
@@ -1589,13 +1594,13 @@ df.sub <- reactive({
              
              list.of.site[[1]]<-rownames(data.df.tot3)
            }
-           
-           BCI_LVLn_of_siteS <- Func_BCI_Calcul(list.of.site, EUL = input$var.bioclim, verif = F)
+           str(list.of.site)
+           BCI_LVLn_of_siteS <- Func_BCI_Calcul.list(list.of.site, EUL = input$var.bioclim, verif = F)
            names(BCI_LVLn_of_siteS)<-colnames(data.df.tot3)
            BCI_LVLn_of_siteS2<-as.data.frame(do.call(rbind, BCI_LVLn_of_siteS))
            BCI_LVLn_of_siteS2(BCI_LVLn_of_siteS2)
            BCI_LVLn_of_siteS[sapply(BCI_LVLn_of_siteS, is.null)] <- NULL ## to remove null element
-           res_lda<-func_LDA(BCI_LVLn_of_siteS, quantiv = TRUE) ########################################probleme ici
+           res_lda<-func_LDA.list(BCI_LVLn_of_siteS, quantiv = TRUE) 
            res_lda<-as.data.frame(do.call(rbind, res_lda))
            res_lda(res_lda)
            DT::datatable(
@@ -1632,12 +1637,8 @@ df.sub <- reactive({
          output$bioclim.names_noused=renderUI({
            req(!is.null(fileisupload()))
            data.sp.used<-levels(as.factor(df.sub()[["name_species"]]))
-
-           # data_allspecies <- data_species_biozone                         #### faire attention au chargement de ce jeu de donnée avec le script palber
            taxNamesTot <- as.character(unlist(data_species_biozone["Taxon"]))
-           
-           
-           # data.sp.used<- mutate_all(data.sp.used, .funs=stringr::str_to_lower)
+
            data.sp.used<-stringr::str_to_lower(data.sp.used)
            id_noused <- which(!is.element(data.sp.used, taxNamesTot))
            names_noused <- data.sp.used[id_noused]
@@ -2563,16 +2564,6 @@ observe({
 
            
                })
-         
-##########PALBER function
-         Func_BIOCLIM2 <- function(M, ...){
-           UseMethod("Func_BIOCLIM2", M)
-         }
-         Func_BCI_Calcul <- function(M, ...){
-           UseMethod("Func_BCI_Calcul", M)
-         }
-         func_LDA <- function(M, ...){
-           UseMethod("func_LDA", M)
-         }
+  
          
 } ## end of server 
