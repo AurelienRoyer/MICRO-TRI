@@ -50,12 +50,26 @@ microTRI()
 
 
 ## a starting manual
-
+-sidebarpanel : acquisition
+1) Create a database 
 ![Figure 1-01](https://github.com/user-attachments/assets/da39f2f3-e13c-47df-bc11-e0cd0262a4d1)
 
+2) Record the information
+   -first : click on "new bag" to open a windows allowing to enter information of year, sector, ID, square, spit, level and US.
+   -second : enter the information of the remain (species, anatomy, number of remain, completeness, observations, marks ...
+   -third : click on "new line" to record it.
+   possibility of modify the last recording by clicking on "previous", to developp a table to show the records,
+![Figure 2-01](https://github.com/user-attachments/assets/ae4cc56a-a8a0-4c5e-88c0-b646e5dd620b)
 
+the panel "table" allows to have a look of the table, to search information, to delete row and to modify a cell
+![figure 3-01-01](https://github.com/user-attachments/assets/0f715e92-f271-4035-9b74-b25878d4df39)
 
+-sidebarpanel : exploration
+to realize quick exploration of the data. with the sidebarpanel, it is possible to select a variable and to select the modalities desired 
+![Figure 4-01](https://github.com/user-attachments/assets/b1bd1214-d107-424d-8adf-60072148eccc)
 
+-sidebarpanel : note 
+allow to record global notes of the observation and (not yet but soon) to export it
 
  ##  Major news 
  still in development
