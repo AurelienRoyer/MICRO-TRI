@@ -51,6 +51,7 @@ microTRI()
 
 ## a starting manual
 
+![Figure 1-01](https://github.com/user-attachments/assets/da39f2f3-e13c-47df-bc11-e0cd0262a4d1)
 
 
 
