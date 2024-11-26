@@ -1,3 +1,4 @@
+## version corrected to fit with 0 and 1 if almost no data
 WilsonBinCI <-  function(n, p, a=0.05) {
   z <- qnorm(1-a/2,lower.tail=T)
  # n<-n
@@ -18,6 +19,12 @@ WilsonBinCI <-  function(n, p, a=0.05) {
    } 
 
 
+  if (p>u){
+    u<-p
+  }
+  if (p<l){
+    l<-p
+  }
     bornes <- c(l,u)
 
   return(bornes)
