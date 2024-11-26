@@ -35,6 +35,7 @@ $(document).ready(function () {
 
 sidebar <- dashboardSidebar(
     sidebarMenu(id = "tabs",
+                
         menuItem("Dashboard database", tabName = "dashboard", icon = icon("dashboard")),
         menuItem("Acquisition", icon = icon("list"), tabName = "SMALLvert"
                  ),
@@ -206,18 +207,19 @@ body <- dashboardBody(
                   fluidRow(
                     id = "mytitle",
                     div(
-                  box(width = 6,background = "blue", 
+                  box(width = 5,background = "blue", 
                       # title="aaa",
                       # solidHeader = TRUE,
                       # collapsible = TRUE,
                 actionButton("submit", "New bag"),
                 actionButton("submit2", "New line"),
                   ),# end of box  
-                box(width = 2,background = "blue", 
+                box(width = 4,background = "blue", 
                 uiOutput ("previous"),
-                uiOutput ("next2")
+                actionButton("next2", "Empty bag")
+                # uiOutput ("next2")
                   ),# end of box  
-                box(width = 4,background = "olive",
+                box(width = 3,background = "olive",
                     uiOutput ("site")
                 )
                 ), # end of fluidRow
@@ -713,9 +715,19 @@ body <- dashboardBody(
     )
 )
 
-
+dbHeader <- dashboardHeader(title = "MICRO-TRI",
+                            # tags$li(a(href = 'http://shinyapps.company.com',
+                            #           icon("power-off"),
+                            #           title = "Back to Apps Home"),
+                            #         class = "dropdown"),
+                            tags$li(a(href = 'https://github.com/AurelienRoyer/MICRO-TRI',
+                                      img(src = 'www/logo1.png',
+                                          title = "MICRO-TRI", height = "30px"),
+                                      style = "padding-top:10px; padding-bottom:10px;"),
+                                    class = "dropdown"))
 ui <-dashboardPage(
-  dashboardHeader(title = "MICRO-TRI"),
+  # dashboardHeader(title = "MICRO-TRI"),
+  dbHeader,
   sidebar,
   body )## end of ui
 

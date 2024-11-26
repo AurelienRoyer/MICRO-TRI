@@ -756,27 +756,51 @@ observeEvent(input$color_patine, {
       
     })
 ##saving ----
+datamodal<-function(){
+  modalDialog(
+    title = tags$h4(style = "color: red;","Load file"),
+    easyClose = T,
+    HTML("Size options are not available without unique ID"),
+    selectizeInput("name_sector","name of sector", choices = c(rV$name_sector),selected = last.name.sector(), options = list(create = TRUE)),
+    selectizeInput("year_exca","year", choices = c(rV$year_exca),selected = last.year_exca(), options = list(create = TRUE)),
+    
+    selectizeInput("ID_dec","ID of split/decapage", choices = c(rV$ID_dec),selected = last.id.dec(), options = list(create = TRUE)),
+    selectizeInput("name_square","name of square", choices = c(rV$name_square),selected = last.name.square(), options = list(create = TRUE)),
+    selectizeInput("name_dec","name of dec", choices = c(rV$name_dec),selected = last.name.dec(), options = list(create = TRUE)),
+    selectizeInput("name_level","name of levels", choices = c(rV$name_level),selected = last.name.level(), options = list(create = TRUE)),
+    selectizeInput("name_us","name of stratigraphical units", choices = c(rV$name_us),selected = last.name.us(), options = list(create = TRUE)),
+    if (!is.null(file.field.BDD.isupload())) {
+      
+      uiOutput("txt.field.data")     
+      
+    }
+  )
+}
+    
 observeEvent(input$submit, {
       
       showModal(
-        modalDialog(
-        title = tags$h4(style = "color: red;","Load file"),
-        easyClose = T,
-        HTML("Size options are not available without unique ID"),
-        selectizeInput("name_sector","name of sector", choices = c(rV$name_sector),selected = last.name.sector(), options = list(create = TRUE)),
-        selectizeInput("year_exca","year", choices = c(rV$year_exca),selected = last.year_exca(), options = list(create = TRUE)),
+        datamodal()
+        # modalDialog(
+        # title = tags$h4(style = "color: red;","Load file"),
+        # easyClose = T,
+        # HTML("Size options are not available without unique ID"),
+        # selectizeInput("name_sector","name of sector", choices = c(rV$name_sector),selected = last.name.sector(), options = list(create = TRUE)),
+        # selectizeInput("year_exca","year", choices = c(rV$year_exca),selected = last.year_exca(), options = list(create = TRUE)),
+        # 
+        # selectizeInput("ID_dec","ID of split/decapage", choices = c(rV$ID_dec),selected = last.id.dec(), options = list(create = TRUE)),
+        # selectizeInput("name_square","name of square", choices = c(rV$name_square),selected = last.name.square(), options = list(create = TRUE)),
+        # selectizeInput("name_dec","name of dec", choices = c(rV$name_dec),selected = last.name.dec(), options = list(create = TRUE)),
+        # selectizeInput("name_level","name of levels", choices = c(rV$name_level),selected = last.name.level(), options = list(create = TRUE)),
+        # selectizeInput("name_us","name of stratigraphical units", choices = c(rV$name_us),selected = last.name.us(), options = list(create = TRUE)),
+        # if (!is.null(file.field.BDD.isupload())) {
+        #   
+        #   uiOutput("txt.field.data")     
+        # 
+        # }
+        # )
         
-        selectizeInput("ID_dec","ID of split/decapage", choices = c(rV$ID_dec),selected = last.id.dec(), options = list(create = TRUE)),
-        selectizeInput("name_square","name of square", choices = c(rV$name_square),selected = last.name.square(), options = list(create = TRUE)),
-        selectizeInput("name_dec","name of dec", choices = c(rV$name_dec),selected = last.name.dec(), options = list(create = TRUE)),
-        selectizeInput("name_level","name of levels", choices = c(rV$name_level),selected = last.name.level(), options = list(create = TRUE)),
-        selectizeInput("name_us","name of stratigraphical units", choices = c(rV$name_us),selected = last.name.us(), options = list(create = TRUE)),
-        if (!is.null(file.field.BDD.isupload())) {
-          
-          uiOutput("txt.field.data")     
-
-        }
-        ))
+        )
       
       
       last.id.dec(input$ID_dec)
@@ -1147,7 +1171,7 @@ observeEvent(input$submit, {
         test<-data.frame(apply(global.load$df,2,as.character))
         write.table(test, file =  paste0(Sys.Date(),".",global.load$site.archaeo,".BDD.uf",".csv",sep=""), row.names = FALSE, sep=";",dec=".") 
 
-          assign("df",global.load$df,envir = .GlobalEnv)
+          # assign("df",global.load$df,envir = .GlobalEnv)
           })
     
 ### rapide button saving ----   
@@ -1335,42 +1359,48 @@ trigger.next.prev(FALSE)
 },priority=10)
 
 
- # observeEvent(trigger.next.prev(),{
-# observe({
-# #   req(!isTRUE(trigger.button.prevnext()))
-# 
-#    req(!isTRUE(trigger.next.prev()))
-# print("aaaaaaaaaaa")
-# Sys.sleep(1)
-# print(df$save5$trace_encoche)
-#   updatePrettySwitch(session = session, inputId = "infos_completude",value = as.logical(global.load$infos_completude))
-#   updatePrettySwitch(session = session, inputId = "infos_photo",value = as.logical(global.load$infos_photo))
-#   updatePrettySwitch(session = session, inputId = "infos_tm",value = as.logical(global.load$infos_tm))
-#   updatePrettySwitch(session = session, inputId = "infos_enc",value = as.logical(global.load$infos_enc))
-#   updatePrettySwitch(session = session, inputId = "infos_obs",value = as.logical(global.load$infos_obs))
-#   
-#   # print(paste(as.character(df$save5$observation)))
-#  # updateTextInput(session = session, inputId = "observation",value = paste(as.character(df$save5$observation)))
-#  updateTextInput(session = session, inputId = "observation",value = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
-#  updateTextInput(session = session, inputId = "txt_photo",value = paste(df$save5$txt_photo))
-#  updatePickerInput(session = session, inputId = "observation_suppl",selected = paste(df$save5$observation_suppl))
-#  updateRadioGroupButtons(session = session, inputId ="trace_tooth_mark",selected = paste(df$save5$trace_tooth_mark))
-#  updateRadioGroupButtons(session = session, inputId ="trace_tooth_mark",selected = "multiple")
-# updateRadioGroupButtons(session = session, inputId ="trace_encoche",selected = paste(df$save5$trace_encoche))
-# updateCheckboxGroupButtons(session = session, inputId = "infos_completude_detailled",selected = df$save5$infos_completude_detailled)  
-# 
-# # trigger.next.prev(TRUE)
-# # trigger.button.prevnext(FALSE)
-#    })
+ #
 
-# output$next2=renderUI({
-#   
-#   if(!isTRUE(trigger.button.prevnext())){
-#     actionButton("Next.button", "Next")}
-#   
-# })
-
-#
+output$next2=renderUI({
+     actionButton("Next.0", "empty")
+ })
+observeEvent(input$Next.0,{
+  updateSelectizeInput(session = session,inputId = "ID_dec", selected = last.id.dec())
+  updateSelectizeInput(session = session,inputId = "name_square",selected = last.name.square())
+  updateSelectizeInput(session = session,inputId = "name_dec",selected = last.name.dec())
+  updateSelectizeInput(session = session,inputId = "name_level",selected = last.name.level())
+  updateSelectizeInput(session = session,inputId = "name_us",selected = last.name.us())
+  updateSelectizeInput(session = session,inputId = "name_sector",selected = last.name.sector())
+  updateSelectizeInput(session = session,inputId = "year_exca",selected = last.year_exca())
+  
+  data <- as.data.frame(t(formData()))
+  data[,8:ncol(data)]<-"empty"
+  global.load$df<-rbind(global.load$df, data)
+  k<-ID_record()+1
+  ID_record(k)
+  global.load$k<-k
+  
+  global.load$ID_dec<-rV$ID_dec
+  global.load$name_sector<-rV$name_sector
+  global.load$name_square<-rV$name_square
+  global.load$year_exca<-rV$year_exca
+  global.load$name_dec<-rV$name_dec
+  global.load$name_level<-rV$name_level
+  global.load$name_us<-rV$name_us
+  global.load$last.id.dec<-last.id.dec()
+  global.load$last.name.square<-last.name.square()
+  global.load$last.name.sector<-last.name.sector()
+  global.load$last.name.dec<-last.name.dec()
+  global.load$last.year_exca<-last.year_exca()
+  global.load$last.name.level<-last.name.level()
+  global.load$last.name.us<-last.name.us()
+  
+  to_save <- reactiveValuesToList(global.load)
+  saveRDS(to_save, file =  paste0(Sys.Date(),".",global.load$site.archaeo,".BDD.uf",".rds"))
+  test<-data.frame(apply(global.load$df,2,as.character))
+  write.table(test, file =  paste0(Sys.Date(),".",global.load$site.archaeo,".BDD.uf",".csv",sep=""), row.names = FALSE, sep=";",dec=".") 
+  datamodal()
+})
 
 
 
