@@ -180,7 +180,7 @@ body <- dashboardBody(
     <font size=3>
    <span style='text-transform:none'>
    
-   <i>Micro-TRI </i> (v.1) is an application dedicated to the record of small vertebrate archaeological and palaeontological remains .</p>
+   <i>Micro-TRI </i> (v.1.1.0) is an application dedicated to the record of small vertebrate archaeological and palaeontological remains .</p>
    <p>It makes it possible to record easily small vertebrate remains with taxonomical and taphonomical information,
    ssociated with field data information. It makes also possible to visualise quick information recorded by levels, square or spit.</p>
    <p>This is an open and free software, 
