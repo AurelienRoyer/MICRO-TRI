@@ -900,7 +900,7 @@ observeEvent(input$submit, {
         
         # data<-c(ID_record(),data)
         names(data)<-c("ID_record",fields_theor)
-        data$date_record<-Sys.time()
+        data$date_record<-paste0(c(Sys.time()))
         if(!is.null(input_infos_suppl_anat())){
          data$infos_suppl_anat<-input_infos_suppl_anat()}
          data$dig_I<-"NA"
