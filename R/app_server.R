@@ -757,18 +757,34 @@ observeEvent(input$color_patine, {
     })
 ##saving ----
 datamodal<-function(){
+  sector<-rV$name_sector
+  if(!is.null(sector)){sector<-sector[order(sector,decreasing=F,na.last=FALSE)]}
+  year<-rV$year_exca
+  if(!is.null(year)){year<-year[order(year,decreasing=F,na.last=FALSE)]}
+  dec<-rV$ID_dec
+  if(!is.null(dec)){dec<-dec[order(dec,decreasing=F,na.last=FALSE)]}
+  square<-rV$name_square
+  if(!is.null(square)){square<-square[order(square,decreasing=F,na.last=FALSE)]}
+  name_dec<-rV$name_dec
+  if(!is.null(name_dec)){name_dec<-name_dec[order(name_dec,decreasing=F,na.last=FALSE)]}
+  level<-rV$name_level
+  if(!is.null(level)){level<-level[order(level,decreasing=F,na.last=FALSE)]}
+  us<-rV$name_us
+  if(!is.null(us)){us<-us[order(us,decreasing=F,na.last=FALSE)]}
+  
   modalDialog(
     title = tags$h4(style = "color: red;","Load file"),
     easyClose = T,
     HTML("Size options are not available without unique ID"),
-    selectizeInput("name_sector","name of sector", choices = c(rV$name_sector),selected = last.name.sector(), options = list(create = TRUE)),
-    selectizeInput("year_exca","year", choices = c(rV$year_exca),selected = last.year_exca(), options = list(create = TRUE)),
+    selectizeInput("name_sector","name of sector", choices = c(sector),selected = last.name.sector(), options = list(create = TRUE)),
+    selectizeInput("year_exca","year", choices = c(year),selected = last.year_exca(), options = list(create = TRUE)),
+    selectizeInput("ID_dec","ID of split/decapage", choices = c(dec),selected = last.id.dec(), options = list(create = TRUE)),
+    selectizeInput("name_square","name of square", choices = c(square),selected = last.name.square(), options = list(create = TRUE)),
+    selectizeInput("name_dec","name of dec", choices = c(name_dec),selected = last.name.dec(), options = list(create = TRUE)),
+     selectizeInput("name_level","name of levels", choices = c(level),selected = last.name.level(), options = list(create = TRUE)),
+
+     selectizeInput("name_us","name of stratigraphical units", choices = c(us),selected = last.name.us(), options = list(create = TRUE)),
     
-    selectizeInput("ID_dec","ID of split/decapage", choices = c(rV$ID_dec),selected = last.id.dec(), options = list(create = TRUE)),
-    selectizeInput("name_square","name of square", choices = c(rV$name_square),selected = last.name.square(), options = list(create = TRUE)),
-    selectizeInput("name_dec","name of dec", choices = c(rV$name_dec),selected = last.name.dec(), options = list(create = TRUE)),
-    selectizeInput("name_level","name of levels", choices = c(rV$name_level),selected = last.name.level(), options = list(create = TRUE)),
-    selectizeInput("name_us","name of stratigraphical units", choices = c(rV$name_us),selected = last.name.us(), options = list(create = TRUE)),
     if (!is.null(file.field.BDD.isupload())) {
       
       uiOutput("txt.field.data")     
@@ -1016,6 +1032,24 @@ observeEvent(input$submit, {
           ))
       
       }
+      if (is.null(input$nb_remains)){
+        showModal(
+          modalDialog(
+            title = tags$h4(style = "color: red;","Are you sur? "),
+            easyClose = T,
+            HTML("No number of remains has been given. Please provide an number "),
+          ))
+        
+      }
+      if (!is.numeric(input$nb_remains)){
+        showModal(
+          modalDialog(
+            title = tags$h4(style = "color: red;","Are you sur? "),
+            easyClose = T,
+            HTML("No correct number of remains has been provider. Please provide a correct number"),
+          ))
+ 
+      }
       if (input$name_species=="not_selected"){
         showModal(
           modalDialog(
@@ -1111,6 +1145,7 @@ observeEvent(input$submit, {
         updatePickerInput(session = session, inputId = "observation_suppl",selected = "")
         updateSelectizeInput(session = session, inputId = "color_patine",selected ="")
         updatePrettySwitch(session = session, inputId = "infos_obs",value = FALSE)
+        updateSliderTextInput(session = session, inputId = "specimen_age",selected = "Adult")
         
         switch(input$name_anat2,
                bone = {
@@ -1494,6 +1529,9 @@ df.sub <- reactive({
            data.df.tot<-df.sub
            # data.df.tot2<-data.df.tot %>% group_by(.data[["name_level"]],.data[["name_species"]])  %>% 
            #   dplyr::summarise(total = sum(!!(as.numeric(data.df.tot$nb_remains))))
+           print("aa")
+           print(data.df.tot$name_level)
+           print(levels(as.character(data.df.tot$name_level)))
            data.df.tot2<-data.df.tot %>% group_by(name_level,name_species)  %>% 
              dplyr::summarise(total = sum((as.numeric(nb_remains))))
            
@@ -1529,8 +1567,9 @@ df.sub <- reactive({
          })
          output$sum.remain=renderUI({
            req(!is.null(fileisupload()))
-           aa<-as.data.frame(global.load$df[["nb_remains"]])
-           tagList(HTML(paste("Number total of all remains: ",sum(aa))))
+           str(global.load$df[["nb_remains"]])
+           aa<-as.data.frame(as.numeric(global.load$df[["nb_remains"]]))
+           tagList(HTML(paste("Number total of all remains: ",sum(aa, na.rm = T))))
          })
          output$sum.remain2=renderUI({
            req(!is.null(fileisupload()))
@@ -2493,7 +2532,7 @@ df.sub <- reactive({
          
          output$table.species <-  DT::renderDataTable({
            data.df.tot2<-df.species.table()
-           assign("data.df.tot2",data.df.tot2, envir=.GlobalEnv)
+           # assign("data.df.tot2",data.df.tot2, envir=.GlobalEnv)
            data.df.tot2<-t(data.df.tot2)
            
            DT::datatable(
@@ -2507,12 +2546,19 @@ df.sub <- reactive({
                  "}")
              ))
          })#end renderDataTable
+        
+         
          output$downloadData_speciesdata<- downloadHandler( 
+
+           
            filename = function() {
              paste0(Sys.Date(),"_species.table",".csv")
            },
            content = function(file) {
-             write.table(df.species.table(), file, row.names = FALSE, sep=";",dec=".") ## to MODIF !!!
+             data.df.tot2<-df.species.table()
+              if (input$flip==TRUE){
+              data.df.tot2<-t(data.df.tot2)}
+             write.table(data.df.tot2, file, row.names = FALSE, sep=";",dec=".") ## to MODIF !!!
            }
          ) 
          
