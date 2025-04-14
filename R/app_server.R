@@ -762,8 +762,14 @@ datamodal<-function(){
   if(!is.null(sector)){sector<-sector[order(sector,decreasing=F,na.last=FALSE)]}
   year<-rV$year_exca
   if(!is.null(year)){year<-year[order(year,decreasing=F,na.last=FALSE)]}
-  # dec<-rV$ID_dec
-  # if(!is.null(dec)){dec<-dec[order(dec,decreasing=F,na.last=FALSE)]}
+  
+  #dec<-rV$ID_dec
+  #if(!is.null(dec)){dec<-dec[order(dec,decreasing=F,na.last=FALSE)]}
+   
+   # if(input$checkbox_ID==T){
+   #   dec<-c(paste0(input$name_square,"_",input$name_dec))
+   # }
+   
   square<-rV$name_square
   if(!is.null(square)){square<-square[order(square,decreasing=F,na.last=FALSE)]}
   name_dec<-rV$name_dec
@@ -781,8 +787,8 @@ datamodal<-function(){
     column(12,selectizeInput("year_exca","year", choices = c(year),selected = last.year_exca(), options = list(create = TRUE)),),
     column(12,
            column(7,
-                  uiOutput("ID_dec2")
-    # selectizeInput("ID_dec","ID of split/decapage", choices = c(dec),selected = last.id.dec(), options = list(create = TRUE)),
+                   uiOutput("ID_dec2"),
+     #selectizeInput("ID_dec","ID of split/decapage", choices = c(dec),selected = last.id.dec(), options = list(create = TRUE)),
     ),
     column(4,checkboxInput("checkbox_ID", label = "Auto ID", value = F),),),
     
@@ -802,18 +808,26 @@ datamodal<-function(){
 
  output$ID_dec2<-renderUI({
    dec<-rV$ID_dec
+
    if(!is.null(dec)){dec<-dec[order(dec,decreasing=F,na.last=FALSE)]}
-   
+
    if(input$checkbox_ID==T){
      dec<-c(paste0(input$name_square,"_",input$name_dec))
      }
    selectizeInput("ID_dec","ID of split/decapage", choices = c(dec),selected = last.id.dec(), options = list(create = TRUE))
-   
+
 })
     
         
 observeEvent(input$submit, {
-      
+  last.id.dec(input$ID_dec)
+  last.name.square(input$name_square)
+  last.name.sector(input$name_sector)
+  last.name.dec(input$name_dec)
+  last.name.level(input$name_level)
+  last.name.us(input$name_us)
+  last.year_exca(input$year_exca)
+  
       showModal(
         datamodal()
         )
