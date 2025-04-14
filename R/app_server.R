@@ -1,4 +1,5 @@
-#### corriger digestion avec seulement colonne 1?2?34 et 0 et pas NA et ind.
+############### microTRI v1.02 
+## V.04/2025
 
 app_server <- function(input, output, session) {
   font.size <- "8pt"
@@ -761,8 +762,8 @@ datamodal<-function(){
   if(!is.null(sector)){sector<-sector[order(sector,decreasing=F,na.last=FALSE)]}
   year<-rV$year_exca
   if(!is.null(year)){year<-year[order(year,decreasing=F,na.last=FALSE)]}
-  dec<-rV$ID_dec
-  if(!is.null(dec)){dec<-dec[order(dec,decreasing=F,na.last=FALSE)]}
+  # dec<-rV$ID_dec
+  # if(!is.null(dec)){dec<-dec[order(dec,decreasing=F,na.last=FALSE)]}
   square<-rV$name_square
   if(!is.null(square)){square<-square[order(square,decreasing=F,na.last=FALSE)]}
   name_dec<-rV$name_dec
@@ -776,14 +777,20 @@ datamodal<-function(){
     title = tags$h4(style = "color: red;","Load file"),
     easyClose = T,
     HTML("Size options are not available without unique ID"),
-    selectizeInput("name_sector","name of sector", choices = c(sector),selected = last.name.sector(), options = list(create = TRUE)),
-    selectizeInput("year_exca","year", choices = c(year),selected = last.year_exca(), options = list(create = TRUE)),
-    selectizeInput("ID_dec","ID of split/decapage", choices = c(dec),selected = last.id.dec(), options = list(create = TRUE)),
-    selectizeInput("name_square","name of square", choices = c(square),selected = last.name.square(), options = list(create = TRUE)),
-    selectizeInput("name_dec","name of dec", choices = c(name_dec),selected = last.name.dec(), options = list(create = TRUE)),
-     selectizeInput("name_level","name of levels", choices = c(level),selected = last.name.level(), options = list(create = TRUE)),
+    column(12,selectizeInput("name_sector","name of sector", choices = c(sector),selected = last.name.sector(), options = list(create = TRUE)),),
+    column(12,selectizeInput("year_exca","year", choices = c(year),selected = last.year_exca(), options = list(create = TRUE)),),
+    column(12,
+           column(7,
+                  uiOutput("ID_dec2")
+    # selectizeInput("ID_dec","ID of split/decapage", choices = c(dec),selected = last.id.dec(), options = list(create = TRUE)),
+    ),
+    column(4,checkboxInput("checkbox_ID", label = "Auto ID", value = F),),),
+    
+    column(12,selectizeInput("name_square","name of square", choices = c(square),selected = last.name.square(), options = list(create = TRUE)),),
+    column(12,selectizeInput("name_dec","name of dec", choices = c(name_dec),selected = last.name.dec(), options = list(create = TRUE)),),
+    column(12,selectizeInput("name_level","name of levels", choices = c(level),selected = last.name.level(), options = list(create = TRUE)),),
 
-     selectizeInput("name_us","name of stratigraphical units", choices = c(us),selected = last.name.us(), options = list(create = TRUE)),
+     column(12,selectizeInput("name_us","name of stratigraphical units", choices = c(us),selected = last.name.us(), options = list(create = TRUE)),),
     
     if (!is.null(file.field.BDD.isupload())) {
       
@@ -792,30 +799,23 @@ datamodal<-function(){
     }
   )
 }
+
+ output$ID_dec2<-renderUI({
+   dec<-rV$ID_dec
+   if(!is.null(dec)){dec<-dec[order(dec,decreasing=F,na.last=FALSE)]}
+   
+   if(input$checkbox_ID==T){
+     dec<-c(paste0(input$name_square,"_",input$name_dec))
+     }
+   selectizeInput("ID_dec","ID of split/decapage", choices = c(dec),selected = last.id.dec(), options = list(create = TRUE))
+   
+})
     
+        
 observeEvent(input$submit, {
       
       showModal(
         datamodal()
-        # modalDialog(
-        # title = tags$h4(style = "color: red;","Load file"),
-        # easyClose = T,
-        # HTML("Size options are not available without unique ID"),
-        # selectizeInput("name_sector","name of sector", choices = c(rV$name_sector),selected = last.name.sector(), options = list(create = TRUE)),
-        # selectizeInput("year_exca","year", choices = c(rV$year_exca),selected = last.year_exca(), options = list(create = TRUE)),
-        # 
-        # selectizeInput("ID_dec","ID of split/decapage", choices = c(rV$ID_dec),selected = last.id.dec(), options = list(create = TRUE)),
-        # selectizeInput("name_square","name of square", choices = c(rV$name_square),selected = last.name.square(), options = list(create = TRUE)),
-        # selectizeInput("name_dec","name of dec", choices = c(rV$name_dec),selected = last.name.dec(), options = list(create = TRUE)),
-        # selectizeInput("name_level","name of levels", choices = c(rV$name_level),selected = last.name.level(), options = list(create = TRUE)),
-        # selectizeInput("name_us","name of stratigraphical units", choices = c(rV$name_us),selected = last.name.us(), options = list(create = TRUE)),
-        # if (!is.null(file.field.BDD.isupload())) {
-        #   
-        #   uiOutput("txt.field.data")     
-        # 
-        # }
-        # )
-        
         )
       
       
@@ -1574,7 +1574,7 @@ df.sub <- reactive({
          output$sum.remain2=renderUI({
            req(!is.null(fileisupload()))
             aa<-df.sub()
-            tagList(HTML(paste("Number of remains selected: ",sum(aa[["nb_remains"]]))))
+            tagList(HTML(paste("Number of remains selected: ",sum(aa[["nb_remains"]], na.rm = T))))
          })  
          
          
