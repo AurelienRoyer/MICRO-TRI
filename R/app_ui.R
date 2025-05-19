@@ -216,8 +216,8 @@ body <- dashboardBody(
                   ),# end of box  
                 box(width = 4,background = "blue", 
                 uiOutput ("previous"),
-                actionButton("next2", "Empty bag")
-                # uiOutput ("next2")
+                #actionButton("next2", "Empty bag")
+                 uiOutput ("next2"),
                   ),# end of box  
                 box(width = 3,background = "olive",
                     uiOutput ("site")
@@ -533,11 +533,26 @@ body <- dashboardBody(
                              uiOutput("sum.species"),
                              tags$br(),
                              tags$br(),
+                             
+                             prettySwitch(
+                               inputId = "flip2",
+                               label = "Level or US",
+                               status = "success",
+                               fill = F
+                             ),
+                             
                              tags$hr(),
                              column(5,
                                     
                                     DTOutput("table.species")),
-                             column(11, downloadButton("downloadData_speciesdata", "Download")),
+                             column(11, 
+                                    prettySwitch(
+                                      inputId = "flip",
+                                      label = "flip: level per species",
+                                      status = "success",
+                                      fill = TRUE
+                                    ),
+                                    downloadButton("downloadData_speciesdata", "Download")),
                            ) #end fluidrow
                   ), #end tabpanel
                 tabPanel(tags$h5("Pivot table"),
@@ -722,7 +737,7 @@ dbHeader <- dashboardHeader(title = "MICRO-TRI",
                             #         class = "dropdown"),
                             tags$li(a(href = 'https://github.com/AurelienRoyer/MICRO-TRI',
                                       img(src = 'www/logo1.png',
-                                          title = "MICRO-TRI", height = "30px"),
+                                          title = "MICRO-TRI", height = "40px"),
                                       style = "padding-top:10px; padding-bottom:10px;"),
                                     class = "dropdown"))
 ui <-dashboardPage(

@@ -757,14 +757,16 @@ observeEvent(input$color_patine, {
       
     })
 ##saving ----
+# autoIDinput<-reactiveVal(FALSE) ##for legends.  
+
 datamodal<-function(){
   sector<-rV$name_sector
   if(!is.null(sector)){sector<-sector[order(sector,decreasing=F,na.last=FALSE)]}
   year<-rV$year_exca
   if(!is.null(year)){year<-year[order(year,decreasing=F,na.last=FALSE)]}
   
-  #dec<-rV$ID_dec
-  #if(!is.null(dec)){dec<-dec[order(dec,decreasing=F,na.last=FALSE)]}
+  dec<-rV$ID_dec
+  if(!is.null(dec)){dec<-dec[order(dec,decreasing=F,na.last=FALSE)]}
    
    # if(input$checkbox_ID==T){
    #   dec<-c(paste0(input$name_square,"_",input$name_dec))
@@ -785,13 +787,25 @@ datamodal<-function(){
     HTML("Size options are not available without unique ID"),
     column(12,selectizeInput("name_sector","name of sector", choices = c(sector),selected = last.name.sector(), options = list(create = TRUE)),),
     column(12,selectizeInput("year_exca","year", choices = c(year),selected = last.year_exca(), options = list(create = TRUE)),),
+    
+    #XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+    print(input$checkbox_ID),
+    
     column(12,
            column(7,
-                   uiOutput("ID_dec2"),
-     #selectizeInput("ID_dec","ID of split/decapage", choices = c(dec),selected = last.id.dec(), options = list(create = TRUE)),
+                  selectizeInput("ID_dec","ID of split/decapage", choices = c(dec),selected = last.id.dec(), options = list(create = TRUE)),
+                  
+                  # if(input$checkbox_ID==F || is.null(input$checkbox_ID)){selectizeInput("ID_dec","ID of split/decapage", choices = c(dec),selected = last.id.dec(), options = list(create = TRUE))
+                  #   }else {
+                  if(input$checkbox_ID==T || is.null(input$checkbox_ID)){
+                      updateSelectInput(session=session,"ID_dec",selected =c(paste0(input$name_square,"_",input$name_dec)))},
+                    
+                  
+                   # uiOutput("ID_dec2"),
+                 #selectizeInput("ID_dec","ID of split/decapage", choices = c(dec),selected = last.id.dec(), options = list(create = TRUE)),
     ),
     column(4,checkboxInput("checkbox_ID", label = "Auto ID", value = F),),),
-    
+    # autoIDinput(input$checkbox_ID),
     column(12,selectizeInput("name_square","name of square", choices = c(square),selected = last.name.square(), options = list(create = TRUE)),),
     column(12,selectizeInput("name_dec","name of dec", choices = c(name_dec),selected = last.name.dec(), options = list(create = TRUE)),),
     column(12,selectizeInput("name_level","name of levels", choices = c(level),selected = last.name.level(), options = list(create = TRUE)),),
@@ -799,26 +813,32 @@ datamodal<-function(){
      column(12,selectizeInput("name_us","name of stratigraphical units", choices = c(us),selected = last.name.us(), options = list(create = TRUE)),),
     
     if (!is.null(file.field.BDD.isupload())) {
-      
       uiOutput("txt.field.data")     
       
     }
   )
 }
+#  output$ID_dec3<-renderUI({
+#    autoIDinput()
+# 
+# })
 
- output$ID_dec2<-renderUI({
-   dec<-rV$ID_dec
 
-   if(!is.null(dec)){dec<-dec[order(dec,decreasing=F,na.last=FALSE)]}
-
-   if(input$checkbox_ID==T){
-     dec<-c(paste0(input$name_square,"_",input$name_dec))
-     }
-   selectizeInput("ID_dec","ID of split/decapage", choices = c(dec),selected = last.id.dec(), options = list(create = TRUE))
-
-})
+#  output$ID_dec2<-renderUI({
+#    dec<-rV$ID_dec
+# 
+#    if(!is.null(dec)){dec<-dec[order(dec,decreasing=F,na.last=FALSE)]}
+# 
+#    if(input$checkbox_ID==T){
+#      dec<-c(paste0(input$name_square,"_",input$name_dec))
+#      }
+#    selectizeInput("ID_dec","ID of split/decapage", choices = c(dec),selected = last.id.dec(), options = list(create = TRUE))
+# 
+# })
+#     
+    #XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
     
-        
+    
 observeEvent(input$submit, {
   last.id.dec(input$ID_dec)
   last.name.square(input$name_square)
@@ -1464,6 +1484,7 @@ observeEvent(input$submit2,{
 ##### df.sub and co   ----  
 somme.indiv<-reactiveVal()
 df.species.table<-reactiveVal()
+df.species.table.UAS<-reactiveVal()
 number.total.of.species<-reactiveVal(1)
 output$liste.sector=renderUI({
   sector.list<-unique(unlist((df$df[["name_sector"]])))
@@ -1516,7 +1537,10 @@ df.sub <- reactive({
              }
           
           if (!is.null(input$US)) {
-             df.sub <- df.sub[df.sub[["name_us"]] %in% input$US, ]} 
+             df.sub <- df.sub[df.sub[["name_us"]] %in% input$US, ]} else {
+               df.sub <- df.sub[df.sub[["name_us"]] %in% rV$name_us, ]
+               
+             }
           
           if (!is.null(input$Passe)) {
              df.sub <- df.sub[df.sub[["name_dec"]]%in% input$Passe, ]}
@@ -1552,7 +1576,13 @@ df.sub <- reactive({
            myFormula <- as.formula(paste0("name_level", " ~ ","name_species"))
            df.species.table<-reshape2::dcast(data.df.tot2,myFormula, fill = 0L)
            df.species.table(df.species.table)
-
+           
+           data.df.tot2<-data.df.tot %>% group_by(name_us,name_species)  %>% 
+             dplyr::summarise(total = sum((as.numeric(nb_remains))))
+           myFormula2 <- as.formula(paste0("name_us", " ~ ","name_species"))
+           df.species.table.UAS<-reshape2::dcast(data.df.tot2,myFormula2, fill = 0L)
+           df.species.table.UAS(df.species.table.UAS)
+           
            number.total.of.species(ncol(df.species.table)-1)
            ####
            df.sub
@@ -2546,9 +2576,12 @@ df.sub <- reactive({
          
          output$table.species <-  DT::renderDataTable({
            data.df.tot2<-df.species.table()
+           if (input$flip2==TRUE){
+             data.df.tot2<-df.species.table.UAS()}
            # assign("data.df.tot2",data.df.tot2, envir=.GlobalEnv)
            data.df.tot2<-t(data.df.tot2)
-           
+           if (input$flip==T){
+             data.df.tot2<-t(data.df.tot2)}
            DT::datatable(
              data= data.df.tot2, 
              extensions = 'Buttons', options = list(
@@ -2570,7 +2603,9 @@ df.sub <- reactive({
            },
            content = function(file) {
              data.df.tot2<-df.species.table()
-              if (input$flip==TRUE){
+             if (input$flip2==TRUE){
+               data.df.tot2<-df.species.table.UAS()}
+              if (input$flip==F){
               data.df.tot2<-t(data.df.tot2)}
              write.table(data.df.tot2, file, row.names = FALSE, sep=";",dec=".") ## to MODIF !!!
            }
