@@ -2785,6 +2785,72 @@ observe({
 
            
                })
-  
+        
+ ## export rmarkdown
          
+         #### rmarkdown report template ----
+         
+         w.report<-function(){ 
+           writeLines(con = "report.Rmd", text = "---
+title: 'Report of small vertebrate observations from the site of `r params$namesite` '
+output: html_document
+date : '`r format(Sys.time())`'
+params:
+  namesite: NA
+  data: NA
+  file: NA
+  path: NA
+  
+
+---
+
+
+```{r setup, include= FALSE}
+library(DT)
+```
+
+
+
+```{r, echo=FALSE, include=FALSE}
+file<-params$file
+path<-params$path
+data2<-params$data
+
+
+```
+---
+### The note save: 
+```{r , echo=FALSE, message=T, out.width='100%'}
+paste(data2)
+
+```
+
+                      
+                      ")
+         }
+
+         
+         output$export.Rmarkdown<- downloadHandler( 
+           filename = function() {
+             paste0(Sys.Date(),"_report_Rmarkdown",".", input$docpdfhtml)
+           },
+           content = function(file) {    
+             params2 <- list(data = global.load$note.obs,
+                             namesite = global.load$site.archaeo
+             )
+             w.report()
+             tmp_dir <- tempdir()
+             # tmp_pic2 <- file.path(tmp_dir,"www/logo1.png")
+             # file.copy("www/logo1.png", tmp_pic2, overwrite = TRUE)
+             tempReport <- tempfile(fileext = ".Rmd") # make sure to avoid conflicts with other shiny sessions if more params are used
+             file.copy("report.Rmd", tempReport, overwrite = TRUE)
+             rmarkdown::render(tempReport, output_format = paste0(input$docpdfhtml,"_document"), output_file = file, output_options = list(self_contained = TRUE),
+                               params = params2
+             )
+           }
+         )
+         
+         
+         
+                 
 } ## end of server 

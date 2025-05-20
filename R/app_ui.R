@@ -742,7 +742,16 @@ body <- dashboardBody(
                 textAreaInput("note.obs", label="observation to add",rows=5, value = "", width = NULL,
                           placeholder = "Leave an comment/observation..."),
                 uiOutput("obs.note.torender"),
-                actionButton("Record_the_observation", "Record the observation")
+                actionButton("Record_the_observation", "Record the observation"),
+                br(),
+                radioButtons("docpdfhtml", "Export format",
+                             choices = c(html = "html"),
+                             
+                             selected = "html", inline=TRUE),
+                br(),
+                fluidRow(
+                  column(6, downloadButton("export.Rmarkdown", "Export settings as Rmarkdown document")),
+                ),
                 
         )
     )
