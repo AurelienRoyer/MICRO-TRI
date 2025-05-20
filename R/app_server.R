@@ -1,5 +1,5 @@
-############### microTRI v1.02 
-## V.04/2025
+############### microTRI v1.05 
+## V.05/2025
 
 app_server <- function(input, output, session) {
   font.size <- "8pt"
