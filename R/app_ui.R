@@ -53,7 +53,12 @@ sidebar <- dashboardSidebar(
                           
                           "Spit"=7),
               selected = "1", inline=TRUE), style = "font-size:70%",
-            
+            prettySwitch(
+              inputId = "flip2",
+              label = "Level or US",
+              status = "success",
+              fill = F
+            ),
             tags$hr(),
             conditionalPanel(condition="input.bt2==1",
                              h4(style = "font-size:70%","color: red;","Subsetting dataset"),
@@ -83,6 +88,7 @@ sidebar <- dashboardSidebar(
                              h4(style = "font-size:70%","color: red;","Subsetting dataset"),
                              tags$br(),
                              uiOutput("liste.passe")),
+
             ),
         menuItem("Note", tabName = "data3", icon = icon("comment"))
     )
@@ -534,12 +540,12 @@ body <- dashboardBody(
                              tags$br(),
                              tags$br(),
                              
-                             prettySwitch(
-                               inputId = "flip2",
-                               label = "Level or US",
-                               status = "success",
-                               fill = F
-                             ),
+                             # prettySwitch(
+                             #   inputId = "flip2",
+                             #   label = "Level or US",
+                             #   status = "success",
+                             #   fill = F
+                             # ),
                              
                              tags$hr(),
                              column(5,
@@ -707,13 +713,25 @@ body <- dashboardBody(
                          tags$br(),
                          column(11, downloadButton("downloadData_bioclim.react2", "Download")),
                          tags$br(),
-                         tags$h5(style = "color: black;","species name(s) not included:"), 
+                         column(11,tags$h5(style = "color: black;","species name(s) not included:")), 
                          uiOutput("bioclim.names_noused"),
-                         tags$h5(style = "color: blue;","Be careful to have well written the species name"), 
-                         tags$h5(style = "color: blue;","exemple: Microtus_arvalis"), 
+                         column(11,tags$h5(style = "color: blue;","Be careful to have well written the species name")), 
+                         column(11,tags$h5(style = "color: blue;","exemple: Microtus_arvalis")), 
                          
                 ),#end tabpanel    
                 tabPanel(tags$h5("Bioclim graph"),
+                         tags$br(),
+                         radioButtons("var.bioclim2", "Variable estimated",
+                                      choices = c("MAT" = "MAT",
+                                                  "Tmax" = "Tmax",
+                                                  "Tmin" = "Tmin",
+                                                  "Mta" = "Mta",
+                                                  "P" = "P"
+                                                  ),
+                                      selected = "MAT", inline=TRUE),
+                         tags$br(),
+                         uiOutput("bioclim.graph"),
+                         column(11, downloadButton("downloadbioclim.graph", "Download")),
                 )#end tabpanel 
 
 

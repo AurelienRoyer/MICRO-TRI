@@ -1594,7 +1594,7 @@ df.sub <- reactive({
          
          output$sum.species=renderUI({
            req(!is.null(fileisupload()))
-           tagList(HTML(paste("Total number of different type of objects: ",number.total.of.species())))
+           tagList(HTML(paste("Total number of different type of taxa: ",number.total.of.species())))
            })
 
          
@@ -1631,6 +1631,8 @@ df.sub <- reactive({
 
          output$rarefactionplot <- renderPlot({
            tab.raref_fossil<-df.species.table()
+           if (input$flip2==TRUE){
+             tab.raref_fossil<-df.species.table.UAS()}
            rownames(tab.raref_fossil)<-tab.raref_fossil[,1]
            tab.raref_fossil.2<-tab.raref_fossil[2:ncol(tab.raref_fossil)]
            S <- vegan::specnumber(tab.raref_fossil.2)
@@ -1689,10 +1691,11 @@ df.sub <- reactive({
 ###### Bioclim methods  ----
          BCI_LVLn_of_siteS2<-reactiveVal(NULL)
          res_lda<-reactiveVal(NULL)
+         
          output$bioclim.react <-  DT::renderDataTable({  
-
-           
            tab.raref_fossil<-df.species.table()
+           if (input$flip2==TRUE){
+             tab.raref_fossil<-df.species.table.UAS()}
            names(tab.raref_fossil)<-stringr::str_to_lower(names(tab.raref_fossil))
            rownames(tab.raref_fossil)<-tab.raref_fossil[,1]
            data.df.tot2<-tab.raref_fossil[2:ncol(tab.raref_fossil)]
@@ -1758,6 +1761,87 @@ df.sub <- reactive({
            tagList(h5(style = "color: red;",HTML(paste(names_noused))))
            
          })
+         output$downloadData_bioclim.react<- downloadHandler( 
+           filename = function() {
+             paste0(Sys.Date(),"ratio.data.table",".csv")
+           },
+           content = function(file) {
+             BCI_LVLn_of_siteS2<-as.data.frame(BCI_LVLn_of_siteS2())
+             write.table(as.data.frame(BCI_LVLn_of_siteS2), file, row.names = FALSE, sep=";",dec=".") 
+           })
+           
+         output$downloadData_bioclim.react2<- downloadHandler( 
+           filename = function() {
+             paste0(Sys.Date(),"ratio.data.table",".csv")
+           },
+           content = function(file) {
+             res_lda<-as.data.frame(res_lda())
+             write.table(as.data.frame(res_lda), file, row.names = FALSE, sep=";",dec=".") 
+           })
+     
+         
+######  Bioclim graphs ----   
+output$bioclim.graph <- renderUI({
+           plotOutput("bioclimgraph"
+                      # , height = height.size(), width = width.size()
+           )
+         })
+         
+         output$bioclimgraph <- renderPlot({
+           plot(bioclimgraph.plot())
+           session_store$bioclimgraph.plot<- bioclimgraph.plot()
+         })         
+
+         bioclimgraph.plot<-reactive({
+        
+           req(!is.null(res_lda()))
+        res_lda<-as.data.frame(res_lda())  
+        switch(input$var.bioclim2,
+               "MAT"={
+                 df.ratio<-as.data.frame(res_lda[,5:7])
+               },
+               "Tmin"={
+                 df.ratio<-as.data.frame(res_lda[,14:16])
+               },
+               "Mta"={
+                 df.ratio<-as.data.frame(res_lda[,17:19])
+               },
+               "P"={
+                 df.ratio<-as.data.frame(res_lda[,26:28])
+               },
+               "Tmax"={
+                 df.ratio<-as.data.frame(res_lda[,11:13])
+               }
+         )
+        
+      
+        df.ratio<-cbind.data.frame(rownames(df.ratio),df.ratio)
+       colnames(df.ratio)<-c("name_level","ratio","lower","upper")
+  
+
+         p <- ggplot2::ggplot(df.ratio, 
+                              ggplot2::aes(x = .data[["ratio"]], y = .data[["name_level"]], xmin = .data[["lower"]], xmax = .data[["upper"]]))
+         p<-p+geom_pointrange()+
+           xlab(paste("MAT°C"))+ylab(paste("name_level")) +
+           do.call(themeforfigure.choice(), list()) +
+           theme(axis.title.x = element_text(size=font_size()),
+                 axis.title.y = element_text(size=font_size()),
+                 axis.text.x = element_text(size=font_tick()),
+                 axis.text.y = element_text(size=font_tick()),
+                 legend.title = element_blank())+
+           theme(legend.position='none')
+         p
+         
+         
+})             
+         output$downloadbioclim.graph<- downloadHandler( 
+           filename = function(){
+             paste("ratio.graph - ",paste(input$file1$name)," - ", Sys.Date(), '.pdf', sep = '')},
+           content = function(file) {
+             ggsave(session_store$bioclimgraph.plot,filename=file, device = "pdf")
+           }
+         ) 
+         
          
 ######  Ratio graphs ---- 
          #option for ratio
@@ -1807,11 +1891,23 @@ df.sub <- reactive({
             setnb<-input$setnb
            digcol<-input$digcol
            # nameofdigelement<-input$nameofdigelement
+           name_aa<-"name_level"
+           if (input$flip2==TRUE){
+             name_aa<-"name_us"
+           }
+           
            df.sub$nb_remains<-as.numeric(df.sub$nb_remains)
-           data.df.calcul<-df.sub %>% group_by(.data[["name_level"]],.data[["name_anat"]])%>%
+           data.df.calcul<-df.sub %>% group_by(.data[[name_aa]],.data[["name_anat"]])%>%
              summarize(nb_total = sum(!!sym("nb_remains")))
-           myFormula <- as.formula(paste0("name_level", " ~ ","name_anat"))
+           myFormula <- as.formula(paste0(name_aa, " ~ ","name_anat"))
+           # if (input$flip2==TRUE){
+           #   data.df.calcul<-df.sub %>% group_by(.data[["name_us"]],.data[["name_anat"]])%>%
+           #     summarize(nb_total = sum(!!sym("nb_remains")))
+           #   myFormula <- as.formula(paste0("name_us", " ~ ","name_anat"))
+           #   }
+           
            data.df.calcul.verif<-reshape2::dcast(data.df.calcul, myFormula , fill = 0L)
+         
            nom.col<-colnames(data.df.calcul.verif)
            
            list.element<-c(list_bone_1)
@@ -2025,9 +2121,9 @@ df.sub <- reactive({
            f_vec <-Vectorize(WilsonBinCI, vectorize.args = c("n","p"), SIMPLIFY = FALSE)
            
            data.df.calcul.anpo<-matrix(unlist(f_vec(c(somme.ratio),c(ratio))),ncol=2, byrow=T)
-           
-           df.ratio<-cbind.data.frame(data.df.calcul.2["name_level"],ratio,data.df.calcul.anpo)
-           
+           print('abc')
+           df.ratio<-cbind.data.frame(data.df.calcul.2[name_aa],ratio,data.df.calcul.anpo)
+           print(df.ratio)
            colnames(df.ratio)<-c("name_level","ratio","lower","upper")
            save.table.ratio(df.ratio)
            ############################################################################################a creer pour ordonner niveau
@@ -2036,10 +2132,10 @@ df.sub <- reactive({
            # }
            
            p <- ggplot2::ggplot(df.ratio, 
-                                ggplot2::aes(x = .data[["ratio"]]*100, y = .data[["name_level"]], xmin = .data[["lower"]]*100, xmax = .data[["upper"]]*100))+ 
+                                ggplot2::aes(x = .data[["ratio"]]*100, y = .data[[1]], xmin = .data[["lower"]]*100, xmax = .data[["upper"]]*100))+  ##prob ici !!
              scale_x_continuous(limits=c(0,100))
            p<-p+geom_pointrange()+
-             xlab(paste(axis.var.name))+ylab(paste("name_level")) +
+             xlab(paste(axis.var.name))+ylab(paste(name_aa)) +
              do.call(themeforfigure.choice(), list()) +
              theme(axis.title.x = element_text(size=font_size()),
                    axis.title.y = element_text(size=font_size()),
