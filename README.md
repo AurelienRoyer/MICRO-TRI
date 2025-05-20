@@ -77,4 +77,5 @@ Different exploration are available : pivot table, digestion ratio, bioclim esti
 allow to record global notes of the observation and (not yet but soon) to export it
 
  ##  Major news 
- still in development
+-05/2025: Bioclim Graph have been added
+-05/2025: exploration of data: possibility to changes ratio according to levels or US
