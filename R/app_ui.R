@@ -31,8 +31,8 @@ $(document).ready(function () {
 });12345
 '
 
-sidebar <- dashboardSidebar(
-    sidebarMenu(id = "tabs",
+sidebar <- shinydashboard::dashboardSidebar(
+  shinydashboard::sidebarMenu(id = "tabs",
                 
         menuItem("Dashboard database", tabName = "dashboard", icon = icon("dashboard")),
         menuItem("Acquisition", icon = icon("list"), tabName = "SMALLvert"
@@ -40,7 +40,7 @@ sidebar <- dashboardSidebar(
         menuItem("Exploration", tabName = "data2", icon = icon("chart-line")),
         div(id = "single", style="display: none;", 
             actionButton(inputId = "refresh",label="refresh"),
-            radioButtons(
+            shiny::radioButtons(
               "bt2", h4("QUICK SIDEBAR"),
               choices = c("Species" = 1,
                           "Level " = 2,
@@ -51,48 +51,48 @@ sidebar <- dashboardSidebar(
                           
                           "Spit"=7),
               selected = "1", inline=TRUE), style = "font-size:70%",
-            prettySwitch(
+            shinyWidgets::prettySwitch(
               inputId = "flip2",
               label = "Level or US",
               status = "success",
               fill = F
             ),
             tags$hr(),
-            conditionalPanel(condition="input.bt2==1",
+            shiny::conditionalPanel(condition="input.bt2==1",
                              h4(style = "font-size:70%","color: red;","Subsetting dataset"),
                              tags$br(),
-                             uiOutput("liste.species")),
-            conditionalPanel(condition="input.bt2==4",
+                             shiny::uiOutput("liste.species")),
+            shiny::conditionalPanel(condition="input.bt2==4",
                              h4(style = "font-size:70%","color: red;","Subsetting dataset"),
                              tags$br(),
-                             uiOutput("liste.square")),
-            conditionalPanel(condition="input.bt2==2",
+                             shiny::uiOutput("liste.square")),
+            shiny::conditionalPanel(condition="input.bt2==2",
                              h4(style = "font-size:70%","color: red;","Subsetting dataset"),
                              tags$br(),
-                             uiOutput("liste.UAS")),
-            conditionalPanel(condition="input.bt2==3",
+                             shiny::uiOutput("liste.UAS")),
+            shiny::conditionalPanel(condition="input.bt2==3",
                              h4(style = "font-size:70%","color: red;","Subsetting dataset"),
                              tags$br(),
-                             uiOutput("liste.sector")),
-            conditionalPanel(condition="input.bt2==5",
+                             shiny::uiOutput("liste.sector")),
+            shiny::conditionalPanel(condition="input.bt2==5",
                              h4(style = "font-size:70%","color: red;","Subsetting dataset"),
                              tags$br(),
-                             uiOutput("liste.year")),
-            conditionalPanel(condition="input.bt2==6",
+                             shiny::uiOutput("liste.year")),
+            shiny::conditionalPanel(condition="input.bt2==6",
                              h4(style = "font-size:70%","color: red;","Subsetting dataset"),
                              tags$br(),
-                             uiOutput("liste.US")),
-            conditionalPanel(condition="input.bt2==7",
+                             shiny::uiOutput("liste.US")),
+            shiny::conditionalPanel(condition="input.bt2==7",
                              h4(style = "font-size:70%","color: red;","Subsetting dataset"),
                              tags$br(),
-                             uiOutput("liste.passe")),
+                             shiny::uiOutput("liste.passe")),
 
             ),
-        menuItem("Note", tabName = "data3", icon = icon("comment"))
+        shinydashboard::menuItem("Note", tabName = "data3", icon = icon("comment"))
     )
 )
 
-body <- dashboardBody(
+body <- shinydashboard::dashboardBody(
   tags$head(tags$script(jsc)),
   useShinyjs(),
     tabItems(

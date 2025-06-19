@@ -176,6 +176,7 @@ observeEvent(input$getData, {
 ### loading data ----
 observeEvent(getdata.launch(), {
   req(!is.null(input_file1.datapath()))
+
   extension <- tools::file_ext(input_file1.name())
   validate(need(extension == "rds", "Please upload a rds file"))
   global<-readRDS(file=input_file1.name())
@@ -215,26 +216,46 @@ observeEvent(getdata.launch(), {
   global.load$chiro.list.select<-global$chiro.list.select
   global.load$euli.list.select<-global$euli.list.select
   global.load$rod.list.select<-global$rod.list.select
- 
-
+  global.load$lago.list.select<-global.load$lago.list.select
+  global.load$listeoflist_bone[["list_bone_1"]]<-global.load$listeoflist_bone[["list_bone_1"]]
+  global.load$listeoflist_bone[["list_bone_2"]]<-global.load$listeoflist_bone[["list_bone_2"]]
   global.load$lago.list.select<-global$lago.list.select
   
   global.load$note.obs<-global$note.obs
   list_info_suppl(global$list_info_suppl)
   patine.list(global$patine.list)
   
-  
+ 
   fileisupload(1)
+  print('eeee3')
+  
   isolate({
-  x <- as.list(global$listeoflist2)
-  names(x) <- names(reactiveValuesToList(global$listeoflist2))
-  global.load$listeoflist2<-do.call("reactiveValues",x) 
-  })
+
+      # x <- shiny::reactiveValuesToList(global$listeoflist2)
+  # names(x) <- names(reactiveValuesToList(global$listeoflist2))
+    global.load$listeoflist2<-reactiveValues(list_rod=global$rod.list.select,
+                                             list_euli=global$euli.list.select,
+                                             list_herpeto=global$herpeto.list.select,
+                                             list_others=global$other.list.select,
+                                             list_chiro=global$chiro.list.select,
+                                             list_lago=global$lago.list.select,
+                                             )
+    
+    
+   # global.load$listeoflist2<-do.call("reactiveValues",x) 
+
+    })
+ 
   isolate({
-    x2 <- as.list(global$listeoflist_bone)
-    names(x2) <- names(reactiveValuesToList(global$listeoflist_bone))
-    global.load$listeoflist_bone<-do.call("reactiveValues",x2) 
+    global$listeoflist_bone<-reactiveValues(list_bone_1=global.load$listeoflist_bone[["list_bone_1"]],
+    list_bone_2=global.load$listeoflist_bone[["list_bone_1"]])
+    # x2 <- as.list(global$listeoflist_bone)
+    # names(x2) <- names(reactiveValuesToList(global$listeoflist_bone))
+    # global.load$listeoflist_bone<-do.call("reactiveValues",x2) 
+    print("yeahh")
   })
+  
+  
   
 })# end observe of df$df2
 observeEvent(fileisupload(), {   
@@ -789,22 +810,24 @@ datamodal<-function(){
     column(12,selectizeInput("year_exca","year", choices = c(year),selected = last.year_exca(), options = list(create = TRUE)),),
     
     #XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-    print(input$checkbox_ID),
-    
-    column(12,
-           column(7,
-                  selectizeInput("ID_dec","ID of split/decapage", choices = c(dec),selected = last.id.dec(), options = list(create = TRUE)),
-                  
-                  # if(input$checkbox_ID==F || is.null(input$checkbox_ID)){selectizeInput("ID_dec","ID of split/decapage", choices = c(dec),selected = last.id.dec(), options = list(create = TRUE))
-                  #   }else {
-                  if(input$checkbox_ID==T || is.null(input$checkbox_ID)){
-                      updateSelectInput(session=session,"ID_dec",selected =c(paste0(input$name_square,"_",input$name_dec)))},
-                    
-                  
-                   # uiOutput("ID_dec2"),
-                 #selectizeInput("ID_dec","ID of split/decapage", choices = c(dec),selected = last.id.dec(), options = list(create = TRUE)),
-    ),
-    column(4,checkboxInput("checkbox_ID", label = "Auto ID", value = F),),),
+    # print(input$checkbox_ID),
+    # 
+    # column(12,
+    #        column(7,
+    #               selectizeInput("ID_dec","ID of split/decapage", choices = c(dec),selected = last.id.dec(), options = list(create = TRUE)),
+    #               
+    #               # if(input$checkbox_ID==F || is.null(input$checkbox_ID)){selectizeInput("ID_dec","ID of split/decapage", choices = c(dec),selected = last.id.dec(), options = list(create = TRUE))
+    #               #   }else {
+    #               if(input$checkbox_ID==T || is.null(input$checkbox_ID)){
+    #                   updateSelectInput(session=session,"ID_dec",selected =c(paste0(input$name_square,"_",input$name_dec)))},
+    #                 
+    #               
+    #                # uiOutput("ID_dec2"),
+    #              #selectizeInput("ID_dec","ID of split/decapage", choices = c(dec),selected = last.id.dec(), options = list(create = TRUE)),
+    # ),
+    # print("fff"),
+    # column(4,checkboxInput("checkbox_ID", label = "Auto ID", value = F),),),
+    # print("fff2"),
     # autoIDinput(input$checkbox_ID),
     column(12,selectizeInput("name_square","name of square", choices = c(square),selected = last.name.square(), options = list(create = TRUE)),),
     column(12,selectizeInput("name_dec","name of dec", choices = c(name_dec),selected = last.name.dec(), options = list(create = TRUE)),),
@@ -840,6 +863,7 @@ datamodal<-function(){
     
     
 observeEvent(input$submit, {
+  print('ee')
   last.id.dec(input$ID_dec)
   last.name.square(input$name_square)
   last.name.sector(input$name_sector)
@@ -847,11 +871,11 @@ observeEvent(input$submit, {
   last.name.level(input$name_level)
   last.name.us(input$name_us)
   last.year_exca(input$year_exca)
-  
+  print('ee2')
       showModal(
         datamodal()
         )
-      
+      print('ee3')
       
       last.id.dec(input$ID_dec)
       last.name.square(input$name_square)
