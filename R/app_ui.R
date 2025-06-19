@@ -566,8 +566,8 @@ body <- dashboardBody(
 
                                    checkboxInput("optioninfosfigplotly", "Show figure legend", TRUE),
                                   numericInput("fontsizetick", "tick font size",12, min = 1, max=40),
-                          numericInput("fontsizeaxis", "Axis font size",12, min = 1, max=40)
-                              uiOutput("themeforfigure2"),
+                          numericInput("fontsizeaxis", "Axis font size",12, min = 1, max=40),
+                              uiOutput("themeforfigure2")
                                  ),),
                          column(12,
                          tags$br(),
