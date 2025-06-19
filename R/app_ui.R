@@ -1,6 +1,4 @@
 
-# setwd("C:/Users/aurelien/Desktop/R shiny software/TRIS")
-
 
 app_ui <- function(){
   # shiny::addResourcePath("microTRI", system.file("R", package="microTRI"))
@@ -103,7 +101,7 @@ body <- dashboardBody(
                 tabsetPanel(
                   id="tab1",
                     tabPanel(h4("Loading Database"),
-                             fileInput("file1", "Choose File (.rds)",
+                             shiny::fileInput("file1", "Choose File (.rds)",
                                          accept = c(".rds")),
                                actionButton(inputId = "getData",label="Get Data"),
                              
@@ -125,7 +123,7 @@ body <- dashboardBody(
                          uiOutput ("liste.faun4.others"),
                          ),#end of column
                          column(2 ,
-                                fileInput("list.extraspecies", "Choose File to import species list (.csv)",
+                                shiny::fileInput("list.extraspecies", "Choose File to import species list (.csv)",
                                    multiple = TRUE,
                                    accept = c("text/csv",
                                               "text/comma-separated-values,text/plain",
@@ -204,32 +202,29 @@ body <- dashboardBody(
                 )#end of tabsetpanel
         ), # end of  tabItem
         
-        tabItem(tabName = "SMALLvert",
-                tabsetPanel(
-                  id="maintab",
+         tabItem(tabName = "SMALLvert",
+                 tabsetPanel(
+                   id="maintab",
                   tabPanel( h4("Record Interface"),
                            fluidRow(
-                             
+
                   fluidRow(
                     id = "mytitle",
                     div(
-                  box(width = 5,background = "blue", 
-                      # title="aaa",
-                      # solidHeader = TRUE,
-                      # collapsible = TRUE,
+                  box(width = 5,background = "blue",
                 actionButton("submit", "New bag"),
                 actionButton("submit2", "New line"),
-                  ),# end of box  
-                box(width = 4,background = "blue", 
+                  ),# end of box
+                box(width = 4,background = "blue",
                 uiOutput ("previous"),
                 #actionButton("next2", "Empty bag")
                  uiOutput ("next2"),
-                  ),# end of box  
+                  ),# end of box
                 box(width = 3,background = "olive",
                     uiOutput ("site")
                 )
                 ), # end of fluidRow
-                             ),   # end of   div       
+                             ),   # end of   div
                 # tags$script(HTML(
                 #   "
                 #     $(window).scroll(function() {
@@ -239,7 +234,7 @@ body <- dashboardBody(
                 #             el.addClass('fix-top');
                 #         } else {
                 #              el.removeClass('fix-top');
-                #         }   
+                #         }
                 #     });
                 #     "
                 # )),
@@ -255,7 +250,7 @@ body <- dashboardBody(
                 #     "
                 # ),
                 # div(style = "width: 100%; height: 90vh",
-                # div(   
+                # div(
                 # hr(),
                 fluidRow(
                   box(width=12,
@@ -264,7 +259,7 @@ body <- dashboardBody(
                   collapsible = TRUE,
                   box(width=1,
                              br(),
-               
+
                              br(),
                          actionButton("goButton1", "line1", icon = icon("fas fa-plus"),lib = "font-awesome"),
                          br(),
@@ -276,9 +271,9 @@ body <- dashboardBody(
                          ),
                   box(width=11,
                 DT::dataTableOutput("responses", width = 700),  style = "overflow-x: scroll;",
-                  ),# end of box 
-                  ),# end of box 
-                ),# end of fluidRow 
+                  ),# end of box
+                  ),# end of box
+                ),# end of fluidRow
                 tags$hr(),
                 # br(),
                 fluidRow(
@@ -293,30 +288,26 @@ body <- dashboardBody(
                   box(title="name_dec",width = 2,background = "light-blue",
                       verbatimTextOutput("value_name_dec"),),
                   box(title="level",width = 2,background = "light-blue",
-                      verbatimTextOutput("value_name_level"),), # end of box 
+                      verbatimTextOutput("value_name_level"),), # end of box
                     box(title="US",width = 2,background = "light-blue",
-                          verbatimTextOutput("value_name_us"),), # end of box 
-                  
+                          verbatimTextOutput("value_name_us"),), # end of box
+
                 ),
                 hr(),
                 fluidRow(
-                #   box(width = 3,),
-                #   box(width = 3,
-                # numericInput("nb_remains", label = h5("Numeric input"), value = 1),
-                #   ),# end of box
                 ),# end of fluidRow
                 fluidRow(
                   box(width = 6,
-                      selectInput(inputId="name_taxa", 
-                                  label= "order level" , 
-                                  choices=c("Rodentia","Eulipotyphla","Herpetofauna","Chiroptera","Lagomorpha","others"), 
-                                  selected = "Rodentia", 
-                                  multiple = FALSE, 
+                      selectInput(inputId="name_taxa",
+                                  label= "order level" ,
+                                  choices=c("Rodentia","Eulipotyphla","Herpetofauna","Chiroptera","Lagomorpha","others"),
+                                  selected = "Rodentia",
+                                  multiple = FALSE,
                                   selectize = TRUE),
                       uiOutput("species_pickerinput"),
 
                 ),# end of box
-                
+
                 box(width = 4,
                     br(),
                     radioGroupButtons(
@@ -326,7 +317,7 @@ body <- dashboardBody(
                       selected =("0"),
                       status = "primary",
                       checkIcon = list(
-                        yes = icon("ok", 
+                        yes = icon("ok",
                                    lib = "glyphicon"),
                         no = icon("remove",
                                   lib = "glyphicon"))
@@ -342,10 +333,10 @@ body <- dashboardBody(
                 box(width = 2,
                     br(),
                     numericInput("nb_remains", label = h5("Numeric input"), value = 1,width ='1000px'),
-                  
+
                     br()
                     ),# end of box
-                # box(width = 3,),
+
                 ),# end of fluidRow
                 fluidRow(
                 box(width = 6,
@@ -353,11 +344,11 @@ body <- dashboardBody(
                         uiOutput("name_anat_list_boneteeth"),
                     # pickerInput(
                     #   inputId = "name_anat",
-                    #   label = "Anatomy", 
+                    #   label = "Anatomy",
                     #   choices = get(list_bone[1]),
                     #   options = list(
                     #     `live-search` = TRUE)),
-                    
+
                     ),# end of box
                     box(width = 4,
                    shinyWidgets::sliderTextInput(
@@ -375,7 +366,7 @@ body <- dashboardBody(
                   selected =("IND"),
                   status = "primary",
                   checkIcon = list(
-                    yes = icon("ok", 
+                    yes = icon("ok",
                                lib = "glyphicon"),
                     no = icon("remove",
                               lib = "glyphicon"))
@@ -389,11 +380,11 @@ body <- dashboardBody(
                       value= FALSE,
                       fill = FALSE
                     ),
-                    
+
                     uiOutput ("completude"),
                 ),# end of box
                 ),
-               
+
                 box(width=5,
                     prettySwitch(
                       inputId = "infos_obs",
@@ -411,40 +402,13 @@ body <- dashboardBody(
                     ),
                     uiOutput ("photo"),
                 )
-                ), # enf of fluirdow
-                
+                ), # end of fluirdow
+
                 fluidRow(
-                #   box(width = 4,
-                # prettySwitch(
-                #      inputId = "infos_completude",
-                #      label = "Complet or broke",
-                #      status = "success",
-                #      fill = TRUE
-                #    ),
-                # 
-                # uiOutput ("completude"),
-                #   ),
+                
                 ),
                 fluidRow(
                 box(width = 4,
-                    # radioGroupButtons(
-                    #   inputId = "trace_dig",
-                    #   label = "Digestion marks",
-                    #   choices = c("IND","0","1","2","3","4"),
-                    #   selected =("0"),
-                    #   status = "primary",
-                    #   checkIcon = list(
-                    #     yes = icon("ok", 
-                    #                lib = "glyphicon"),
-                    #     no = icon("remove",
-                    #               lib = "glyphicon"))
-                    # ),
-                # sliderInput(
-                #   inputId = "trace_dig",
-                #   label = "Digestion marks",
-                #   min = 0, max = 4,
-                #   value = 0,step=1
-                # ),
                   radioGroupButtons(
                     inputId = "trace_heat",
                     label = "Burnt marks",
@@ -452,7 +416,7 @@ body <- dashboardBody(
                     selected =("no"),
                     status = "primary",
                     checkIcon = list(
-                      yes = icon("ok", 
+                      yes = icon("ok",
                                  lib = "glyphicon"),
                       no = icon("remove",
                                 lib = "glyphicon"))
@@ -481,7 +445,7 @@ body <- dashboardBody(
                       selected =("0"),
                       status = "primary",
                       checkIcon = list(
-                        yes = icon("ok", 
+                        yes = icon("ok",
                                    lib = "glyphicon"),
                         no = icon("remove",
                                   lib = "glyphicon"))
@@ -489,12 +453,12 @@ body <- dashboardBody(
                     ),
                     )
                   ) # end of fluidpage
-                  ),#end of tabpanel 
+                  ),#end of tabpanel
                 tabPanel(h4("Table"),
-                DT::dataTableOutput("responses2", width = 700),  style = "overflow-x: scroll;", 
-                tags$hr(),     
+                DT::dataTableOutput("responses2", width = 700),  style = "overflow-x: scroll;",
+                tags$hr(),
                 actionButton("deleteRows", "Delete Rows")
-                ),#end of tabpanel 
+                ),#end of tabpanel
                 tabPanel(h4("Options"),
                          tabsetPanel(
                            tabPanel(tags$h5("rename column modality"),
@@ -502,13 +466,13 @@ body <- dashboardBody(
                                     uiOutput("liste.newgroup2"),
                                     uiOutput("liste.newgroup4"),
                                     textInput("text.new.group2", label=h5("New name of the modality"),value = "new.modality"),
-                                    actionButton("go.ng2", "Modify"),),    
-                          
-                           tabPanel(tags$h5("rename column"), 
+                                    actionButton("go.ng2", "Modify"),),
+
+                           tabPanel(tags$h5("rename column"),
                            )
                            )#end of tabsetpanel   , ou poas ?
-                         )#end of tabpanel 
-                )#end of tabsetpanel     
+                         )#end of tabpanel
+                )#end of tabsetpanel
         ), # end of  tabItem
         tabItem(tabName = "data2",
                 # h2("analyses2 tab content"),
@@ -518,8 +482,8 @@ body <- dashboardBody(
                            # uiOutput("liste.UAS"),
                            # uiOutput("liste.passe"),
                            # uiOutput("liste.square"),
-                           
-                           tags$h4(style = "color: blue;","summary of basic data"), 
+
+                           tags$h4(style = "color: blue;","summary of basic data"),
                            tags$br(),
                            uiOutput("sum.species2"),
                            tags$br(),
@@ -528,30 +492,30 @@ body <- dashboardBody(
                            uiOutput("sum.remain"),
                            tags$br(),
                            uiOutput("sum.remain2")
-                           
-                  ),#end tabpanel 
+
+                  ),#end tabpanel
                   tabPanel(tags$h5("Data material table per levels"),
                            fluidRow(
                              tags$br(),
                              # tags$h5(style = "color: blue;","Correspond to nature object data per level, as defined in both select input in 'Data upload' window"),
-                             
+
                              tags$br(),
                              uiOutput("sum.species"),
                              tags$br(),
                              tags$br(),
-                             
+
                              # prettySwitch(
                              #   inputId = "flip2",
                              #   label = "Level or US",
                              #   status = "success",
                              #   fill = F
                              # ),
-                             
+
                              tags$hr(),
                              column(5,
-                                    
+
                                     DTOutput("table.species")),
-                             column(11, 
+                             column(11,
                                     prettySwitch(
                                       inputId = "flip",
                                       label = "flip: level per species",
@@ -582,42 +546,42 @@ body <- dashboardBody(
                                   size = "xs",
                                   icon = icon("fas fa-cogs",lib = "font-awesome")
                                 ),
-                                tags$style("#bsmodal_param .modal-dialog{ width:1200px} 
+                                tags$style("#bsmodal_param .modal-dialog{ width:1200px}
                                                                 .modal-backdrop {
                                                                                     display: none;
                                                                                     z-index: 1040 !important;
                                                                                 }
-                                                                                
+
                                                                                 .modal-content {
                                                                                     margin: 2px auto;
                                                                                     z-index: 1100 !important;
                                                                                 }
-                                                                                
+
                                                                                 "),
-                                
+
                                 bsModal(
                                   id = "bsmodal_param",
                                   title = tags$h4(style = "color: red;","Graphical options"),
                                   trigger = "chr_setting",size = "large",
-                                  
-                                  checkboxInput("optioninfosfigplotly", "Show figure legend", TRUE),
+
+                                   checkboxInput("optioninfosfigplotly", "Show figure legend", TRUE),
                                   numericInput("fontsizetick", "tick font size",12, min = 1, max=40),
-                                  numericInput("fontsizeaxis", "Axis font size",12, min = 1, max=40),
-                                  uiOutput("themeforfigure")
-                                ),),
+                          numericInput("fontsizeaxis", "Axis font size",12, min = 1, max=40)
+                              uiOutput("themeforfigure2"),
+                                 ),),
                          column(12,
                          tags$br(),
                            tags$br(),
                          uiOutput("Ratio.data.graph"),),
                          tags$br(),
                          tags$br(),
-                         column(11, downloadButton("downloadData_ratio.graph", "Download")),
-                         tags$br(),
-                         tags$br(),
-                         DTOutput("table.Data_ratio"),
-                         column(11, downloadButton("downloadData_ratio", "Download"))
-                ),#end tabpanel 
-                
+                          column(11, downloadButton("downloadData_ratio.graph", "Download")),
+                          tags$br(),
+                          tags$br(),
+                          DTOutput("table.Data_ratio"),
+                          column(11, downloadButton("downloadData_ratio", "Download"))
+                ),#end tabpanel
+
                 tabPanel(tags$h5("Digestion Ratio"),
                          tags$br(),
                          column(9,uiOutput("Ratio.dig.list"),),
@@ -630,31 +594,31 @@ body <- dashboardBody(
                                   size = "xs",
                                   icon = icon("fas fa-cogs",lib = "font-awesome")
                                 ),
-                                tags$style("#bsmodal_param2 .modal-dialog{ width:1200px} 
+                                tags$style("#bsmodal_param2 .modal-dialog{ width:1200px}
                                                                 .modal-backdrop {
                                                                                     display: none;
                                                                                     z-index: 1040 !important;
                                                                                 }
-                                                                                
+
                                                                                 .modal-content {
                                                                                     margin: 2px auto;
                                                                                     z-index: 1100 !important;
                                                                                 }
-                                                                                
+
                                                                                 "),
-                                
+
                                 bsModal(
                                   id = "bsmodal_param2",
                                   title = tags$h4(style = "color: red;","Graphical options"),
                                   trigger = "chr_setting_dig",size = "large",
-                                  
+
                                   # checkboxInput("optioninfosfigplotly", "Show figure legend", TRUE),
                                   # numericInput("fontsizetick", "tick font size",12, min = 1, max=40),
                                   # numericInput("fontsizeaxis", "Axis font size",12, min = 1, max=40),
                                   uiOutput("themeforfigure")
                                 ),),
                          column(12,
-                           
+
                                 tags$br(),
                                 uiOutput("Ratio.data.dig.graph"),),
                          tags$br(),
@@ -664,8 +628,8 @@ body <- dashboardBody(
                          tags$br(),
                          DTOutput("table.Data_dig"),
                          column(11, downloadButton("downloadData_dig", "Download"))
-                         
-                ),#end tabpanel 
+
+                ),#end tabpanel
                 tabPanel(tags$h5("Completude"),
                          tags$br(),
                          uiOutput("select.ratio.comp.list"),
@@ -678,8 +642,8 @@ body <- dashboardBody(
                          tags$br(),
                          DTOutput("table.Data_comp"),
                          column(11, downloadButton("downloadData_comp", "Download"))
-                ),#end tabpanel   
-                
+                ),#end tabpanel
+        
                 tabPanel(tags$h5("rarity curves"),
                          tags$br(),
                          materialSwitch(
@@ -694,7 +658,7 @@ body <- dashboardBody(
                          tags$br(),
                          DTOutput("table.species.perlevels"),
                          column(11, downloadButton("downloadData_rarefactiondata", "Download")),
-                ),#end tabpanel    
+                ),#end tabpanel
                 tabPanel(tags$h5("Bioclim data"),
                          uiOutput("sum.bucket2"),
                          tags$br(),
@@ -713,12 +677,12 @@ body <- dashboardBody(
                          tags$br(),
                          column(11, downloadButton("downloadData_bioclim.react2", "Download")),
                          tags$br(),
-                         column(11,tags$h5(style = "color: black;","species name(s) not included:")), 
+                         column(11,tags$h5(style = "color: black;","species name(s) not included:")),
                          uiOutput("bioclim.names_noused"),
-                         column(11,tags$h5(style = "color: blue;","Be careful to have well written the species name")), 
-                         column(11,tags$h5(style = "color: blue;","exemple: Microtus_arvalis")), 
-                         
-                ),#end tabpanel    
+                         column(11,tags$h5(style = "color: blue;","Be careful to have well written the species name")),
+                         column(11,tags$h5(style = "color: blue;","exemple: Microtus_arvalis")),
+
+                ),#end tabpanel
                 tabPanel(tags$h5("Bioclim graph"),
                          tags$br(),
                          radioButtons("var.bioclim2", "Variable estimated",
@@ -732,10 +696,10 @@ body <- dashboardBody(
                          tags$br(),
                          uiOutput("bioclim.graph"),
                          column(11, downloadButton("downloadbioclim.graph", "Download")),
-                )#end tabpanel 
+                )#end tabpanel
 
 
-                )#end of tabsetpanel  
+                )#end of tabsetpanel
         ),
         tabItem(tabName = "data3",
                 h2("Global note from microvertebrate observation"),
@@ -758,10 +722,6 @@ body <- dashboardBody(
 )
 
 dbHeader <- dashboardHeader(title = "MICRO-TRI",
-                            # tags$li(a(href = 'http://shinyapps.company.com',
-                            #           icon("power-off"),
-                            #           title = "Back to Apps Home"),
-                            #         class = "dropdown"),
                             tags$li(a(href = 'https://github.com/AurelienRoyer/MICRO-TRI',
                                       img(src = 'www/logo1.png',
                                           title = "MICRO-TRI", height = "40px"),

@@ -1853,6 +1853,18 @@ output$bioclim.graph <- renderUI({
                        choices = themes,
                        selected = "theme_minimal")
          })
+         output$themeforfigure2=renderUI({
+           req(!is.null(fileisupload()))
+           themes <- c("theme_bw", "theme_classic", "theme_dark", "theme_grey", "theme_light", "theme_linedraw", "theme_minimal")
+           selectInput("themeforfigure.list2", h4("Theme for 'Simple 2Dplot'"),
+                       choices = themes,
+                       selected = "theme_minimal")
+         })
+         
+         observeEvent(input$themeforfigure.list2,{
+           themeforfigure.choice(c(input$themeforfigure.list2))
+           
+         })
          
          observeEvent(input$themeforfigure.list,{
            themeforfigure.choice(c(input$themeforfigure.list))
