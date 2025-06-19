@@ -332,7 +332,7 @@ body <- dashboardBody(
                                   lib = "glyphicon"))
                     ),
                     br(),
-                    sliderTextInput(
+                    shinyWidgets::sliderTextInput(
                       inputId = "specimen_age",
                       label = "specimen age",
                       choices = c("Young","Adult","Old"),
@@ -360,7 +360,7 @@ body <- dashboardBody(
                     
                     ),# end of box
                     box(width = 4,
-                   sliderTextInput(
+                   shinyWidgets::sliderTextInput(
                      inputId = "name_anat2",
                      label = "bone/teeth",
                      choices = c("bone","teeth"),
