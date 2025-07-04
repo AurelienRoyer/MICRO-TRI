@@ -1,5 +1,5 @@
-############### microTRI v1.15 
-## V.05/2025
+############### microTRI v1.16 
+## V.07/2025
 
 app_server <- function(input, output, session) {
   font.size <- "8pt"
@@ -1202,7 +1202,7 @@ observeEvent(input$submit, {
         updateNumericInput(session = session, inputId = "nb_remains",value =1)
         updateRadioGroupButtons(session = session, inputId = "infos_lat", selected = "IND")  
         updatePrettySwitch(session = session, inputId = "infos_completude",value = FALSE)
-        updateCheckboxGroupButtons(session = session, inputId = "infos_completude_detailled",selected = c(""))  
+        shinyWidgets::updateCheckboxGroupButtons(session = session, inputId = "infos_completude_detailled",selected = c(""))  
         updateRadioGroupButtons(session = session, inputId = "trace_dig",selected = "IND")
         updateRadioGroupButtons(session = session, inputId ="trace_root",selected = "0")
         updateRadioGroupButtons(session = session, inputId ="trace_heat",selected = "no")
@@ -1458,7 +1458,7 @@ observeEvent(input$Previous.button,{
   # updateTextInput(session = session, inputId = "txt_photo",value = paste(df$save5$txt_photo))
   # updateTextInput(session = session, inputId = "observation",value = paste(as.character(df$save5$observation)))
   updatePickerInput(session = session, inputId = "observation_suppl",selected = paste(df$save5$observation_suppl))
-  updateCheckboxGroupButtons(session = session, inputId = "infos_completude_detailled",selected = df$save5$infos_completude_detailled)
+  shinyWidgets::updateCheckboxGroupButtons(session = session, inputId = "infos_completude_detailled",selected = df$save5$infos_completude_detailled)
   
   
   updateRadioGroupButtons(session = session, inputId = "trace_dig",selected = df$save5$trace_dig)
