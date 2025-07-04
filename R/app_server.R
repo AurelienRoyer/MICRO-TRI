@@ -2817,6 +2817,7 @@ observe({
            saveRDS(to_save, file =  paste0(Sys.Date(),".",global.load$site.archaeo,".BDD.uf.fusion",".rds"))
            test<-data.frame(apply(global.load$df,2,as.character))
            write.table(test, file =  paste0(Sys.Date(),".",global.load$site.archaeo,".BDD.uf.fusion",".csv",sep=""), row.names = FALSE, sep=";",dec=".") 
+           
            } )
 ## rename option ----
          output$liste.newgroup2=renderUI({
@@ -2838,6 +2839,11 @@ observe({
 
            global.load$df[,input$liste.newgroup.rename]<-list(aa)
 
+           to_save <- reactiveValuesToList(global.load)
+           saveRDS(to_save, file =  paste0(Sys.Date(),".",global.load$site.archaeo,".BDD.uf",".rds"))
+           test<-data.frame(apply(global.load$df,2,as.character))
+           write.table(test, file =  paste0(Sys.Date(),".",global.load$site.archaeo,".BDD.uf",".csv",sep=""), row.names = FALSE, sep=";",dec=".") 
+           
            
                })
         
