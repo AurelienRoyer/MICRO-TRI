@@ -1947,9 +1947,13 @@ output$bioclim.graph <- renderUI({
            digcol<-input$digcol
            # nameofdigelement<-input$nameofdigelement
            name_aa<-"name_level"
-           if (input$flip2==TRUE){
+           assign("df.sub",df.sub,envir=.GlobalEnv)
+           print(name_aa)
+            if (input$flip2==TRUE){
              name_aa<-"name_us"
            }
+           print("cc")
+           
            
            df.sub$nb_remains<-as.numeric(df.sub$nb_remains)
            data.df.calcul<-df.sub %>% group_by(.data[[name_aa]],.data[["name_anat"]])%>%
