@@ -20,8 +20,8 @@ app_ui <- function(){
 # # list_info_suppl<-c("No infos","T6","T9","supplementary triangle","Rhombe pitymien")
 # # patine.list<-c("","doubtful","pollution-white","pollution-recent")
 # 
-# list_bone_1<-c("not_selected","m1inf","Mol","Mand","Max","Hum","Fem","Rad","Ulna","Tin",
-#              "Iinf","Isup","Bassin")
+ list_bone_1<-c("not_selected","m1inf","Mol","Mand","Max","Hum","Fem","Rad","Ulna","Tin",
+              "Iinf","Isup","Bassin")
 # list_bone<-c("list_bone_1")
 jsc <- '
 $(document).ready(function () {

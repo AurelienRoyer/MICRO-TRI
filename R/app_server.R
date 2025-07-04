@@ -202,8 +202,7 @@ observeEvent(getdata.launch(), {
   last.name.square(global$last.name.square)
   last.name.dec(global$last.name.dec)
   last.name.level(global$last.name.level)
-  
- 
+
   
   last.name.us(global$last.name.us)
   last.name.sector(global$last.name.sector)
@@ -214,6 +213,8 @@ observeEvent(getdata.launch(), {
   global.load$other.list.select<-global$other.list.select
   global.load$herpeto.list.select<-global$herpeto.list.select
   global.load$chiro.list.select<-global$chiro.list.select
+ 
+  print(global$chiro.list.select)
   global.load$euli.list.select<-global$euli.list.select
   global.load$rod.list.select<-global$rod.list.select
   global.load$lago.list.select<-global.load$lago.list.select
@@ -225,35 +226,47 @@ observeEvent(getdata.launch(), {
   list_info_suppl(global$list_info_suppl)
   patine.list(global$patine.list)
   
+ print(global.load$listeoflist_bone[["list_bone_1"]])
+  print(global$rod.list.select)
+  print(global.load$rod.list.select)
  
   fileisupload(1)
   print('eeee3')
-  
-  isolate({
+  global.load$listeoflist2<-global$listeoflist2
+  global.load$listeoflist_bone<-global$listeoflist_bone
+  print(print(reactiveValuesToList(global.load$listeoflist2)[[paste(global.load$rod.list.select)]]))
+ 
+   # isolate({
 
-      # x <- shiny::reactiveValuesToList(global$listeoflist2)
+    # x <- shiny::reactiveValuesToList(global$listeoflist2)
   # names(x) <- names(reactiveValuesToList(global$listeoflist2))
-    global.load$listeoflist2<-reactiveValues(list_rod=global$rod.list.select,
-                                             list_euli=global$euli.list.select,
-                                             list_herpeto=global$herpeto.list.select,
-                                             list_others=global$other.list.select,
-                                             list_chiro=global$chiro.list.select,
-                                             list_lago=global$lago.list.select,
-                                             )
+    # global.load$listeoflist2<-reactiveValues(list_rod=global$rod.list.select,
+    #                                          list_euli=global$euli.list.select,
+    #                                          list_herpeto=global$herpeto.list.select,
+    #                                          list_others=global$other.list.select,
+    #                                          list_chiro=global$chiro.list.select,
+    #                                          list_lago=global$lago.list.select,
+    #                                          )
     
     
    # global.load$listeoflist2<-do.call("reactiveValues",x) 
 
-    })
+    # })
+  print("aaa11aaa")
+  print(global.load$listeoflist2[[paste(global.load$rod.list.select)]])
+  print(reactiveValuesToList(global.load$listeoflist2)[[paste(global.load$rod.list.select)]])
+  
  
-  isolate({
-    global$listeoflist_bone<-reactiveValues(list_bone_1=global.load$listeoflist_bone[["list_bone_1"]],
-    list_bone_2=global.load$listeoflist_bone[["list_bone_1"]])
-    # x2 <- as.list(global$listeoflist_bone)
-    # names(x2) <- names(reactiveValuesToList(global$listeoflist_bone))
-    # global.load$listeoflist_bone<-do.call("reactiveValues",x2) 
-    print("yeahh")
-  })
+  
+  # isolate({
+  #   global$listeoflist_bone<-reactiveValues(list_bone_1=global.load$listeoflist_bone[["list_bone_1"]],
+  #   list_bone_2=global.load$listeoflist_bone[["list_bone_1"]])
+  #   
+  #   # x2 <- as.list(global$listeoflist_bone)
+  #   # names(x2) <- names(reactiveValuesToList(global$listeoflist_bone))
+  #   # global.load$listeoflist_bone<-do.call("reactiveValues",x2) 
+  #    print("yeahh")
+  # })
   
   
   
@@ -1256,14 +1269,20 @@ observeEvent(input$submit, {
                      global.load$listeoflist2[[paste(global.load$chiro.list.select)]]<-c(reactiveValuesToList(global.load$listeoflist2)[[paste(global.load$chiro.list.select)]],levels(factor(as.character(data$name_species)))) }
                  })
                })
+    print("aaa22aaa")
     
     global.load$listeoflist2<-global.load$listeoflist2
     global.load$listeoflist_bone<-global.load$listeoflist_bone
+    
+        print(global.load$listeoflist2[[paste(global.load$rod.list.select)]])
+    print(global.load$rod.list.select)
+    print(reactiveValuesToList(global.load$listeoflist2)[[paste(global.load$rod.list.select)]])
+
         to_save <- reactiveValuesToList(global.load)
         saveRDS(to_save, file =  paste0(Sys.Date(),".",global.load$site.archaeo,".BDD.uf",".rds"))
         test<-data.frame(apply(global.load$df,2,as.character))
         write.table(test, file =  paste0(Sys.Date(),".",global.load$site.archaeo,".BDD.uf",".csv",sep=""), row.names = FALSE, sep=";",dec=".") 
-
+  assign("temp2",global.load$listeoflist2,envir = .GlobalEnv)
           # assign("df",global.load$df,envir = .GlobalEnv)
           })
     
