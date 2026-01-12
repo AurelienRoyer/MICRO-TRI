@@ -1,5 +1,5 @@
-############### microTRI v1.16 
-## V.12/2025
+############### microTRI v1.17 
+## V.01/2026
 
 app_server <- function(input, output, session) {
   font.size <- "8pt"
@@ -850,9 +850,9 @@ datamodal<-function(){
     #XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
     # print(input$checkbox_ID),
     # 
-    # column(12,
-    #        column(7,
-    #               selectizeInput("ID_dec","ID of split/decapage", choices = c(dec),selected = last.id.dec(), options = list(create = TRUE)),
+     column(12,
+            column(7,
+                   selectizeInput("ID_dec","ID of split/decapage", choices = c(dec),selected = last.id.dec(), options = list(create = TRUE)),
     #               
     #               # if(input$checkbox_ID==F || is.null(input$checkbox_ID)){selectizeInput("ID_dec","ID of split/decapage", choices = c(dec),selected = last.id.dec(), options = list(create = TRUE))
     #               #   }else {
@@ -862,9 +862,10 @@ datamodal<-function(){
     #               
     #                # uiOutput("ID_dec2"),
     #              #selectizeInput("ID_dec","ID of split/decapage", choices = c(dec),selected = last.id.dec(), options = list(create = TRUE)),
-    # ),
+     ),
     # print("fff"),
-    # column(4,checkboxInput("checkbox_ID", label = "Auto ID", value = F),),),
+    # column(4,checkboxInput("checkbox_ID", label = "Auto ID", value = F),),
+           ),
     # print("fff2"),
     # autoIDinput(input$checkbox_ID),
     column(12,selectizeInput("name_square","name of square", choices = c(square),selected = last.name.square(), options = list(create = TRUE)),),
@@ -2949,3 +2950,4 @@ paste(data2)
          
                  
 } ## end of server 
+
