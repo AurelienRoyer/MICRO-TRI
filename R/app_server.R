@@ -1,5 +1,5 @@
 ############### microTRI v1.16 
-## V.07/2025
+## V.12/2025
 
 app_server <- function(input, output, session) {
   font.size <- "8pt"
@@ -336,7 +336,7 @@ observeEvent(input$go.ng3, {
   req(!is.null(input$liste.col.us.select))
   req(!is.null(input$liste.col.ID.select))
   global.load$df.datafield<-global.load$BDD.field
-  # print((input$liste.col.ID.select != "null" & dim(global.load$df.datafield[duplicated(global.load$df.datafield[,input$liste.col.ID.select]),])[1]>0))
+   print((input$liste.col.ID.select != "null" & dim(global.load$df.datafield[duplicated(global.load$df.datafield[,input$liste.col.ID.select]),])[1]>0))
   if(input$liste.col.ID.select != "null" & dim(global.load$df.datafield[duplicated(global.load$df.datafield[,input$liste.col.ID.select]),])[1]>0) { 
   showModal(modalDialog(
     title = "Issues with loaded data",
@@ -350,17 +350,42 @@ observeEvent(input$go.ng3, {
   temp3<-data.frame(unlist(global.load$df[,c("name_us")]))
   temp<-data.frame(temp,temp3)
   colnames(temp)<-c("ID_dec","name_us")
-  assign("ttt",temp, envir=.GlobalEnv)
-  assign("tt2",global.load$df.datafield, envir=.GlobalEnv)
-  temp2<-dplyr::left_join(temp[1],global.load$df.datafield[,c(input$liste.col.ID.select,input$liste.col.us.select)])
+  temp4 <-global.load$df.datafield[,c(input$liste.col.ID.select,input$liste.col.us.select)]
+  colnames(temp4)<-c("ID_dec","name_us")
   
-  global.load$df[,"name_us"]<-list(temp2[3])
-
-  # to_save <- reactiveValuesToList(global.load)
-  # saveRDS(to_save, file =  paste0(Sys.Date(),".",global.load$site.archaeo,".BDD.uf",".rds"))
-  # test<-data.frame(apply(global.load$df,2,as.character))
-  # write.table(test, file =  paste0(Sys.Date(),".",global.load$site.archaeo,".BDD.uf",".csv",sep=""), row.names = FALSE, sep=";",dec=".") 
+   assign("ttt",temp, envir=.GlobalEnv)
+   assign("tt2",global.load$df.datafield, envir=.GlobalEnv)
+  temp2<-dplyr::left_join(temp[1],temp4)
+  # temp2<-dplyr::left_join(temp[1],global.load$df.datafield[,c(input$liste.col.ID.select,input$liste.col.us.select)])
   
+  assign("ttt",temp2, envir=.GlobalEnv)
+ 
+   global.load$df[,"name_us"]<-list(temp2[2])
+   print(list(temp2[2]))
+   global.load$df[,"name_us"]<-temp2[2]
+   
+   global.load$df[,"name_us"][is.na(global.load$df[,"name_us"])] <- 0
+   
+   print(temp2[2])
+   print('hhh')
+   rV$name_us<- global.load$df[,"name_us"]
+   global.load$name_us<-rV$name_us
+   last.name.us(rV$name_us)
+   updateSelectizeInput(session = session,inputId = "name_us",selected = last.name.us())
+   
+   print("oo")
+   print(rV$name_us)
+   to_save <- reactiveValuesToList(global.load)
+   saveRDS(to_save, file =  paste0(Sys.Date(),".",global.load$site.archaeo,".BDD.uf",".rds"))
+   test<-data.frame(apply(global.load$df,2,as.character))
+   write.table(test, file =  paste0(Sys.Date(),".",global.load$site.archaeo,".BDD.uf",".csv",sep=""), row.names = FALSE, sep=";",dec=".") 
+  
+   showModal(modalDialog(
+     title = "Fusion is done",
+     HTML(paste(" fusion is done "))
+     
+   ))
+   
   ################################################################################################################################ revoir le if. revoir la fusion. 
   
   })
@@ -876,7 +901,7 @@ datamodal<-function(){
     
     
 observeEvent(input$submit, {
-  print('ee')
+  # print('ee')
   last.id.dec(input$ID_dec)
   last.name.square(input$name_square)
   last.name.sector(input$name_sector)
@@ -1269,7 +1294,7 @@ observeEvent(input$submit, {
                      global.load$listeoflist2[[paste(global.load$chiro.list.select)]]<-c(reactiveValuesToList(global.load$listeoflist2)[[paste(global.load$chiro.list.select)]],levels(factor(as.character(data$name_species)))) }
                  })
                })
-    print("aaa22aaa")
+    # print("aaa22aaa")
     
     global.load$listeoflist2<-global.load$listeoflist2
     global.load$listeoflist_bone<-global.load$listeoflist_bone
@@ -1569,7 +1594,10 @@ df.sub <- reactive({
            req(!is.null(fileisupload))
 
           df.sub<-global.load$df
-
+          assign("temppp2",df.sub,envir = .GlobalEnv)
+print("bof")
+print(input$US)      
+print(length(rV$name_us))
 
              if (!is.null(input$localisation)) {
           df.sub <- df.sub[df.sub[["name_sector"]] %in% input$localisation, ]}
@@ -1578,13 +1606,14 @@ df.sub <- reactive({
                df.sub <- df.sub[df.sub[["name_level"]] %in% rV$name_level, ]
               
              }
-          
+          print(("rr"))
           if (!is.null(input$US)) {
              df.sub <- df.sub[df.sub[["name_us"]] %in% input$US, ]} else {
                df.sub <- df.sub[df.sub[["name_us"]] %in% rV$name_us, ]
                
              }
-          
+          print("ttt")
+          print(df.sub)
           if (!is.null(input$Passe)) {
              df.sub <- df.sub[df.sub[["name_dec"]]%in% input$Passe, ]}
           if (!is.null(input$Square)) {
@@ -1595,7 +1624,7 @@ df.sub <- reactive({
              df.sub <- df.sub[df.sub[["year_exca"]] %in% input$Year, ]}
 
              df.sub[,1:29][df.sub[,1:29]=="NULL"] <- "NA"
-               # df.sub<-as.data.frame(t(apply(df.sub,2, function(x) unlist(x))))
+               print(nrow(df.sub))
              if(nrow(df.sub)>1){
                df.sub<-as.data.frame(apply(df.sub,2, function(x) as.character(x)))}
                assign("temppp",df.sub,envir = .GlobalEnv)
@@ -1745,6 +1774,7 @@ df.sub <- reactive({
            data.df.tot3<-as.data.frame(t(data.df.tot2))
            data.df.tot3<-mutate_all(data.df.tot3, function(x) as.numeric(as.character(x)))
            list.of.site<-vector("list", ncol(data.df.tot3))
+           
            if(ncol(data.df.tot3)>1){
              for (i in 1:ncol(data.df.tot3)) {
                list.of.site[[i]]<-rownames(data.df.tot3[data.df.tot3[,i]!=0,])
@@ -1754,6 +1784,7 @@ df.sub <- reactive({
              list.of.site[[1]]<-rownames(data.df.tot3)
            }
            str(list.of.site)
+           assign("list.of.site",list.of.site, envir=.GlobalEnv)
            BCI_LVLn_of_siteS <- Func_BCI_Calcul.list(list.of.site, EUL = input$var.bioclim, verif = F)
            names(BCI_LVLn_of_siteS)<-colnames(data.df.tot3)
            BCI_LVLn_of_siteS2<-as.data.frame(do.call(rbind, BCI_LVLn_of_siteS))
@@ -1948,13 +1979,10 @@ output$bioclim.graph <- renderUI({
            # nameofdigelement<-input$nameofdigelement
            name_aa<-"name_level"
            assign("df.sub",df.sub,envir=.GlobalEnv)
-           print(name_aa)
             if (input$flip2==TRUE){
              name_aa<-"name_us"
            }
-           print("cc")
-           
-           
+
            df.sub$nb_remains<-as.numeric(df.sub$nb_remains)
            data.df.calcul<-df.sub %>% group_by(.data[[name_aa]],.data[["name_anat"]])%>%
              summarize(nb_total = sum(!!sym("nb_remains")))
@@ -2171,27 +2199,41 @@ output$bioclim.graph <- renderUI({
                     axis.var.name<-"ratio AN/PO%"
                   }
            )
-           ## test de somme.ratio si =0
-            # somme.ratio<-somme.ratio[-(which(rowSums(somme.ratio)==0)),]
-          ##
-           ratio<-unlist(ratio)
-           somme.ratio<-unlist(somme.ratio)
+
+            table.joint<-cbind.data.frame(data.df.calcul.2[name_aa],ratio,somme.ratio)
+            table.joint <- table.joint %>%
+              filter(somme.ratio > 0)  ## correction pb avec ligne a 0
+              
+           ratio<-unlist(table.joint$ratio)
+           somme.ratio<-unlist(table.joint$somme.ratio)
            
            f_vec <-Vectorize(WilsonBinCI, vectorize.args = c("n","p"), SIMPLIFY = FALSE)
-           
            data.df.calcul.anpo<-matrix(unlist(f_vec(c(somme.ratio),c(ratio))),ncol=2, byrow=T)
-           print('abc')
-           df.ratio<-cbind.data.frame(data.df.calcul.2[name_aa],ratio,data.df.calcul.anpo)
-           print(df.ratio)
-           colnames(df.ratio)<-c("name_level","ratio","lower","upper")
+           df.ratio<-cbind.data.frame(table.joint[name_aa],ratio,data.df.calcul.anpo,somme.ratio)
+
+           colnames(df.ratio)<-c(name_aa,"ratio","lower","upper","n_remains")
+           
+           #ajout valeur moyenne du site
+           rrrrrratio<-sum(c(ratio*somme.ratio))
+           ssssssome<-sum(c(somme.ratio))
+           sum.tot<-rrrrrratio/ssssssome
+           
+           data.df.calcul.anpo3<-matrix(unlist(f_vec(c(ssssssome),c(sum.tot))),ncol=2, byrow=T)
+           df.ratio2<-cbind.data.frame("all",sum.tot,data.df.calcul.anpo3,ssssssome)
+           colnames(df.ratio2)<-c(name_aa,"ratio","lower","upper","n_remains")
+           df.ratio<-rbind.data.frame(df.ratio,df.ratio2)
+           #
+           
            save.table.ratio(df.ratio)
            ############################################################################################a creer pour ordonner niveau
            # if (!is.null(factor.order.level.activation())){
            #   df.ratio[[setlevels]]<-factor(df.ratio[[setlevels]], levels = factor.order.level())
            # }
            
+           
+           
            p <- ggplot2::ggplot(df.ratio, 
-                                ggplot2::aes(x = .data[["ratio"]]*100, y = .data[[1]], xmin = .data[["lower"]]*100, xmax = .data[["upper"]]*100))+  ##prob ici !!
+                                ggplot2::aes(x = .data[["ratio"]]*100, y = .data[[name_aa]], xmin = .data[["lower"]]*100, xmax = .data[["upper"]]*100))+  ##prob ici !!
              scale_x_continuous(limits=c(0,100))
            p<-p+geom_pointrange()+
              xlab(paste(axis.var.name))+ylab(paste(name_aa)) +
@@ -2263,16 +2305,23 @@ output$bioclim.graph <- renderUI({
            setus<-input$setus
            setanat<-input$setanat
            setnb<-input$setnb
+           
+           if (input$flip2==TRUE){
+             setUAS<-"name_us"} else  {
+               setUAS<- "name_level"
+             }
+           
            # digcol<-c("dig_I","dig_MOL","dig_m1inf","dig_bone","dig_bone_others")
            df.sub$nb_remains<-as.numeric(df.sub$nb_remains)
-           data.df.calcul.gh<-df.sub %>% group_by(.data[["name_level"]],.data[["name_anat"]],.data[["infos_suppl_anat"]],.data[["dig_I"]],
+           data.df.calcul.gh<-df.sub %>% group_by(.data[[setUAS]],.data[["name_anat"]],.data[["infos_suppl_anat"]],.data[["dig_I"]],
                                                   .data[["dig_MOL"]],.data[["dig_m1inf"]],
                                                   ,.data[["dig_bone"]],.data[["dig_bone_others"]])%>%
              summarize(nb_total = sum(!!sym("nb_remains")))
            
            
            list.element<-c("0","1","2","3","4","IND")
-           
+           print("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
+           assign("df.sub",df.sub,envir=.GlobalEnv)
           assign("tt",data.df.calcul.gh,envir=.GlobalEnv)
            switch(input$select.ratio.dig,
                   "1"={
@@ -2341,54 +2390,22 @@ output$bioclim.graph <- renderUI({
                   "4"={
                     FEM.dig<-subset(data.df.calcul.gh, infos_suppl_anat == "Iinf")
                     validate(need(nrow(FEM.dig) > 0 ,"No 'Iinf' elements found in the database"))
-                    
-                    # FEM.dig<-FEM.dig[,c(1,2,4,9)]
+
                     digcol<-"dig_I"
-                    # myFormula <- as.formula(paste0("name_level", " ~ ",digcol))
-                    # data.df.calcul.verif<-reshape2::dcast(FEM.dig, myFormula , fill = 0L)
-                    # new.element <-setdiff(list.element,colnames(data.df.calcul.verif))
-                    # new.element.tab<-matrix(data=0,ncol
-                    #                         =length(new.element),dimnames =list(c(),new.element))
-                    # 
-                    # data.df.calcul.verif<- cbind(data.df.calcul.verif,new.element.tab)
-                    # print(data.df.calcul.verif)
-                    # somme.ratio<-rowSums(data.df.calcul.verif[2:ncol(data.df.calcul.verif)])
-                    # ratio<-rowSums(data.df.calcul.verif[3:6])/(rowSums(data.df.calcul.verif[2:6])+somme.ratio)
+
                     axis.var.name<-"% Iinf dig"
                   },
                   "5"={
                     FEM.dig<-subset(data.df.calcul.gh, infos_suppl_anat == "Isup")
                     validate(need(nrow(FEM.dig) > 0 ,"No 'Isup' elements found in the database"))
-                    
-                    # FEM.dig<-FEM.dig[,c(1,2,4,9)]
                     digcol<-"dig_I"
-                    # myFormula <- as.formula(paste0("name_level", " ~ ",digcol))
-                    # data.df.calcul.verif<-reshape2::dcast(FEM.dig, myFormula , fill = 0L)
-                    # new.element <-setdiff(list.element,colnames(data.df.calcul.verif))
-                    # new.element.tab<-matrix(data=0,ncol
-                    #                         =length(new.element),dimnames =list(c(),new.element))
-                    # 
-                    # data.df.calcul.verif<- cbind(data.df.calcul.verif,new.element.tab)
-                    # somme.ratio<-rowSums(data.df.calcul.verif[2:ncol(data.df.calcul.verif)])
-                    # ratio<-rowSums(data.df.calcul.verif[3:6])/(rowSums(data.df.calcul.verif[2:6])+somme.ratio)
                     axis.var.name<-"% Isup dig"
                    
                   },
                   "6"={
                     FEM.dig<-subset(data.df.calcul.gh, infos_suppl_anat == "Isup"| infos_suppl_anat == "Iinf")
                     validate(need(nrow(FEM.dig) > 0 ,"No 'Incisor' elements found in the database"))
-                    
-                    # FEM.dig<-FEM.dig[,c(1,2,4,9)]
                     digcol<-"dig_I"
-                    # myFormula <- as.formula(paste0("name_level", " ~ ",digcol))
-                    # data.df.calcul.verif<-reshape2::dcast(FEM.dig, myFormula , fill = 0L)
-                    # new.element <-setdiff(list.element,colnames(data.df.calcul.verif))
-                    # new.element.tab<-matrix(data=0,ncol
-                    #                         =length(new.element),dimnames =list(c(),new.element))
-                    # 
-                    # data.df.calcul.verif<- cbind(data.df.calcul.verif,new.element.tab)
-                    # somme.ratio<-rowSums(data.df.calcul.verif[2:ncol(data.df.calcul.verif)])
-                    # ratio<-rowSums(data.df.calcul.verif[3:6])/(rowSums(data.df.calcul.verif[2:6])+somme.ratio)
                     axis.var.name<-"% incisor dig"
                     
                   },
@@ -2429,42 +2446,90 @@ output$bioclim.graph <- renderUI({
                     axis.var.name<-"% MO dig"
                   }
            )
-           ## test de somme.ratio si =0
-           # somme.ratio<-somme.ratio[-(which(rowSums(somme.ratio)==0)),]
-           ##                    FEM.dig<-subset(tt, name_anat == "Fem")
-          myFormula <- as.formula(paste0("name_level + nb_total", " ~ ",digcol))
-         
+           
+          myFormula <- as.formula(paste0(setUAS,"+ nb_total", " ~ ",digcol))
           data.df.calcul.verif<-reshape2::dcast(FEM.dig, myFormula , fill = 0L)
-            
-      
+          assign("data.df.calcul.verif",data.df.calcul.verif,envir=.GlobalEnv)
+          
+          
           new.element <-setdiff(list.element,colnames(data.df.calcul.verif))
           if(length(new.element)>0){
             new.element.tab<-matrix(data=0,ncol
                                     =length(new.element),dimnames =list(c(),new.element))
             
             data.df.calcul.verif<- cbind(data.df.calcul.verif,new.element.tab)}
-          data.df.calcul.verif2<-data.df.calcul.verif %>% group_by(.data[["name_level"]])%>%
+          
+          data.df.calcul.verif3 <- data.df.calcul.verif %>%
+            filter(nb_total > 0) %>% ## correction pb avec ligne a 0
+            pivot_longer(
+              # cols = c(`0`,`1`,`2`,`3`,`4`,`IND`,`NA`),
+              cols = c(`0`,`1`,`2`,`3`,`4`),
+              names_to = "categorie",
+              values_to = "valeur"
+            ) %>%
+            filter(valeur > 0) %>%
+            mutate(valeur = nb_total) %>%     # 
+            pivot_wider(
+              names_from = categorie,
+              values_from = valeur,
+              values_fill = 0
+            )
+          
+          
+          
+          # data.df.calcul.verif[["0"]]<-data.df.calcul.verif[["nb_total"]]*c(data.df.calcul.verif[["0"]])
+          # data.df.calcul.verif[["1"]]<-data.df.calcul.verif[["nb_total"]]*c(data.df.calcul.verif[["1"]])
+          # data.df.calcul.verif[["2"]]<-data.df.calcul.verif[["nb_total"]]*c(data.df.calcul.verif[["2"]])
+          # data.df.calcul.verif[["3"]]<-data.df.calcul.verif[["nb_total"]]*c(data.df.calcul.verif[["3"]])
+          # data.df.calcul.verif[["4"]]<-data.df.calcul.verif[["nb_total"]]*c(data.df.calcul.verif[["4"]])
+          # data.df.calcul.verif[["IND"]]<-data.df.calcul.verif[["nb_total"]]*c(data.df.calcul.verif[["IND"]])
+          
+          data.df.calcul.verif2<-data.df.calcul.verif3 %>% group_by(.data[[setUAS]])%>%
           summarise(across(c("0","1","2","3","4"),sum))
+          somme.ratio<-rowSums(data.df.calcul.verif2[2:ncol(data.df.calcul.verif2)])
 
-           somme.ratio<-rowSums(data.df.calcul.verif2[2:ncol(data.df.calcul.verif2)])
+# ## correction pb avec ligne a 0
+#            somme.ratio<-rowSums(data.df.calcul.verif2[2:ncol(data.df.calcul.verif2)])
+#            ind<-which(somme.ratio %in% c(0))
+#            if(length(ind)>0){
+#              data.df.calcul.verif2<-   data.df.calcul.verif2[-c(ind),]
+#              somme.ratio<-   somme.ratio[-c(ind)]
+#            }
+#            
+# ##
+    
            ratio<-rowSums(data.df.calcul.verif2[c("1","2","3","4")])/(rowSums(data.df.calcul.verif2[c("0","1","2","3","4")]))
-           
-           
            f_vec <-Vectorize(WilsonBinCI, vectorize.args = c("n","p"), SIMPLIFY = FALSE)
+   
            data.df.calcul.anpo<-matrix(unlist(f_vec(c(somme.ratio),c(ratio))),ncol=2, byrow=T)
-           df.ratio<-cbind.data.frame(data.df.calcul.verif2["name_level"],ratio,data.df.calcul.anpo,somme.ratio)
-           colnames(df.ratio)<-c("name_level","ratio","lower","upper","n_remains")
-           save.table.dig(df.ratio)
+           df.ratio<-cbind.data.frame(data.df.calcul.verif2[setUAS],ratio,data.df.calcul.anpo,somme.ratio)
+             colnames(df.ratio)<-c(setUAS,"ratio","lower","upper","n_remains")
+          
            ############################################################################################a creer pour ordonner niveau
            # if (!is.null(factor.order.level.activation())){
            #   df.ratio[[setlevels]]<-factor(df.ratio[[setlevels]], levels = factor.order.level())
            # }
            
+ #ajout valeur moyenne du site
+           
+           rrrrrratio<-sum(c(ratio*somme.ratio))
+           ssssssome<-sum(c(somme.ratio))
+           sum.tot<-rrrrrratio/ssssssome
+           
+           data.df.calcul.anpo3<-matrix(unlist(f_vec(c(ssssssome),c(sum.tot))),ncol=2, byrow=T)
+           df.ratio2<-cbind.data.frame("all",sum.tot,data.df.calcul.anpo3,ssssssome)
+           colnames(df.ratio2)<-c(setUAS,"ratio","lower","upper","n_remains")
+           df.ratio<-rbind.data.frame(df.ratio,df.ratio2)
+           
+           
+ #
+           save.table.dig(df.ratio)
+           
            p <- ggplot2::ggplot(df.ratio, 
-                                ggplot2::aes(x = .data[["ratio"]]*100, y = .data[["name_level"]], xmin = .data[["lower"]]*100, xmax = .data[["upper"]]*100))+ 
+                                ggplot2::aes(x = .data[["ratio"]]*100, y = .data[[setUAS]], xmin = .data[["lower"]]*100, xmax = .data[["upper"]]*100))+ 
              scale_x_continuous(limits=c(0,100))
            p<-p+geom_pointrange()+
-             xlab(paste(axis.var.name))+ylab(paste("name_level")) +
+             xlab(paste(axis.var.name))+ylab(paste(setUAS)) +
              do.call(themeforfigure.choice(), list()) +
              theme(axis.title.x = element_text(size=font_size()),
                    axis.title.y = element_text(size=font_size()),
@@ -2537,41 +2602,22 @@ output$bioclim.graph <- renderUI({
          
          Ratio.completude<-reactive({
            df.sub<-df.sub()
-           setlevels<-input$setlevels
-           # setus<-input$setus
-           # setanat<-input$setanat
-           # setnb<-input$setnb
+           name_aa<-"name_level"
+           if (input$flip2==TRUE){
+             name_aa<-"name_us"
+           }
+           
            df.sub$nb_remains<-as.numeric(df.sub$nb_remains)
-           data.df.calcul.gh<-df.sub %>% group_by(.data[["name_level"]],.data[["name_anat"]],.data[["infos_completude"]],
+           data.df.calcul.gh<-df.sub %>% group_by(.data[[name_aa]],.data[["name_anat"]],.data[["infos_completude"]],
                                                   .data[["infos_completude_detailled"]])%>%
              summarize(nb_total = sum(!!sym("nb_remains")))
-
+assign("data.df.calcul.gh",data.df.calcul.gh, envir = .GlobalEnv)
            switch(input$select.ratio.comp,
                   "1"={
                     data.df.calcul.gh2<-as.data.frame(subset(data.df.calcul.gh,name_anat=="Fem"))
                     validate(need(nrow(data.df.calcul.gh2) > 0 ,"No 'Fem' elements found in the database"))
                     
-                    data.df.calcul.gh2[["name_level"]]<-lapply(data.df.calcul.gh2[["name_level"]], function(x){ifelse(is.null(x), NA, x)})
-                    data.df.calcul.gh2[["infos_completude_detailled"]]<-lapply(data.df.calcul.gh2[["infos_completude_detailled"]], function(x){ifelse(is.null(x), "no", x)})
-
-                    name_level<-unlist(data.df.calcul.gh2[["name_level"]])
-                    infos_completude<-unlist(data.df.calcul.gh2[["infos_completude"]])
-                    infos_completude_detailled<-unlist(data.df.calcul.gh2[["infos_completude_detailled"]])
-                    nb_total<-unlist(data.df.calcul.gh2[["nb_total"]])
-                    temp<-cbind.data.frame(name_level,infos_completude,infos_completude_detailled,nb_total)
-                     digcol<-c("infos_completude")
-                    myFormula <- as.formula(paste0("name_level", " ~ ",digcol))
-                    data.df.calcul.verif<-reshape2::dcast(temp, myFormula , fill = 0L)
-                    if(ncol(data.df.calcul.verif)<3){
-                    new.element <-setdiff(c("Complete","Frag"),colnames(data.df.calcul.verif))
-                    new.element.tab<-matrix(data=0,ncol
-                                            =length(new.element),dimnames =list(c(),new.element))
-                    data.df.calcul.verif<- cbind(data.df.calcul.verif,new.element.tab)}
-                    
-                    somme.ratio<-rowSums(data.df.calcul.verif[2:ncol(data.df.calcul.verif)])
-                    ratio<-rowSums(data.df.calcul.verif[2])/(rowSums(data.df.calcul.verif[2:3]))
-                   
-                    # str_count(data.df.calcul.gh$infos_completude_detailled,pattern = "Prox")*data.df.calcul.gh$nb_total
+                  # str_count(data.df.calcul.gh$infos_completude_detailled,pattern = "Prox")*data.df.calcul.gh$nb_total
                    # dplyr::select(data.df.calcul.gh2,starts_with("infos_completude"))
                     axis.var.name<-"% Fem fragmentation"
                     
@@ -2579,71 +2625,54 @@ output$bioclim.graph <- renderUI({
                   "2"={
                     data.df.calcul.gh2<-as.data.frame(subset(data.df.calcul.gh,name_anat=="Hum"))
                     validate(need(nrow(data.df.calcul.gh2) > 0 ,"No 'Hum' elements found in the database"))
-                    
-                    data.df.calcul.gh2[["name_level"]]<-lapply(data.df.calcul.gh2[["name_level"]], function(x){ifelse(is.null(x), NA, x)})
-                    data.df.calcul.gh2[["infos_completude_detailled"]]<-lapply(data.df.calcul.gh2[["infos_completude_detailled"]], function(x){ifelse(is.null(x), "no", x)})
-                    
-                    name_level<-unlist(data.df.calcul.gh2[["name_level"]])
-                    infos_completude<-unlist(data.df.calcul.gh2[["infos_completude"]])
-                    infos_completude_detailled<-unlist(data.df.calcul.gh2[["infos_completude_detailled"]])
-                    nb_total<-unlist(data.df.calcul.gh2[["nb_total"]])
-                    temp<-cbind.data.frame(name_level,infos_completude,infos_completude_detailled,nb_total)
-                    digcol<-c("infos_completude")
-                    myFormula <- as.formula(paste0("name_level", " ~ ",digcol))
-                    data.df.calcul.verif<-reshape2::dcast(temp, myFormula , fill = 0L)
-                    if(ncol(data.df.calcul.verif)<3){
-                      new.element <-setdiff(c("Complete","Frag"),colnames(data.df.calcul.verif))
-                      new.element.tab<-matrix(data=0,ncol
-                                              =length(new.element),dimnames =list(c(),new.element))
-                      data.df.calcul.verif<- cbind(data.df.calcul.verif,new.element.tab)}
-                    
-                    somme.ratio<-rowSums(data.df.calcul.verif[2:ncol(data.df.calcul.verif)])
-                    ratio<-rowSums(data.df.calcul.verif[2])/(rowSums(data.df.calcul.verif[2:3]))
-                    
                     axis.var.name<-"% Hum fragmentation"
                   },
                   "3"={
                     data.df.calcul.gh2<-as.data.frame(subset(data.df.calcul.gh,name_anat=="Fem" | name_anat=="Hum"))
                     validate(need(nrow(data.df.calcul.gh2) > 0 ,"No 'Hum' or 'fem' elements found in the database"))
-                    
-                    data.df.calcul.gh2[["name_level"]]<-lapply(data.df.calcul.gh2[["name_level"]], function(x){ifelse(is.null(x), NA, x)})
-                    data.df.calcul.gh2[["infos_completude_detailled"]]<-lapply(data.df.calcul.gh2[["infos_completude_detailled"]], function(x){ifelse(is.null(x), "no", x)})
-                    
-                    name_level<-unlist(data.df.calcul.gh2[["name_level"]])
-                    infos_completude<-unlist(data.df.calcul.gh2[["infos_completude"]])
-                    infos_completude_detailled<-unlist(data.df.calcul.gh2[["infos_completude_detailled"]])
-                    nb_total<-unlist(data.df.calcul.gh2[["nb_total"]])
-                    temp<-cbind.data.frame(name_level,infos_completude,infos_completude_detailled,nb_total)
-                    digcol<-c("infos_completude")
-                    myFormula <- as.formula(paste0("name_level", " ~ ",digcol))
-                    data.df.calcul.verif<-reshape2::dcast(temp, myFormula , fill = 0L)
-                    if(ncol(data.df.calcul.verif)<3){
-                      new.element <-setdiff(c("Complete","Frag"),colnames(data.df.calcul.verif))
-                      new.element.tab<-matrix(data=0,ncol
-                                              =length(new.element),dimnames =list(c(),new.element))
-                      data.df.calcul.verif<- cbind(data.df.calcul.verif,new.element.tab)}
-                    
-                    somme.ratio<-rowSums(data.df.calcul.verif[2:ncol(data.df.calcul.verif)])
-                    ratio<-rowSums(data.df.calcul.verif[2])/(rowSums(data.df.calcul.verif[2:3]))
                     axis.var.name<-"% bone fragmentation"
                   }
            )
 
+data.df.calcul.gh2[[name_aa]]<-lapply(data.df.calcul.gh2[[name_aa]], function(x){ifelse(is.null(x), NA, x)})
+data.df.calcul.gh2[["infos_completude_detailled"]]<-lapply(data.df.calcul.gh2[["infos_completude_detailled"]], function(x){ifelse(is.null(x), "no", x)})
+
+name_level<-unlist(data.df.calcul.gh2[[name_aa]])
+infos_completude<-unlist(data.df.calcul.gh2[["infos_completude"]])
+infos_completude_detailled<-unlist(data.df.calcul.gh2[["infos_completude_detailled"]])
+nb_total<-unlist(data.df.calcul.gh2[["nb_total"]])
+temp<-cbind.data.frame("name_level",infos_completude,infos_completude_detailled,nb_total)
+digcol<-c("infos_completude")
+myFormula <- as.formula(paste0("name_level", " ~ ",digcol))
+data.df.calcul.verif<-reshape2::dcast(temp, myFormula , fill = 0L)
+data.df.calcul.verif$sum<-data.df.calcul.verif$Complete+data.df.calcul.verif$Frag
+data.df.calcul.verif <- data.df.calcul.verif %>%
+  filter(sum > 0) ## correction pb avec ligne a 0
+
+if(ncol(data.df.calcul.verif)<4){
+  new.element <-setdiff(c("Complete","Frag"),colnames(data.df.calcul.verif))
+  new.element.tab<-matrix(data=0,ncol
+                          =length(new.element),dimnames =list(c(),new.element))
+  data.df.calcul.verif<- cbind(data.df.calcul.verif,new.element.tab)}
+
+somme.ratio<-rowSums(data.df.calcul.verif[2:ncol(data.df.calcul.verif)])
+ratio<-rowSums(data.df.calcul.verif[2])/(rowSums(data.df.calcul.verif[2:3]))
+
+
            f_vec <-Vectorize(WilsonBinCI, vectorize.args = c("n","p"), SIMPLIFY = FALSE)
            data.df.calcul.anpo<-matrix(unlist(f_vec(c(somme.ratio),c(ratio))),ncol=2, byrow=T)
-           df.ratio<-cbind.data.frame(data.df.calcul.verif["name_level"],ratio,data.df.calcul.anpo)
-           colnames(df.ratio)<-c("name_level","ratio","lower","upper")
+           df.ratio<-cbind.data.frame(data.df.calcul.verif["name_level"],ratio,data.df.calcul.anpo,somme.ratio)
+           
+           colnames(df.ratio)<-c("name_level","ratio","lower","upper","n_remains")
+           
            save.table.comp(df.ratio)
-           ############################################################################################a creer pour ordonner niveau
-           # if (!is.null(factor.order.level.activation())){
-           #   df.ratio[[setlevels]]<-factor(df.ratio[[setlevels]], levels = factor.order.level())
-           # }
+
            
            p <- ggplot2::ggplot(df.ratio, 
                                 ggplot2::aes(x = .data[["ratio"]]*100, y = .data[["name_level"]], xmin = .data[["lower"]]*100, xmax = .data[["upper"]]*100))+ 
              scale_x_continuous(limits=c(0,100))
            p<-p+geom_pointrange()+
-             xlab(paste(axis.var.name))+ylab(paste("name_level")) +
+             xlab(paste(axis.var.name))+ylab(paste(name_aa)) +
              do.call(themeforfigure.choice(), list()) +
              theme(axis.title.x = element_text(size=font_size()),
                    axis.title.y = element_text(size=font_size()),
@@ -2733,8 +2762,9 @@ output$bioclim.graph <- renderUI({
            data.df.tot2<-df.species.table()
            if (input$flip2==TRUE){
              data.df.tot2<-df.species.table.UAS()}
-           # assign("data.df.tot2",data.df.tot2, envir=.GlobalEnv)
+            assign("data.df.tot2",data.df.tot2, envir=.GlobalEnv)
            data.df.tot2<-t(data.df.tot2)
+           
            if (input$flip==T){
              data.df.tot2<-t(data.df.tot2)}
            DT::datatable(
