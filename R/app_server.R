@@ -852,7 +852,7 @@ datamodal<-function(){
     # 
      column(12,
             column(7,
-                   selectizeInput("ID_dec","ID of split/decapage", choices = c(dec),selected = last.id.dec(), options = list(create = TRUE)),
+                  selectizeInput("ID_dec","ID of split/decapage", choices = c(dec),selected = last.id.dec(), options = list(create = TRUE)),
     #               
     #               # if(input$checkbox_ID==F || is.null(input$checkbox_ID)){selectizeInput("ID_dec","ID of split/decapage", choices = c(dec),selected = last.id.dec(), options = list(create = TRUE))
     #               #   }else {
@@ -863,10 +863,10 @@ datamodal<-function(){
     #                # uiOutput("ID_dec2"),
     #              #selectizeInput("ID_dec","ID of split/decapage", choices = c(dec),selected = last.id.dec(), options = list(create = TRUE)),
      ),
-    # print("fff"),
+
     # column(4,checkboxInput("checkbox_ID", label = "Auto ID", value = F),),
-           ),
-    # print("fff2"),
+    ),
+
     # autoIDinput(input$checkbox_ID),
     column(12,selectizeInput("name_square","name of square", choices = c(square),selected = last.name.square(), options = list(create = TRUE)),),
     column(12,selectizeInput("name_dec","name of dec", choices = c(name_dec),selected = last.name.dec(), options = list(create = TRUE)),),
@@ -902,7 +902,7 @@ datamodal<-function(){
     
     
 observeEvent(input$submit, {
-  # print('ee')
+
   last.id.dec(input$ID_dec)
   last.name.square(input$name_square)
   last.name.sector(input$name_sector)
@@ -2461,16 +2461,17 @@ output$bioclim.graph <- renderUI({
             data.df.calcul.verif<- cbind(data.df.calcul.verif,new.element.tab)}
           
           data.df.calcul.verif3 <- data.df.calcul.verif %>%
-            filter(nb_total > 0) %>% ## correction pb avec ligne a 0
-            pivot_longer(
+            dplyr::filter(nb_total > 0) %>% ## correction pb avec ligne a 0
+            tidyr::pivot_longer(
               # cols = c(`0`,`1`,`2`,`3`,`4`,`IND`,`NA`),
               cols = c(`0`,`1`,`2`,`3`,`4`),
               names_to = "categorie",
               values_to = "valeur"
             ) %>%
-            filter(valeur > 0) %>%
-            mutate(valeur = nb_total) %>%     # 
-            pivot_wider(
+            # dplyr::filter(valeur > 0) %>%
+            # dplyr::mutate(valeur = nb_total) %>%     # 
+            dplyr::mutate(valeur = ifelse(valeur > 0, nb_total, 0)) %>%
+            tidyr::pivot_wider(
               names_from = categorie,
               values_from = valeur,
               values_fill = 0
@@ -2489,16 +2490,7 @@ output$bioclim.graph <- renderUI({
           summarise(across(c("0","1","2","3","4"),sum))
           somme.ratio<-rowSums(data.df.calcul.verif2[2:ncol(data.df.calcul.verif2)])
 
-# ## correction pb avec ligne a 0
-#            somme.ratio<-rowSums(data.df.calcul.verif2[2:ncol(data.df.calcul.verif2)])
-#            ind<-which(somme.ratio %in% c(0))
-#            if(length(ind)>0){
-#              data.df.calcul.verif2<-   data.df.calcul.verif2[-c(ind),]
-#              somme.ratio<-   somme.ratio[-c(ind)]
-#            }
-#            
-# ##
-    
+
            ratio<-rowSums(data.df.calcul.verif2[c("1","2","3","4")])/(rowSums(data.df.calcul.verif2[c("0","1","2","3","4")]))
            f_vec <-Vectorize(WilsonBinCI, vectorize.args = c("n","p"), SIMPLIFY = FALSE)
    
@@ -2761,13 +2753,17 @@ ratio<-rowSums(data.df.calcul.verif[2])/(rowSums(data.df.calcul.verif[2:3]))
          
          output$table.species <-  DT::renderDataTable({
            data.df.tot2<-df.species.table()
+           print("a")
+           print(data.df.tot2)
+           assign("data.df.tot2",data.df.tot2, envir=.GlobalEnv)
            if (input$flip2==TRUE){
-             data.df.tot2<-df.species.table.UAS()}
-            assign("data.df.tot2",data.df.tot2, envir=.GlobalEnv)
+           data.df.tot2<-df.species.table.UAS()}
+           print(data.df.tot2)
            data.df.tot2<-t(data.df.tot2)
            
            if (input$flip==T){
-             data.df.tot2<-t(data.df.tot2)}
+             data.df.tot2<-t(data.df.tot2)
+             }
            DT::datatable(
              data= data.df.tot2, 
              extensions = 'Buttons', options = list(
@@ -2793,7 +2789,7 @@ ratio<-rowSums(data.df.calcul.verif[2])/(rowSums(data.df.calcul.verif[2:3]))
                data.df.tot2<-df.species.table.UAS()}
               if (input$flip==F){
               data.df.tot2<-t(data.df.tot2)}
-             write.table(data.df.tot2, file, row.names = FALSE, sep=";",dec=".") ## to MODIF !!!
+             write.table(data.df.tot2, file, row.names = T, sep=";",dec=".") ## to MODIF !!!
            }
          ) 
          
@@ -2950,4 +2946,3 @@ paste(data2)
          
                  
 } ## end of server 
-
