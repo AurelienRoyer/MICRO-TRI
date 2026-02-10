@@ -1,5 +1,5 @@
 ############### microTRI v1.17 
-## V.01/2026
+## V.02/2026
 
 app_server <- function(input, output, session) {
   font.size <- "8pt"
@@ -2946,3 +2946,4 @@ paste(data2)
          
                  
 } ## end of server 
+
