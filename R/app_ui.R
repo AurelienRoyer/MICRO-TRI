@@ -1,4 +1,5 @@
-
+############### microTRI v1.17 
+## V.02/2026
 
 app_ui <- function(){
   # shiny::addResourcePath("microTRI", system.file("R", package="microTRI"))
@@ -326,7 +327,7 @@ body <- shinydashboard::dashboardBody(
                     shinyWidgets::sliderTextInput(
                       inputId = "specimen_age",
                       label = "specimen age",
-                      choices = c("Young","Adult","Old"),
+                      choices = c("Foetus","Young","Adult","Old"),
                       selected =c("Adult")
                     ),
                 ),# end of box
@@ -735,4 +736,5 @@ ui <-dashboardPage(
 
 }
 # Run the application 
+
 
