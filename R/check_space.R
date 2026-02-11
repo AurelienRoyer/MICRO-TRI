@@ -20,7 +20,8 @@ check_disk_space <- function(path = tempdir()) {
       block_size <- 1024^2  # 1 Mo
       for (i in seq(1, file_size, by = block_size)) {
         end <- min(i + block_size - 1, file_size)
-        char_vector <- rep("A", end - i + 1)  # Vecteur de caractères de longueur 1
+        #char_vector <- rep("A", end - i + 1)  # Vecteur de caractères de longueur 1
+        char_vector <- strrep("A", end - i + 1)
         writeBin(charToRaw(char_vector), con)
       }
       TRUE
@@ -31,4 +32,5 @@ check_disk_space <- function(path = tempdir()) {
   )
   
   return(result)
+
 }
