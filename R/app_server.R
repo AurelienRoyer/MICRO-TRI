@@ -1,4 +1,4 @@
-############### microTRI v1.17 
+############### microTRI v1.18 
 ## V.02/2026
 
 app_server <- function(input, output, session) {
@@ -1120,6 +1120,24 @@ observeEvent(input$submit, {
 ### data writting     ----
     # When the Submit button is clicked, save the form data
     observeEvent(ignoreInit = TRUE, c(input$submit2 , input$Next.button), {
+
+###check_space pour éviter que ca merde lors de l'enregistrement 
+      result <- check_disk_space()
+      if (result) {
+        # Si result = TRUE (fichier de 50 Mo créé avec succès)
+      } else {
+        # Si result = FALSE (échec de création du fichier)
+        showModal(
+          modalDialog(
+            title = "⚠️ Espace disque insuffisant",
+            "Moins de 50 Mo d'espace disponible dans le répertoire courant. Libérez de l'espace pour continuer.",
+            easyClose = TRUE,
+            footer = NULL
+          )
+        )
+        stop()
+      }
+      
       if (is.null(input$ID_dec)){
         showModal(
           modalDialog(
@@ -2946,4 +2964,3 @@ paste(data2)
          
                  
 } ## end of server 
-
