@@ -3,7 +3,7 @@
 #' @param path Chemin du répertoire à vérifier (par défaut, le répertoire temporaire).
 #' @return TRUE si l'espace est suffisant, FALSE sinon.
 check_disk_space <- function(path = tempdir()) {
-  file_size <- 50 * 1024^2  # 50 Mo en octets
+  file_size <- 10 * 1024^2  # 50 Mo en octets
   temp_file <- file.path(path, "test_50mo.tmp")
   
   if (!dir.exists(path)) {
@@ -34,3 +34,4 @@ check_disk_space <- function(path = tempdir()) {
   return(result)
 
 }
+
