@@ -1275,13 +1275,24 @@ observeEvent(input$submit, {
                    global.load$listeoflist_bone[["list_bone_2"]]<-c(reactiveValuesToList(global.load$listeoflist_bone)[[2]],levels(factor(as.character(data$name_anat)))) }
                })
                })
+         future::future({
         switch(last.taxa.name(),
             
                Rodentia = {
-                 isolate ({
-                   if(!data$name_species %in% reactiveValuesToList(global.load$listeoflist2)[[paste(global.load$rod.list.select)]] ){
-                     global.load$listeoflist2[[paste(global.load$rod.list.select)]]<-c(reactiveValuesToList(global.load$listeoflist2)[[paste(global.load$rod.list.select)]],levels(factor(as.character(data$name_species)))) }
-                   })
+                    isolate ({
+                   key <- paste(global.load$rod.list.select) #
+                   current_list <- global.load$listeoflist2[[key]]#
+                   new_values <- levels(factor(as.character(data$name_species)))
+                   
+                   # if(!data$name_species %in% reactiveValuesToList(global.load$listeoflist2)[[paste(global.load$rod.list.select)]] ){
+                   #   global.load$listeoflist2[[paste(global.load$rod.list.select)]]<-c(reactiveValuesToList(global.load$listeoflist2)[[paste(global.load$rod.list.select)]],levels(factor(as.character(data$name_species)))) }
+                   # 
+                   if (!data$name_species %in% current_list) {
+                     global.load$listeoflist2[[key]] <- unique(c(current_list, new_values))
+                   }
+                   
+                    })
+
                },
                Eulipotyphla =   {
                  isolate ({
@@ -1313,7 +1324,7 @@ observeEvent(input$submit, {
                      global.load$listeoflist2[[paste(global.load$chiro.list.select)]]<-c(reactiveValuesToList(global.load$listeoflist2)[[paste(global.load$chiro.list.select)]],levels(factor(as.character(data$name_species)))) }
                  })
                })
-    # print("aaa22aaa")
+     }) #end of the future
     
     global.load$listeoflist2<-global.load$listeoflist2
     global.load$listeoflist_bone<-global.load$listeoflist_bone
