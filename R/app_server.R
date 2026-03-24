@@ -1,5 +1,5 @@
-############### microTRI v1.18 
-## V.02/2026
+############### microTRI v1.181 
+## V.03/2026
 
 app_server <- function(input, output, session) {
   font.size <- "8pt"
@@ -141,7 +141,7 @@ pickerInput(
 
 observeEvent(ignoreInit = TRUE,input$create_bdd,{
   global.load$site.archaeo<-input$name_site
-  to_save <- reactiveValuesToList(global.load)
+  to_save <- clean_shiny(global.load)
   saveRDS(to_save, file =  paste0(Sys.Date(),".",global.load$site.archaeo,".BDD.uf",".rds"))
   write.table(as.data.frame(fields_theor), file =  paste0(Sys.Date(),".",global.load$site.archaeo,".BDD.uf",".csv",sep=""), row.names = FALSE, sep=";",dec=".") 
   fileisupload(1)
@@ -375,7 +375,7 @@ observeEvent(input$go.ng3, {
    
    print("oo")
    print(rV$name_us)
-   to_save <- reactiveValuesToList(global.load)
+   to_save <- clean_shiny(global.load)
    saveRDS(to_save, file =  paste0(Sys.Date(),".",global.load$site.archaeo,".BDD.uf",".rds"))
    test<-data.frame(apply(global.load$df,2,as.character))
    write.table(test, file =  paste0(Sys.Date(),".",global.load$site.archaeo,".BDD.uf",".csv",sep=""), row.names = FALSE, sep=";",dec=".") 
@@ -1201,7 +1201,7 @@ observeEvent(input$submit, {
           }
         
         global.load$df<-rbind(global.load$df, data)
-        
+      
         k<-ID_record()+1
         ID_record(k)
         global.load$k<-k
@@ -1238,11 +1238,12 @@ observeEvent(input$submit, {
         global.load$infos_enc<-input$infos_enc
         global.load$infos_obs<-input$infos_obs
         global.load$infos_completude<-input$infos_completude
-          
+        
+       
         updateSelectizeInput(session = session, inputId = "name_species",selected ="not_selected")
         updatePickerInput(session = session, inputId = "infos_suppl_anat",selected =NULL,choices = NULL)
         updateSelectizeInput(session = session, inputId = "name_anat",selected = "not_selected")
-
+        
         updateNumericInput(session = session, inputId = "nb_remains",value =1)
         updateRadioGroupButtons(session = session, inputId = "infos_lat", selected = "IND")  
         updatePrettySwitch(session = session, inputId = "infos_completude",value = FALSE)
@@ -1261,7 +1262,7 @@ observeEvent(input$submit, {
         updateSelectizeInput(session = session, inputId = "color_patine",selected ="")
         updatePrettySwitch(session = session, inputId = "infos_obs",value = FALSE)
         updateSliderTextInput(session = session, inputId = "specimen_age",selected = "Adult")
-        
+      
         switch(input$name_anat2,
                bone = {
                  isolate ({
@@ -1275,7 +1276,7 @@ observeEvent(input$submit, {
                    global.load$listeoflist_bone[["list_bone_2"]]<-c(reactiveValuesToList(global.load$listeoflist_bone)[[2]],levels(factor(as.character(data$name_anat)))) }
                })
                })
-         future::future({
+        future::future({
         switch(last.taxa.name(),
             
                Rodentia = {
@@ -1295,6 +1296,7 @@ observeEvent(input$submit, {
 
                },
                Eulipotyphla =   {
+                
                  isolate ({
                    if(!data$name_species %in% reactiveValuesToList(global.load$listeoflist2)[[paste(global.load$euli.list.select)]] ){
                      global.load$listeoflist2[[paste(global.load$euli.list.select)]]<-c(reactiveValuesToList(global.load$listeoflist2)[[paste(global.load$euli.list.select)]],levels(factor(as.character(data$name_species)))) }
@@ -1324,7 +1326,8 @@ observeEvent(input$submit, {
                      global.load$listeoflist2[[paste(global.load$chiro.list.select)]]<-c(reactiveValuesToList(global.load$listeoflist2)[[paste(global.load$chiro.list.select)]],levels(factor(as.character(data$name_species)))) }
                  })
                })
-     }) #end of the future
+        }) #end of the future
+
     
     global.load$listeoflist2<-global.load$listeoflist2
     global.load$listeoflist_bone<-global.load$listeoflist_bone
@@ -1333,7 +1336,9 @@ observeEvent(input$submit, {
     print(global.load$rod.list.select)
     print(reactiveValuesToList(global.load$listeoflist2)[[paste(global.load$rod.list.select)]])
 
-        to_save <- reactiveValuesToList(global.load)
+        # to_save <- reactiveValuesToList(global.load)
+         to_save <- clean_shiny(global.load)
+    
         saveRDS(to_save, file =  paste0(Sys.Date(),".",global.load$site.archaeo,".BDD.uf",".rds"))
         test<-data.frame(apply(global.load$df,2,as.character))
         write.table(test, file =  paste0(Sys.Date(),".",global.load$site.archaeo,".BDD.uf",".csv",sep=""), row.names = FALSE, sep=";",dec=".") 
@@ -1388,7 +1393,7 @@ observeEvent(input$submit, {
       data <- as.data.frame(t(formData()))
       global.load$df<-rbind(global.load$df, temp)
       refresh_dtoutput(rnorm(1,mean=100,sd=100))
-      to_save <- reactiveValuesToList(global.load)
+      to_save <- clean_shiny(global.load)
       saveRDS(to_save, file =  paste0(Sys.Date(),".",global.load$site.archaeo,".BDD.uf",".rds"))
       test<-data.frame(apply(global.load$df,2,as.character))
       write.table(test, file =  paste0(Sys.Date(),".",global.load$site.archaeo,".BDD.uf",".csv",sep=""), row.names = FALSE, sep=";",dec=".") 
@@ -1427,7 +1432,7 @@ observeEvent(input$submit, {
       clmn <- input$responses2_cell_edit$col
       data2[row, clmn] <- input$responses2_cell_edit$value
       global.load$df<-data2
-      to_save <- reactiveValuesToList(global.load)
+      to_save <- clean_shiny(global.load)
       saveRDS(to_save, file =  paste0(Sys.Date(),".",global.load$site.archaeo,".BDD.uf",".rds"))
       test<-data.frame(apply(global.load$df,2,as.character))
       write.table(test, file =  paste0(Sys.Date(),".",global.load$site.archaeo,".BDD.uf",".csv",sep=""), row.names = FALSE, sep=";",dec=".") 
@@ -1438,7 +1443,7 @@ observeEvent(input$submit, {
          data2<-global.load$df
          data2 <-  data2[-as.numeric(input$responses2_rows_selected),]
          global.load$df<-data2
-         to_save <- reactiveValuesToList(global.load)
+         to_save <- clean_shiny(global.load)
          saveRDS(to_save, file =  paste0(Sys.Date(),".",global.load$site.archaeo,".BDD.uf",".rds"))
          test<-data.frame(apply(global.load$df,2,as.character))
          write.table(test, file =  paste0(Sys.Date(),".",global.load$site.archaeo,".BDD.uf",".csv",sep=""), row.names = FALSE, sep=";",dec=".") 
@@ -1450,7 +1455,7 @@ observeEvent(input$submit, {
 output$obs.note.torender <- renderText({ global.load$note.obs })
 observeEvent(input$Record_the_observation,{
      global.load$note.obs<-paste0(global.load$note.obs,"<p>",input$note.obs,"</p>")
-     to_save <- reactiveValuesToList(global.load)
+     to_save <- clean_shiny(global.load)
      saveRDS(to_save, file =  paste0(Sys.Date(),".",global.load$site.archaeo,".BDD.uf",".rds"))
          })
 
@@ -1532,6 +1537,7 @@ output$next2=renderUI({
      actionButton("Next.0", "empty")
  })
 observeEvent(input$Next.0,{
+
   updateSelectizeInput(session = session,inputId = "ID_dec", selected = last.id.dec())
   updateSelectizeInput(session = session,inputId = "name_square",selected = last.name.square())
   updateSelectizeInput(session = session,inputId = "name_dec",selected = last.name.dec())
@@ -1541,12 +1547,13 @@ observeEvent(input$Next.0,{
   updateSelectizeInput(session = session,inputId = "year_exca",selected = last.year_exca())
   
   data <- as.data.frame(t(formData()))
-  data[,8:ncol(data)]<-"empty"
+  data[,8:ncol(data)]<-"empty" #a corriger en 10?
   global.load$df<-rbind(global.load$df, data)
   k<-ID_record()+1
   ID_record(k)
+
   global.load$k<-k
-  
+
   global.load$ID_dec<-rV$ID_dec
   global.load$name_sector<-rV$name_sector
   global.load$name_square<-rV$name_square
@@ -1562,12 +1569,27 @@ observeEvent(input$Next.0,{
   global.load$last.name.level<-last.name.level()
   global.load$last.name.us<-last.name.us()
   
-  to_save <- reactiveValuesToList(global.load)
+  to_save <- clean_shiny(global.load)
   saveRDS(to_save, file =  paste0(Sys.Date(),".",global.load$site.archaeo,".BDD.uf",".rds"))
   test<-data.frame(apply(global.load$df,2,as.character))
   write.table(test, file =  paste0(Sys.Date(),".",global.load$site.archaeo,".BDD.uf",".csv",sep=""), row.names = FALSE, sep=";",dec=".") 
   datamodal()
+  showModal(
+    modalDialog(
+      title = tags$h4(style = "color: blue;","The line is created!"),
+      easyClose = F,
+      footer = NULL,
+      HTML("The line is created"),
+      
+    ))
+  session$onFlushed(function() {
+   session$sendCustomMessage("autoCloseModal", 1)
+  }, once = TRUE)
 })
+##ajout pour qu'il se ferme automatiquement
+#session$onFlushed(function() {
+#  session$sendCustomMessage(type = "closeModalAfter", message = NULL)
+#}, once = TRUE)
 
 
 
@@ -2873,7 +2895,7 @@ observe({
         
            global.load$df<-rbind.data.frame(global.load$df,global.load$BDD.old)
            global.load$k<-global.load$k+nrow(global.load$BDD.old)
-           to_save <- reactiveValuesToList(global.load)
+           to_save <- clean_shiny(global.load)
            saveRDS(to_save, file =  paste0(Sys.Date(),".",global.load$site.archaeo,".BDD.uf.fusion",".rds"))
            test<-data.frame(apply(global.load$df,2,as.character))
            write.table(test, file =  paste0(Sys.Date(),".",global.load$site.archaeo,".BDD.uf.fusion",".csv",sep=""), row.names = FALSE, sep=";",dec=".") 
@@ -2899,7 +2921,7 @@ observe({
 
            global.load$df[,input$liste.newgroup.rename]<-list(aa)
 
-           to_save <- reactiveValuesToList(global.load)
+           to_save <- clean_shiny(global.load)
            saveRDS(to_save, file =  paste0(Sys.Date(),".",global.load$site.archaeo,".BDD.uf",".rds"))
            test<-data.frame(apply(global.load$df,2,as.character))
            write.table(test, file =  paste0(Sys.Date(),".",global.load$site.archaeo,".BDD.uf",".csv",sep=""), row.names = FALSE, sep=";",dec=".") 
