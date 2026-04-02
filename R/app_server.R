@@ -1,5 +1,5 @@
-############### microTRI v1.181 
-## V.03/2026
+############### microTRI v1.182
+## V.03/2026 # marche pas pour exploration 
 
 app_server <- function(input, output, session) {
   font.size <- "8pt"
@@ -19,8 +19,8 @@ app_server <- function(input, output, session) {
     fileisupload<-reactiveVal(NULL)
     e<-reactiveVal(NULL)
     df<-reactiveValues( #creation df 
-      df=NULL,save1=NULL,save2=NULL,save3=NULL,save4=NULL,save5=NULL) # end reactivevalues
-    global.load<-reactiveValues(df=NULL,save5=NULL,site.archaeo=NULL)
+      df=data.frame(),save1=NULL,save2=NULL,save3=NULL,save4=NULL,save5=NULL) # end reactivevalues
+    global.load<-reactiveValues(df=data.frame(),save5=NULL,site.archaeo=NULL)
     df_rapid_line<-reactiveVal(0)
     input_infos_suppl_anat<-reactiveVal(NULL)
     session_store <- reactiveValues()  ## for save  plot 
@@ -56,11 +56,13 @@ observeEvent(ignoreInit = TRUE,input$go.ng4, {
     
     
 output$liste.faun4=renderUI({
+  req(global.load$listeoflist2)
     selectInput("rod.list.select", label = h5("Rodentia List"), 
                   choices = names(reactiveValuesToList(global.load$listeoflist2)), 
                    selected = names(reactiveValuesToList(global.load$listeoflist2))[[1]]) 
     })
 output$liste.faun4.eulipo=renderUI({
+  req(global.load$listeoflist2)
   selectInput("euli.list.select", label = h5("Eulipotyphla List"), 
               choices = names(reactiveValuesToList(global.load$listeoflist2)), 
               selected = names(reactiveValuesToList(global.load$listeoflist2))[[2]])
@@ -71,17 +73,20 @@ output$liste.faun4.chiro=renderUI({
               selected = names(reactiveValuesToList(global.load$listeoflist2))[[5]])
 })
 output$liste.faun4.herpeto=renderUI({
+  req(global.load$listeoflist2)
   selectInput("herpeto.list.select", label = h5("Herpetofauna List"), 
               choices = names(reactiveValuesToList(global.load$listeoflist2)), 
               selected = names(reactiveValuesToList(global.load$listeoflist2))[[3]]) 
 })
 output$liste.faun4.lago=renderUI({
+  req(global.load$listeoflist2)
   selectInput("lago.list.select", label = h5("Lagomorpha List"), 
               choices = names(reactiveValuesToList(global.load$listeoflist2)), 
               selected = names(reactiveValuesToList(global.load$listeoflist2))[[6]]) 
 })
 
 output$liste.faun4.others=renderUI({
+  req(global.load$listeoflist2)
   selectInput("other.list.select", label = h5("Other List"), 
               choices = names(reactiveValuesToList(global.load$listeoflist2)), 
               selected = names(reactiveValuesToList(global.load$listeoflist2))[[4]])
@@ -176,11 +181,48 @@ observeEvent(input$getData, {
 ### loading data ----
 observeEvent(getdata.launch(), {
   req(!is.null(input_file1.datapath()))
-
   extension <- tools::file_ext(input_file1.name())
   validate(need(extension == "rds", "Please upload a rds file"))
   global<-readRDS(file=input_file1.name())
-
+# print("loaded")
+# print(class(global.load$df))
+# if (!is.data.frame(global.load$df)) {
+#   global.load$df <- as.data.frame(global.load$df)
+# }
+  # assign("xss",global$df, envir=.GlobalEnv)
+  # global$df <- as.data.frame(lapply(global$df, function(col) {
+  #   if (is.list(col)) unlist(col) else col
+  # }))
+  # 
+  global$df <- as.data.frame(
+    lapply(global$df, function(col) {
+      
+      if (is.list(col)) {
+        sapply(col, function(cell) {
+          
+          if (length(cell) == 0) {
+            return(NA)
+          }
+          
+          if (length(cell) == 1) {
+            return(cell)
+          }
+          
+          # si plusieurs valeurs → à adapter selon ton besoin
+          return(paste(cell, collapse = ";"))
+        })
+        
+      } else {
+        col
+      }
+      
+    }),
+    stringsAsFactors = FALSE
+  )
+  
+  
+  # assign("xss2",global$df, envir=.GlobalEnv)
+  
   df$df<-global$df
 
   ID_record(global$k)
@@ -194,6 +236,7 @@ observeEvent(getdata.launch(), {
   rV$name_square<-global$name_square
   rV$name_dec<-global$name_dec
   rV$name_level<-global$name_level
+
   rV$name_us<-global$name_us
   rV$name_sector<-global$name_sector
   rV$year_exca<-global$year_exca
@@ -209,12 +252,11 @@ observeEvent(getdata.launch(), {
   last.year_exca(global$last.year_exca)
 
   global.load$site.archaeo<-global$site.archaeo
+
   # global.load$patine.list.select<-global.load$patine.list.select
   global.load$other.list.select<-global$other.list.select
   global.load$herpeto.list.select<-global$herpeto.list.select
   global.load$chiro.list.select<-global$chiro.list.select
- 
-  print(global$chiro.list.select)
   global.load$euli.list.select<-global$euli.list.select
   global.load$rod.list.select<-global$rod.list.select
   global.load$lago.list.select<-global.load$lago.list.select
@@ -226,50 +268,24 @@ observeEvent(getdata.launch(), {
   list_info_suppl(global$list_info_suppl)
   patine.list(global$patine.list)
   
- print(global.load$listeoflist_bone[["list_bone_1"]])
-  print(global$rod.list.select)
-  print(global.load$rod.list.select)
- 
   fileisupload(1)
-  print('eeee3')
-  global.load$listeoflist2<-global$listeoflist2
-  global.load$listeoflist_bone<-global$listeoflist_bone
-  print(print(reactiveValuesToList(global.load$listeoflist2)[[paste(global.load$rod.list.select)]]))
- 
-   # isolate({
+  # 
+  # str(global.load$listeoflist2)
+  # str(global$listeoflist2)
+  
+  global.load$listeoflist2 <- safe_update_rv(
+    global.load$listeoflist2,
+    global$listeoflist2 )
+  
+# str(global.load$listeoflist2)
 
-    # x <- shiny::reactiveValuesToList(global$listeoflist2)
-  # names(x) <- names(reactiveValuesToList(global$listeoflist2))
-    # global.load$listeoflist2<-reactiveValues(list_rod=global$rod.list.select,
-    #                                          list_euli=global$euli.list.select,
-    #                                          list_herpeto=global$herpeto.list.select,
-    #                                          list_others=global$other.list.select,
-    #                                          list_chiro=global$chiro.list.select,
-    #                                          list_lago=global$lago.list.select,
-    #                                          )
-    
-    
-   # global.load$listeoflist2<-do.call("reactiveValues",x) 
+  global.load$listeoflist_bone <- safe_update_rv(
+    global.load$listeoflist_bone,
+    global$listeoflist_bone
+  )
 
-    # })
-  print("aaa11aaa")
-  print(global.load$listeoflist2[[paste(global.load$rod.list.select)]])
-  print(reactiveValuesToList(global.load$listeoflist2)[[paste(global.load$rod.list.select)]])
-  
- 
-  
-  # isolate({
-  #   global$listeoflist_bone<-reactiveValues(list_bone_1=global.load$listeoflist_bone[["list_bone_1"]],
-  #   list_bone_2=global.load$listeoflist_bone[["list_bone_1"]])
-  #   
-  #   # x2 <- as.list(global$listeoflist_bone)
-  #   # names(x2) <- names(reactiveValuesToList(global$listeoflist_bone))
-  #   # global.load$listeoflist_bone<-do.call("reactiveValues",x2) 
-  #    print("yeahh")
-  # })
-  
-  
-  
+  # print("fin loaded")
+
 })# end observe of df$df2
 observeEvent(fileisupload(), {   
   updateTabItems(session, "tabs", "SMALLvert")
@@ -321,12 +337,14 @@ observeEvent(getdata.fieldBDD.launch(), {
 
 output$liste.col.ID=renderUI({
   req(!is.null(file.field.BDD.isupload()))
+  req(!is.null(global.load$BDD.field))
   selectInput("liste.col.ID.select", label = h5("Select the column with ID data"), 
               choices = colnames(global.load$BDD.field), 
               selected = colnames(global.load$BDD.field)[1])
 })
 output$liste.col.US=renderUI({
   req(!is.null(file.field.BDD.isupload()))
+  req(!is.null(global.load$BDD.field))
   selectInput("liste.col.us.select", label = h5("Select the column with US data"), 
               choices = colnames(global.load$BDD.field), 
               selected = colnames(global.load$BDD.field)[2])
@@ -335,8 +353,8 @@ output$liste.col.US=renderUI({
 observeEvent(input$go.ng3, { 
   req(!is.null(input$liste.col.us.select))
   req(!is.null(input$liste.col.ID.select))
+  req(!is.null(global.load$BDD.field))
   global.load$df.datafield<-global.load$BDD.field
-   print((input$liste.col.ID.select != "null" & dim(global.load$df.datafield[duplicated(global.load$df.datafield[,input$liste.col.ID.select]),])[1]>0))
   if(input$liste.col.ID.select != "null" & dim(global.load$df.datafield[duplicated(global.load$df.datafield[,input$liste.col.ID.select]),])[1]>0) { 
   showModal(modalDialog(
     title = "Issues with loaded data",
@@ -402,18 +420,21 @@ liste.set.sector<-reactiveVal(c("sector","null"))
   liste.set.year.exca<-reactiveVal(c("year","null"))
 output$set.ID.dec=renderUI({
   req(!is.null(file.field.BDD.isupload()))
+  req(!is.null(global.load$BDD.field))
   selectInput("setIDdec", h4("ID of split (Default name: ID)"),
               choices = names(global.load$BDD.field)[c(1:ncol(global.load$BDD.field))],
               selected = liste.set.ID.dec())
 }) 
 output$set.year=renderUI({
   req(!is.null(file.field.BDD.isupload()))
+  req(!is.null(global.load$BDD.field))
   selectInput("setyear", h4("Year (Default name: Year)"),
               choices = names(global.load$BDD.field)[c(1:ncol(global.load$BDD.field))],
               selected = liste.set.year.exca())
 }) 
 output$set.sector=renderUI({
   req(!is.null(file.field.BDD.isupload()))
+  req(!is.null(global.load$BDD.field))
   selectInput("setsector", h4("Sector (Default name: Sector)"),
               choices = names(global.load$BDD.field)[c(1:ncol(global.load$BDD.field))],
               selected = liste.set.sector())
@@ -421,12 +442,14 @@ output$set.sector=renderUI({
 
 output$set.square=renderUI({
   req(!is.null(file.field.BDD.isupload()))
+  req(!is.null(global.load$BDD.field))
   selectInput("setsquare", h4("Square (Default name: Square)"),
               choices = names(global.load$BDD.field)[c(1:ncol(global.load$BDD.field))],
               selected = liste.set.square())
 }) 
 output$set.dec=renderUI({
   req(!is.null(file.field.BDD.isupload()))
+  req(!is.null(global.load$BDD.field))
   selectInput("setdec", h4("Splits/decapage (Default name: dec)"),
               choices = names(global.load$BDD.field)[c(1:ncol(global.load$BDD.field))],
               selected = liste.set.dec())
@@ -434,12 +457,14 @@ output$set.dec=renderUI({
 
 output$set.levels=renderUI({
   req(!is.null(file.field.BDD.isupload()))
+  req(!is.null(global.load$BDD.field))
   selectInput("setlevels", h4("Levels (Default name: Levels)"),
               choices = names(global.load$BDD.field)[c(1:ncol(global.load$BDD.field))],
               selected = liste.set.levels())
 }) 
 output$set.us=renderUI({
   req(!is.null(file.field.BDD.isupload()))
+  req(!is.null(global.load$BDD.field))
   selectInput("setus", h4("Levels (Default name: us)"),
               choices = names(global.load$BDD.field)[c(1:ncol(global.load$BDD.field))],
               selected = liste.set.us())
@@ -455,13 +480,22 @@ output$set.us=renderUI({
     output$value_name_sector <- renderText({ input$name_sector })
     output$value_year_exca <- renderText({ input$year_exca })
     
-    rV <- reactiveValues(ID_dec = "")
-    rV <- reactiveValues(name_square = "")
-    rV <- reactiveValues(name_dec = "")
-    rV <- reactiveValues(name_level = "")
-    rV <- reactiveValues(name_us = "")
-    rV <- reactiveValues(name_sector = "")
-    rV <- reactiveValues(year_exca = "")
+    # rV <- reactiveValues(ID_dec = "")
+    # rV <- reactiveValues(name_square = "")
+    # rV <- reactiveValues(name_dec = "")
+    # rV <- reactiveValues(name_level = "")
+    # rV <- reactiveValues(name_us = "")
+    # rV <- reactiveValues(name_sector = "")
+    # rV <- reactiveValues(year_exca = "")
+    rV <- reactiveValues(
+      ID_dec = "",
+      name_square = "",
+      name_dec = "",
+      name_level = "",
+      name_us = "",
+      name_sector = "",
+      year_exca = ""
+    )
     last.id.dec<-reactiveVal("not_selected")
     last.name.square<-reactiveVal("not_selected")
     last.name.sector<-reactiveVal("not_selected")
@@ -470,34 +504,45 @@ output$set.us=renderUI({
     last.name.level<-reactiveVal("not_selected")
     last.name.us<-reactiveVal("not_selected")
     last.taxa.name<-reactiveVal("not_selected")
-    
+  
     output$species_pickerinput=renderUI({
+      print(input$name_taxa)
+
+      req(input$name_taxa)
+     # print(reactiveValuesToList(global.load$listeoflist2))
+      # liste <- reactiveValuesToList(global.load$listeoflist2)
+      req(length(reactiveValuesToList(global.load$listeoflist2)) > 0)
+      
       switch(input$name_taxa,
              Rodentia = {
+               req(global.load$rod.list.select)
                last.taxa.name("Rodentia")
-               isolate ({species.menu<-(reactiveValuesToList(global.load$listeoflist2))[[paste(global.load$rod.list.select)]]})
-              
+                isolate ({species.menu<-(reactiveValuesToList(global.load$listeoflist2))[[paste(global.load$rod.list.select)]]})
+
              },
              Eulipotyphla =   {
-               
+               req(global.load$euli.list.select)
                last.taxa.name("Eulipotyphla")
                isolate ({species.menu<-(reactiveValuesToList(global.load$listeoflist2))[[paste(global.load$euli.list.select)]]})
              },
              Lagomorpha =   {
+               req(global.load$lago.list.select)
                last.taxa.name("Lagomorpha")
-           
+
                isolate ({species.menu<-(reactiveValuesToList(global.load$listeoflist2))[[paste(global.load$lago.list.select)]]})
              },
-             others =   { 
-               
+             others =   {
+               req(global.load$other.list.select)
                last.taxa.name("others")
                isolate ({species.menu<-(reactiveValuesToList(global.load$listeoflist2))[[paste(global.load$other.list.select)]]})
              },
              Herpetofauna =   {
+               req(global.load$herpeto.list.select)
                last.taxa.name("Herpetofauna")
                 isolate ({species.menu<-(reactiveValuesToList(global.load$listeoflist2))[[paste(global.load$herpeto.list.select)]]})
              },
-             Chiroptera =  { 
+             Chiroptera =  {
+               req(global.load$chiro.list.select)
                last.taxa.name("Chiroptera")
                isolate ({species.menu<-(reactiveValuesToList(global.load$listeoflist2))[[paste(global.load$chiro.list.select)]]})
              })
@@ -512,8 +557,10 @@ output$set.us=renderUI({
     })
     output$completude=renderUI({
 
-      if (input$infos_completude==TRUE) {
+      # if (input$infos_completude==TRUE) {
+      if (isTRUE(input$infos_completude)) {
         extension<-input$name_anat
+        # print(extension)
         sep2<-"frag"
         if (extension=="Hum" || extension=="Fem" || extension=="Mand"|| extension=="Mol"){ 
           switch(extension,
@@ -549,10 +596,10 @@ output$set.us=renderUI({
        
 
       }
-      
+  
     })
     output$obs=renderUI({
-      
+
       if (!isTRUE(trigger.next.prev())){
         choice2<-paste(df$save5$observation)}
       else{
@@ -563,7 +610,7 @@ output$set.us=renderUI({
         textInput("observation", label="observation", value = choice2, width = NULL,
                   placeholder = NULL)
       }
-      
+
     })
 
     output$obs2=renderUI({
@@ -611,17 +658,22 @@ output$set.us=renderUI({
     })
     
     output$name_anat_list_boneteeth=renderUI({
+
+    
+
       switch(input$name_anat2,
              bone = {
                # isolate({list.bb<-get(list_bone[1]) })
-               isolate({list.bb<-reactiveValuesToList(global.load$listeoflist_bone)[[1]]})
+               isolate({
+                 list.bb<-reactiveValuesToList(global.load$listeoflist_bone)[[1]]})
+               
                },
              teeth= {
                
                # isolate({list.bb<-get(list_bone[2])})
                isolate({list.bb<-reactiveValuesToList(global.load$listeoflist_bone)[[2]]})
                })
-             
+         
       selectizeInput(
         inputId = "name_anat",
         label = "Anatomy", 
@@ -629,6 +681,8 @@ output$set.us=renderUI({
         choices = list.bb,
         options = list(create = TRUE,
           `live-search` = TRUE))
+      
+
     })
     
     
@@ -823,7 +877,6 @@ datamodal<-function(){
   if(!is.null(sector)){sector<-sector[order(sector,decreasing=F,na.last=FALSE)]}
   year<-rV$year_exca
   if(!is.null(year)){year<-year[order(year,decreasing=F,na.last=FALSE)]}
-  
   dec<-rV$ID_dec
   if(!is.null(dec)){dec<-dec[order(dec,decreasing=F,na.last=FALSE)]}
    
@@ -910,13 +963,10 @@ observeEvent(input$submit, {
   last.name.level(input$name_level)
   last.name.us(input$name_us)
   last.year_exca(input$year_exca)
-  print('ee2')
       showModal(
         datamodal()
         )
-      print('ee3')
-      
-      last.id.dec(input$ID_dec)
+       last.id.dec(input$ID_dec)
       last.name.square(input$name_square)
       last.name.sector(input$name_sector)
       last.name.dec(input$name_dec)
@@ -934,6 +984,7 @@ observeEvent(input$submit, {
     })
     
     observeEvent(input$ID_dec, {
+  
       # nchar check, because emptying the text field results in "" choice.
       if (nchar(input$ID_dec) && !(input$ID_dec %in% rV$ID_dec)) {
         rV$ID_dec <- c(rV$ID_dec, input$ID_dec)
@@ -954,11 +1005,13 @@ observeEvent(input$submit, {
         rV$name_dec <- c(rV$name_dec, input$name_dec)
       }})
     observeEvent(input$name_level, {
+
       # nchar check, because emptying the text field results in "" choice.
       if (nchar(input$name_level) && !(input$name_level %in% rV$name_level)) {
         rV$name_level <- c(rV$name_level, input$name_level)
       }})
     observeEvent(input$name_us, {
+      
       # nchar check, because emptying the text field results in "" choice.
       if (nchar(input$name_us) && !(input$name_us %in% rV$name_us)) {
         rV$name_us <- c(rV$name_us, input$name_us)
@@ -1010,8 +1063,10 @@ observeEvent(input$submit, {
         } else {ID_record2<-ID_record()}
         
         data<-c(ID_record2,data)
-        
-        # data<-c(ID_record(),data)
+        # print("jj3")
+        # print(class(data))
+        # assign("data2",data, envir=.GlobalEnv)
+  
         names(data)<-c("ID_record",fields_theor)
         data$date_record<-paste0(c(Sys.time()))
         if(!is.null(input_infos_suppl_anat())){
@@ -1035,12 +1090,12 @@ observeEvent(input$submit, {
            data$name_level<-"empty"}
          if(length(data$name_us)==1 && data$name_us=="") {
            data$name_us<-"empty"}
-         if (input$infos_enc==F) {data$trace_encoche<-"no"}
-         if (input$infos_tm==F) {data$trace_tooth_mark<-"no"}
+         if (isFALSE(input$infos_tm)) {data$trace_encoche<-"no"}
+         if (isFALSE(input$infos_tm)){data$trace_tooth_mark<-"no"}
            
         #"Mand","Max",
-        if (!input$trace_dig=="IND"){
-          
+        # if (!input$trace_dig=="IND"){
+         if (!is.null(input$trace_dig) && input$trace_dig != "IND") {
           if(input$name_anat2=="bone"){
             data$dig_bone_others<-input$trace_dig
             switch(input$name_anat,
@@ -1165,7 +1220,8 @@ observeEvent(input$submit, {
           ))
  
       }
-      if (input$name_species=="not_selected"){
+      # if (input$name_species=="not_selected"){
+      if (!is.null(input$name_species) && input$name_species == "not_selected"){
         showModal(
           modalDialog(
             title = tags$h4(style = "color: red;","Are you sur? "),
@@ -1173,7 +1229,9 @@ observeEvent(input$submit, {
             HTML("No species name has been selected. Please provide a species name"),
           ))
       }
-      if (input$name_anat=="not_selected"){
+      # if (!is.null(input$name_species) && input$name_species == "not_selected")}
+      # if (input$name_anat=="not_selected"){
+      if (!is.null(input$name_anat) && input$name_anat == "not_selected"){
         showModal(
           modalDialog(
             title = tags$h4(style = "color: red;","Are you sur? "),
@@ -1189,9 +1247,9 @@ observeEvent(input$submit, {
       updateSelectizeInput(session = session,inputId = "name_us",selected = last.name.us())
       updateSelectizeInput(session = session,inputId = "name_sector",selected = last.name.sector())
       updateSelectizeInput(session = session,inputId = "year_exca",selected = last.year_exca())
-      
+   
       data <- as.data.frame(t(formData()))
-
+  
         if(!isTRUE(trigger.button.prevnext())){
           global.load$df<-global.load$df[-c(nrow(global.load$df)),]
           data$observation<-paste(as.character(df$save5$observation))
@@ -1199,9 +1257,15 @@ observeEvent(input$submit, {
           trigger.button.prevnext(TRUE)
           trigger.next.prev(TRUE)
           }
-        
-        global.load$df<-rbind(global.load$df, data)
+      # print("rrrrererreere") 
+      # assign("data",data,envir = .GlobalEnv)
+      #  assign("df",global.load$df,envir = .GlobalEnv)
+        global.load$df<-rbind.data.frame(global.load$df, data)
       
+        # print("dataX")
+        # print(class(global.load$df))
+        # 
+        
         k<-ID_record()+1
         ID_record(k)
         global.load$k<-k
@@ -1276,22 +1340,22 @@ observeEvent(input$submit, {
                    global.load$listeoflist_bone[["list_bone_2"]]<-c(reactiveValuesToList(global.load$listeoflist_bone)[[2]],levels(factor(as.character(data$name_anat)))) }
                })
                })
+    
         future::future({
+       
         switch(last.taxa.name(),
-            
                Rodentia = {
                     isolate ({
-                   key <- paste(global.load$rod.list.select) #
-                   current_list <- global.load$listeoflist2[[key]]#
-                   new_values <- levels(factor(as.character(data$name_species)))
+                   # key <- paste(global.load$rod.list.select) #
+                   # current_list <- global.load$listeoflist2[[key]]#
+                   # new_values <- levels(factor(as.character(data$name_species)))
+                   # if (!data$name_species %in% current_list) {
+                   #   global.load$listeoflist2[[key]] <- unique(c(current_list, new_values))
+                   # }
                    
-                   # if(!data$name_species %in% reactiveValuesToList(global.load$listeoflist2)[[paste(global.load$rod.list.select)]] ){
-                   #   global.load$listeoflist2[[paste(global.load$rod.list.select)]]<-c(reactiveValuesToList(global.load$listeoflist2)[[paste(global.load$rod.list.select)]],levels(factor(as.character(data$name_species)))) }
-                   # 
-                   if (!data$name_species %in% current_list) {
-                     global.load$listeoflist2[[key]] <- unique(c(current_list, new_values))
-                   }
-                   
+                   if(!data$name_species %in% reactiveValuesToList(global.load$listeoflist2)[[paste(global.load$rod.list.select)]] ){
+                     global.load$listeoflist2[[paste(global.load$rod.list.select)]]<-c(reactiveValuesToList(global.load$listeoflist2)[[paste(global.load$rod.list.select)]],levels(factor(as.character(data$name_species)))) }
+
                     })
 
                },
@@ -1326,23 +1390,19 @@ observeEvent(input$submit, {
                      global.load$listeoflist2[[paste(global.load$chiro.list.select)]]<-c(reactiveValuesToList(global.load$listeoflist2)[[paste(global.load$chiro.list.select)]],levels(factor(as.character(data$name_species)))) }
                  })
                })
+       
         }) #end of the future
 
-    
     global.load$listeoflist2<-global.load$listeoflist2
     global.load$listeoflist_bone<-global.load$listeoflist_bone
     
-        print(global.load$listeoflist2[[paste(global.load$rod.list.select)]])
-    print(global.load$rod.list.select)
-    print(reactiveValuesToList(global.load$listeoflist2)[[paste(global.load$rod.list.select)]])
-
         # to_save <- reactiveValuesToList(global.load)
          to_save <- clean_shiny(global.load)
     
         saveRDS(to_save, file =  paste0(Sys.Date(),".",global.load$site.archaeo,".BDD.uf",".rds"))
         test<-data.frame(apply(global.load$df,2,as.character))
         write.table(test, file =  paste0(Sys.Date(),".",global.load$site.archaeo,".BDD.uf",".csv",sep=""), row.names = FALSE, sep=";",dec=".") 
-  assign("temp2",global.load$listeoflist2,envir = .GlobalEnv)
+  # assign("temp2",global.load$listeoflist2,envir = .GlobalEnv)
           # assign("df",global.load$df,envir = .GlobalEnv)
           })
     
@@ -1403,16 +1463,22 @@ observeEvent(input$submit, {
 ### table modification ----    
     curPgInd<-reactiveVal(1)  
     observeEvent(global.load$df, {
-      user<-nrow(global.load$df)
-      if(user == 0) {
-        return ()
-      }
+      req(global.load$df)
+       user<-nrow(global.load$df)
+       if (is.null(user) || user == 0) {
+         return()
+       }
       curPgInd(ceiling(user / 5))
     })
     
     output$responses <- DT::renderDataTable({
+      req(global.load$df)
+     dttable<- global.load$df
+      if (!is.data.frame(global.load$df)) {
+      dttable<-data.frame(sapply(global.load$df,c))
+      }
       refresh_dtoutput()
-      global.load$df
+      dttable
      
     }, 
     callback = JS(paste0('setTimeout(function() {table.page(', curPgInd() - 1,').draw(false);}, 100);')),
@@ -1420,8 +1486,14 @@ observeEvent(input$submit, {
     )
     
     output$responses2 <- DT::renderDataTable({
+      req(global.load$df)
+      dttable<- global.load$df
+      if (!is.data.frame(global.load$df)) {
+        dttable<-data.frame(sapply(global.load$df,c))
+      }
        datatable(
-         global.load$df,
+         # global.load$df,
+         dttable,
          editable = TRUE)
     } ,   
     options = list(lengthMenu = c(1, 2,3, 5,10,25,50), pageLength = 5)
@@ -1547,8 +1619,18 @@ observeEvent(input$Next.0,{
   updateSelectizeInput(session = session,inputId = "year_exca",selected = last.year_exca())
   
   data <- as.data.frame(t(formData()))
+  # print("jj")
+  # print(class(data))
+  # print(class(global.load$df))
   data[,8:ncol(data)]<-"empty" #a corriger en 10?
-  global.load$df<-rbind(global.load$df, data)
+  if (is.null(global.load$df) || nrow(global.load$df) == 0) {
+    global.load$df <- data
+  } else {
+    global.load$df <- rbind(global.load$df, data)
+  }
+  # print("jj2")
+  # print(class(global.load$df))
+  # 
   k<-ID_record()+1
   ID_record(k)
 
@@ -1607,81 +1689,156 @@ df.species.table<-reactiveVal()
 df.species.table.UAS<-reactiveVal()
 number.total.of.species<-reactiveVal(1)
 output$liste.sector=renderUI({
-  sector.list<-unique(unlist((df$df[["name_sector"]])))
+  # print("temp")
+  # req(df$df)
+  # req(nrow(df$df) > 0)
+  # print("temp2")
+  sector.list2<-unique(unlist((df$df[["name_sector"]])))
+  # print(sector.list2)
+  # if (length(sector.list) == 0) {
+  #   sector.list <- "Aucun secteur"
+  # }
+  #print(df$df[["name_sector"]])
+  # print("z")
+  # print(sector.list)
+  sector.list <- unique(df$df$name_sector)
+  sector.list <- sector.list[!is.na(sector.list)]
+  
+  print(sector.list)
   checkboxGroupInput("localisation", h6("Secteur"),
                       choices = levels(as.factor(sector.list)),selected = levels(as.factor(sector.list)))
 })
 output$liste.UAS=renderUI({
+  # print("k")
+  # req(df$df)
+  # print("eee")
+  # print(df$df)
+  # req(nrow(df$df) > 0)
   lvl.list<-unique(unlist((df$df[["name_level"]])))
   checkboxGroupInput("UAS", h6("Levels"),
                      choices = levels(as.factor(lvl.list)),selected = levels(as.factor(lvl.list)))
 })
 
 output$liste.US=renderUI({
+  # req(df$df)
+  # req(nrow(df$df) > 0)
   us.list<-unique(unlist((df$df[["name_us"]])))
   checkboxGroupInput("US", h6("US"),
                      choices = levels(as.factor(us.list)),selected = levels(as.factor(us.list)))
 })
 output$liste.passe=renderUI({
+  # req(df$df)
+  # req(nrow(df$df) > 0)
   dec.list<-unique(unlist((df$df[["name_dec"]])))
   checkboxGroupInput("Passe", h6("Split"),
                      choices = levels(as.factor(dec.list)),selected = levels(as.factor(dec.list)))
 })
 output$liste.square=renderUI({
+  # req(df$df)
+  # req(nrow(df$df) > 0)
   sq.list<-unique(unlist((df$df[["name_square"]])))
   checkboxGroupInput("Square", h6("Square"),
                      choices = levels(as.factor(sq.list)),selected = levels(as.factor(sq.list)))
 })
 output$liste.year=renderUI({
+  # req(df$df)
+  # req(nrow(df$df) > 0)
   y.list<-unique(unlist((df$df[["year_exca"]])))
   checkboxGroupInput("Year", h6("Year"),
                      choices = levels(as.factor(y.list)),selected = levels(as.factor(y.list)))
 })
 output$liste.species=renderUI({
+  # print("k2")
+  # req(df$df)
+  # req(nrow(df$df) > 0)
+  #  print("azaeaezae")
+  # # print(str(df$df[["name_species"]]))
   sq.list<-unique(unlist((df$df[["name_species"]])))
   checkboxGroupInput("Species", h6("Species"),
                      choices = levels(as.factor(sq.list)),selected = levels(as.factor(sq.list)))
 })
-df.sub <- reactive({ 
-           req(!is.null(fileisupload))
+
+df.sub <- reactive({
+           # req(!is.null(fileisupload))
+  # print("INPUT UAS:")
+  # print(input$UAS)
+  # print(unique(global.load$df$name_level))
+  req(fileisupload())
+  # assign("temppp3",global.load$df,envir = .GlobalEnv)
 
           df.sub<-global.load$df
-          assign("temppp2",df.sub,envir = .GlobalEnv)
-print("bof")
-print(input$US)      
-print(length(rV$name_us))
+          # print("aaaaaaa")
+          # print(str(df.sub))
+          # print(class(global.load$df))
+          # print(input$localisation)
+          # print(df.sub[df.sub$name_sector])
+          # print("prout")
+          # print(class(df$df))
+          # print(str(df$df))
+           assign("temppp2",df.sub,envir = .GlobalEnv)
 
-             if (!is.null(input$localisation)) {
-          df.sub <- df.sub[df.sub[["name_sector"]] %in% input$localisation, ]}
-          if (!is.null(input$UAS)) {
-             df.sub <- df.sub[df.sub[["name_level"]] %in% input$UAS, ]} else {
-               df.sub <- df.sub[df.sub[["name_level"]] %in% rV$name_level, ]
-              
-             }
-          print(("rr"))
-          if (!is.null(input$US)) {
-             df.sub <- df.sub[df.sub[["name_us"]] %in% input$US, ]} else {
-               df.sub <- df.sub[df.sub[["name_us"]] %in% rV$name_us, ]
+          #    if (!is.null(input$localisation)) {
+          # df.sub <- df.sub[df.sub$name_sector %in% input$localisation, ]}
+          #
+          #  print("CHECK df.sub")
+          #  print(class(df.sub))
+          #  print(names(df.sub))
+          #  print(str(df.sub$name_level))
+          #  print(rV$name_level)
+          #
+           # print(input$UAS)
+           # print(df.sub[df.sub[["name_level"]],])
+
+          # if (!is.null(input$UAS)) {
+          #    df.sub <- df.sub[df.sub[["name_level"]] %in% input$UAS, ]} else {
+          #      df.sub <- df.sub[df.sub[["name_level"]] %in% rV$name_level, ]
+          # 
+          #    }
+          # 
+          # if (!is.null(input$US)) {
+          #    df.sub <- df.sub[df.sub[["name_us"]] %in% input$US, ]} else {
+          #      df.sub <- df.sub[df.sub[["name_us"]] %in% rV$name_us, ]
+          # 
+          #    }
+          # if (!is.null(input$Passe)) {
+          #    df.sub <- df.sub[df.sub[["name_dec"]]%in% input$Passe, ]}
+          # if (!is.null(input$Square)) {
+          #    df.sub <- df.sub[df.sub[["name_square"]] %in% input$Square, ]}
+          # if (!is.null(input$Species)) {
+          #    df.sub <- df.sub[df.sub[["name_species"]] %in% input$Species, ]}
+          # if (!is.null(input$Year)) {
+          #    df.sub <- df.sub[df.sub[["year_exca"]] %in% input$Year, ]}
+
+           if (!is.null(input$UAS)) {
+             df.sub <- df.sub[df.sub$name_level %in% input$UAS, ]} else {
+               df.sub <- df.sub[df.sub$name_level %in% rV$name_level, ]
                
              }
-          print("ttt")
-          print(df.sub)
-          if (!is.null(input$Passe)) {
-             df.sub <- df.sub[df.sub[["name_dec"]]%in% input$Passe, ]}
-          if (!is.null(input$Square)) {
-             df.sub <- df.sub[df.sub[["name_square"]] %in% input$Square, ]}
-          if (!is.null(input$Species)) {
-             df.sub <- df.sub[df.sub[["name_species"]] %in% input$Species, ]}
-          if (!is.null(input$Year)) {
-             df.sub <- df.sub[df.sub[["year_exca"]] %in% input$Year, ]}
-
+           
+           if (!is.null(input$US)) {
+             df.sub <- df.sub[df.sub$name_us %in% input$US, ]} else {
+               df.sub <- df.sub[df.sub$name_us %in% rV$name_us, ]
+               
+             }
+           if (!is.null(input$Passe)) {
+             df.sub <- df.sub[df.sub$name_dec %in% input$Passe, ]}
+           if (!is.null(input$Square)) {
+             df.sub <- df.sub[df.sub$name_square %in% input$Square, ]}
+           if (!is.null(input$Species)) {
+             df.sub <- df.sub[df.sub$name_species %in% input$Species, ]}
+           if (!is.null(input$Year)) {
+             df.sub <- df.sub[df.sub$year_exca %in% input$Year, ]}
+           
+           print("oula")
              df.sub[,1:29][df.sub[,1:29]=="NULL"] <- "NA"
-               print(nrow(df.sub))
+
              if(nrow(df.sub)>1){
                df.sub<-as.data.frame(apply(df.sub,2, function(x) as.character(x)))}
-               assign("temppp",df.sub,envir = .GlobalEnv)
-               
+            assign("temppp",df.sub,envir = .GlobalEnv)
+
+
              validate(need(nrow(df.sub)!=0, "There are no matches in the dataset. Try removing or relaxing one or more filters."))
+             # print("rr")
              df.sub
              df.sub$nb_remains<-as.numeric(df.sub$nb_remains)
 
@@ -1689,45 +1846,47 @@ print(length(rV$name_us))
            # data.df.tot<-as.data.frame(t(apply(df.sub,1, function(x) unlist(x))))
            # data.df.tot$nb_remains<-as.numeric(data.df.tot$nb_remains)
            data.df.tot<-df.sub
-           # data.df.tot2<-data.df.tot %>% group_by(.data[["name_level"]],.data[["name_species"]])  %>% 
+           # data.df.tot2<-data.df.tot %>% group_by(.data[["name_level"]],.data[["name_species"]])  %>%
            #   dplyr::summarise(total = sum(!!(as.numeric(data.df.tot$nb_remains))))
-           print("aa")
-           print(data.df.tot$name_level)
-           print(levels(as.character(data.df.tot$name_level)))
-           data.df.tot2<-data.df.tot %>% group_by(name_level,name_species)  %>% 
+           # print("aa")
+           # print(data.df.tot$name_level)
+           # print(levels(as.character(data.df.tot$name_level)))
+           data.df.tot2<-data.df.tot %>% group_by(name_level,name_species)  %>%
              dplyr::summarise(total = sum((as.numeric(nb_remains))))
-           
+
            myFormula <- as.formula(paste0("name_level", " ~ ","name_species"))
            df.species.table<-reshape2::dcast(data.df.tot2,myFormula, fill = 0L)
            df.species.table(df.species.table)
-           
-           data.df.tot2<-data.df.tot %>% group_by(name_us,name_species)  %>% 
+
+           data.df.tot2<-data.df.tot %>% group_by(name_us,name_species)  %>%
              dplyr::summarise(total = sum((as.numeric(nb_remains))))
            myFormula2 <- as.formula(paste0("name_us", " ~ ","name_species"))
            df.species.table.UAS<-reshape2::dcast(data.df.tot2,myFormula2, fill = 0L)
            df.species.table.UAS(df.species.table.UAS)
-           
+
            number.total.of.species(ncol(df.species.table)-1)
            ####
            df.sub
-  
+
          })  # end of df.sub reactive
-         
+
 
          ###### Basic data ----
-         
+# observe({
+#   print("Shiny is alive")
+# })
          output$sum.species=renderUI({
            req(!is.null(fileisupload()))
            tagList(HTML(paste("Total number of different type of taxa: ",number.total.of.species())))
            })
 
-         
+
          output$sum.bucket=renderUI({
            req(!is.null(fileisupload()))
            aa<-df.sub()[["ID_dec"]]
            tagList(HTML(paste("Number of bucket selected: ",length(unique(aa)))))
          })
-         
+
          output$sum.bucket2=renderUI({
            req(!is.null(fileisupload()))
            aa<-df.sub()[,"ID_dec"]
@@ -1735,7 +1894,7 @@ print(length(rV$name_us))
          })
          output$sum.remain=renderUI({
            req(!is.null(fileisupload()))
-           str(global.load$df[["nb_remains"]])
+           # str(global.load$df[["nb_remains"]])
            aa<-as.data.frame(as.numeric(global.load$df[["nb_remains"]]))
            tagList(HTML(paste("Number total of all remains: ",sum(aa, na.rm = T))))
          })
@@ -1743,8 +1902,8 @@ print(length(rV$name_us))
            req(!is.null(fileisupload()))
             aa<-df.sub()
             tagList(HTML(paste("Number of remains selected: ",sum(aa[["nb_remains"]], na.rm = T))))
-         })  
-         
+         })
+
          
          ###### rarefaction curves ----
          output$rarefactionplotui <- renderUI({
@@ -2372,9 +2531,9 @@ output$bioclim.graph <- renderUI({
            
            
            list.element<-c("0","1","2","3","4","IND")
-           print("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
-           assign("df.sub",df.sub,envir=.GlobalEnv)
-          assign("tt",data.df.calcul.gh,envir=.GlobalEnv)
+           # print("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
+           # assign("df.sub",df.sub,envir=.GlobalEnv)
+          # assign("tt",data.df.calcul.gh,envir=.GlobalEnv)
            switch(input$select.ratio.dig,
                   "1"={
                     FEM.dig<-subset(data.df.calcul.gh, name_anat == "Fem")
@@ -2793,6 +2952,8 @@ ratio<-rowSums(data.df.calcul.verif[2])/(rowSums(data.df.calcul.verif[2:3]))
 
     Pivotdatatable<-reactive({req(input$listesum)
            df.sub<-df.sub()
+           print("gg25")
+           print(class(df.sub))
            liste.sum<-c(input$listesum,"nb_remains") # creation d'une liste
            table_matos<-df.sub %>% group_by(across(liste.sum)) %>% summarize(n_row=n()    )
            str(table_matos)
@@ -2807,7 +2968,9 @@ ratio<-rowSums(data.df.calcul.verif[2])/(rowSums(data.df.calcul.verif[2:3]))
            print("a")
            print(data.df.tot2)
            assign("data.df.tot2",data.df.tot2, envir=.GlobalEnv)
-           if (input$flip2==TRUE){
+           req(nrow(data.df.tot2) > 0)
+           
+            if (input$flip2==TRUE){
            data.df.tot2<-df.species.table.UAS()}
            print(data.df.tot2)
            data.df.tot2<-t(data.df.tot2)
