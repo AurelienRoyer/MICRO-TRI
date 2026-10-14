@@ -1090,7 +1090,7 @@ observeEvent(input$submit, {
            data$name_level<-"empty"}
          if(length(data$name_us)==1 && data$name_us=="") {
            data$name_us<-"empty"}
-         if (isFALSE(input$infos_tm)) {data$trace_encoche<-"no"}
+         if (isFALSE(input$infos_enc)) {data$trace_encoche<-"no"}
          if (isFALSE(input$infos_tm)){data$trace_tooth_mark<-"no"}
            
         #"Mand","Max",
